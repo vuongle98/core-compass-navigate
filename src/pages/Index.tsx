@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { ActiveUsers } from "@/components/dashboard/ActiveUsers";
+import { Link } from "react-router-dom";
 import { 
   Users, 
   Shield, 
@@ -17,13 +18,13 @@ import {
 const Index = () => {
   // Mock data for dashboard metrics
   const stats = [
-    { title: "Total Users", value: 2458, icon: Users, change: 12.5 },
-    { title: "Roles", value: 14, icon: Shield, change: 0 },
-    { title: "Permissions", value: 42, icon: Key, change: 4.2 },
-    { title: "Files", value: 321, icon: FileText, change: -2.3 },
-    { title: "Notifications", value: 68, icon: Bell, change: 8.1 },
-    { title: "Config Params", value: 35, icon: Settings, change: 1.5 },
-    { title: "Feature Flags", value: 24, icon: Flag, change: 5.2 },
+    { title: "Total Users", value: 2458, icon: Users, change: 12.5, link: "/users" },
+    { title: "Roles", value: 14, icon: Shield, change: 0, link: "/roles" },
+    { title: "Permissions", value: 42, icon: Key, change: 4.2, link: "/permissions" },
+    { title: "Files", value: 321, icon: FileText, change: -2.3, link: "/files" },
+    { title: "Notifications", value: 68, icon: Bell, change: 8.1, link: "/notifications" },
+    { title: "Config Params", value: 35, icon: Settings, change: 1.5, link: "/configuration" },
+    { title: "Feature Flags", value: 24, icon: Flag, change: 5.2, link: "/feature-flags" },
   ];
 
   // Mock activity data for the charts
@@ -68,28 +69,41 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
           {stats.map((stat) => (
-            <StatCard 
-              key={stat.title}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              change={stat.change}
-            />
+            <Link key={stat.title} to={stat.link} className="block">
+              <StatCard 
+                title={stat.title}
+                value={stat.value}
+                icon={stat.icon}
+                change={stat.change}
+                className="transition-transform hover:scale-105 cursor-pointer"
+              />
+            </Link>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <ActivityChart 
-            title="User Activity (Last 7 Days)"
-            data={userActivityData}
-            color="#8B5CF6" 
-          />
-          <ActivityChart 
-            title="File Uploads (Last 7 Days)"
-            data={fileUploadsData}
-            color="#0EA5E9" 
-          />
-          <ActiveUsers users={activeUsers} />
+          <Link to="/users" className="col-span-2 block">
+            <ActivityChart 
+              title="User Activity (Last 7 Days)"
+              data={userActivityData}
+              color="#8B5CF6" 
+              className="transition-transform hover:scale-105 cursor-pointer"
+            />
+          </Link>
+          <Link to="/files" className="block">
+            <ActivityChart 
+              title="File Uploads (Last 7 Days)"
+              data={fileUploadsData}
+              color="#0EA5E9" 
+              className="transition-transform hover:scale-105 cursor-pointer"
+            />
+          </Link>
+          <Link to="/users" className="block">
+            <ActiveUsers 
+              users={activeUsers} 
+              className="transition-transform hover:scale-105 cursor-pointer"
+            />
+          </Link>
         </div>
 
         <div className="mt-6">

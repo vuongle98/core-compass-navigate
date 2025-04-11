@@ -14,11 +14,12 @@ interface User {
 
 interface ActiveUsersProps {
   users: User[];
+  className?: string;
 }
 
-export function ActiveUsers({ users }: ActiveUsersProps) {
+export function ActiveUsers({ users, className }: ActiveUsersProps) {
   return (
-    <Card>
+    <Card className={cn("", className)}>
       <CardHeader>
         <CardTitle>Active Users</CardTitle>
       </CardHeader>

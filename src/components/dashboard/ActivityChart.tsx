@@ -13,6 +13,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ActivityData {
   name: string;
@@ -23,11 +24,12 @@ interface ActivityChartProps {
   title: string;
   data: ActivityData[];
   color?: string;
+  className?: string;
 }
 
-export function ActivityChart({ title, data, color = "#8B5CF6" }: ActivityChartProps) {
+export function ActivityChart({ title, data, color = "#8B5CF6", className }: ActivityChartProps) {
   return (
-    <Card className="col-span-2">
+    <Card className={cn("col-span-2", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
