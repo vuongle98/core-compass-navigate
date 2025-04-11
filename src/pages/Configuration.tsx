@@ -41,11 +41,11 @@ const Configuration = () => {
   ];
 
   const columns = [
-    { header: "Key", accessorKey: "key" },
-    { header: "Value", accessorKey: "value" },
-    { header: "Type", accessorKey: "type" },
-    { header: "Last Modified", accessorKey: "lastModified" },
-    { header: "Environment", accessorKey: "environment" },
+    { header: "Key", accessorKey: "key" as const },
+    { header: "Value", accessorKey: "value" as const },
+    { header: "Type", accessorKey: "type" as const },
+    { header: "Last Modified", accessorKey: "lastModified" as const },
+    { header: "Environment", accessorKey: "environment" as const },
   ];
 
   return (

@@ -13,9 +13,9 @@ const Roles = () => {
   ];
 
   const columns = [
-    { header: "Role Name", accessorKey: "name" },
-    { header: "Description", accessorKey: "description" },
-    { header: "User Count", accessorKey: "userCount" },
+    { header: "Role Name", accessorKey: "name" as const },
+    { header: "Description", accessorKey: "description" as const },
+    { header: "User Count", accessorKey: "userCount" as const },
   ];
 
   return (

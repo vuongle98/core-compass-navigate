@@ -14,9 +14,9 @@ const Permissions = () => {
   ];
 
   const columns = [
-    { header: "Permission", accessorKey: "name" },
-    { header: "Description", accessorKey: "description" },
-    { header: "Module", accessorKey: "module" },
+    { header: "Permission", accessorKey: "name" as const },
+    { header: "Description", accessorKey: "description" as const },
+    { header: "Module", accessorKey: "module" as const },
   ];
 
   return (

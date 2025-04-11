@@ -33,11 +33,11 @@ const Files = () => {
   ];
 
   const columns = [
-    { header: "File Name", accessorKey: "name" },
-    { header: "Type", accessorKey: "type" },
-    { header: "Size", accessorKey: "size" },
-    { header: "Uploaded By", accessorKey: "uploadedBy" },
-    { header: "Upload Date", accessorKey: "uploadedAt" },
+    { header: "File Name", accessorKey: "name" as const },
+    { header: "Type", accessorKey: "type" as const },
+    { header: "Size", accessorKey: "size" as const },
+    { header: "Uploaded By", accessorKey: "uploadedBy" as const },
+    { header: "Upload Date", accessorKey: "uploadedAt" as const },
   ];
 
   return (

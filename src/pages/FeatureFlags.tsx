@@ -3,7 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const FeatureFlags = () => {
   // Mock data
@@ -43,19 +43,19 @@ const FeatureFlags = () => {
   };
 
   const columns = [
-    { header: "Flag Name", accessorKey: "name" },
-    { header: "Description", accessorKey: "description" },
+    { header: "Flag Name", accessorKey: "name" as const },
+    { header: "Description", accessorKey: "description" as const },
     { 
       header: "Status", 
-      accessorKey: "enabled",
-      cell: (flag) => (
+      accessorKey: "enabled" as const,
+      cell: (flag: typeof featureFlags[0]) => (
         <Switch 
           checked={flag.enabled} 
           onCheckedChange={() => handleToggle(flag.id, flag.enabled)} 
         />
       )
     },
-    { header: "Environment", accessorKey: "environment" },
+    { header: "Environment", accessorKey: "environment" as const },
   ];
 
   return (
