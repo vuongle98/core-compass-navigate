@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -77,14 +78,13 @@ const Files = () => {
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: ({ row }) => {
-        const file = row.original;
-        if (file.type === "Image") {
+      cell: (item: FileItem) => {
+        if (item.type === "Image") {
           return (
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => setPreviewFile(file)}
+              onClick={() => setPreviewFile(item)}
               title="Preview Image"
             >
               <Eye className="h-4 w-4" />
