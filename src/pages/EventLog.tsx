@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
+import { toast } from "sonner";
 
 interface Event {
   id: number;
@@ -14,8 +15,8 @@ interface Event {
 }
 
 const EventLog = () => {
-  // Mock data for system events
-  const events = [
+  // Initial static events data for fallback
+  const staticEvents = [
     { 
       id: 1, 
       event: "System Startup", 
@@ -41,6 +42,20 @@ const EventLog = () => {
       message: "Multiple failed login attempts detected for user 'johndoe'"
     },
   ];
+
+  // State to store events data
+  const [events, setEvents] = useState<Event[]>(staticEvents);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<boolean>(false);
+
+  // Handle API fetch error
+  useEffect(() => {
+    if (error) {
+      toast.error("Failed to load event data", {
+        description: "Falling back to static data. Please try again later.",
+      });
+    }
+  }, [error]);
 
   const columns = [
     { header: "Event", accessorKey: "event" as const },
