@@ -59,14 +59,17 @@ export function DataTable<T extends { id: string | number }>({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
   
+  // Ensure initialData is always an array
+  const safeInitialData = Array.isArray(initialData) ? initialData : [];
+  
   // Pagination state
   const [paginationState, setPaginationState] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: initialPageSize,
     pageCount: 1,
-    totalItems: initialData.length,
+    totalItems: safeInitialData.length,
   });
-  const [data, setData] = useState<T[]>(initialData);
+  const [data, setData] = useState<T[]>(safeInitialData);
   const [isLoading, setIsLoading] = useState(false);
 
   // Create a dynamic form schema based on columns
@@ -97,6 +100,13 @@ export function DataTable<T extends { id: string | number }>({
     }
   }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize]);
 
+  // Handle changes to initialData
+  useEffect(() => {
+    if (!pagination || !apiEndpoint) {
+      setData(Array.isArray(initialData) ? initialData : []);
+    }
+  }, [initialData, pagination, apiEndpoint]);
+
   const fetchPaginatedData = async () => {
     if (!apiEndpoint) return;
     
@@ -107,14 +117,25 @@ export function DataTable<T extends { id: string | number }>({
         pageSize: paginationState.pageSize,
       });
       
-      setData(response.data);
-      setPaginationState({
-        ...paginationState,
-        pageCount: response.totalPages,
-        totalItems: response.totalItems,
-      });
+      if (response && response.data) {
+        setData(response.data);
+        setPaginationState({
+          ...paginationState,
+          pageCount: response.totalPages || 1,
+          totalItems: response.totalItems || 0,
+        });
+      } else {
+        // Fallback to initial data if API response is invalid
+        setData(safeInitialData);
+        console.warn("API returned invalid data format");
+        toast.error("Failed to load data", {
+          description: "Received invalid data format from API",
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch paginated data:", error);
+      // Fallback to initial data on error
+      setData(safeInitialData);
       toast.error("Failed to load data", {
         description: "Could not retrieve the requested data. Please try again.",
       });
@@ -260,7 +281,7 @@ export function DataTable<T extends { id: string | number }>({
               Loading data...
             </TableCell>
           </TableRow>
-        ) : data.length > 0 ? (
+        ) : data && data.length > 0 ? (
           data.map((item) => (
             <TableRow key={item.id as React.Key}>
               {columns.map((column) => (
@@ -298,7 +319,7 @@ export function DataTable<T extends { id: string | number }>({
         <div className="text-center py-8 border rounded-md">
           Loading data...
         </div>
-      ) : data.length > 0 ? (
+      ) : data && data.length > 0 ? (
         data.map((item) => (
           <div key={item.id as React.Key} className="border rounded-md p-4 pb-2">
             {columns.map((column) => (
