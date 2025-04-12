@@ -77,6 +77,7 @@ const Files = () => {
     { header: "Upload Date", accessorKey: "uploadedAt" as const },
     {
       header: "Actions",
+      accessorKey: "actions" as const, // Added accessorKey property
       cell: ({ row }) => {
         const file = row.original;
         if (file.type === "Image") {
