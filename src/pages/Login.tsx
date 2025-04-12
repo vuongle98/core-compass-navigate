@@ -38,10 +38,10 @@ const Login = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const success = await AuthService.login({
-        username: values.username,
-        password: values.password,
-      });
+      const success = await AuthService.login(
+        values.username,
+        values.password
+      );
       
       if (success) {
         navigate("/");

@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 interface User {
@@ -30,15 +31,15 @@ class AuthService {
   /**
    * Login user and store tokens
    */
-  public async login(email: string, password: string): Promise<boolean> {
+  public async login(username: string, password: string): Promise<boolean> {
     try {
       // For development/testing - use mock data instead of API call
       
       // Generate mock tokens and user data
       const mockUser: User = {
         id: "user-" + Date.now(),
-        email: email,
-        name: email.split('@')[0],
+        email: username,
+        name: username.split('@')[0] || username,
         role: "admin"
       };
       

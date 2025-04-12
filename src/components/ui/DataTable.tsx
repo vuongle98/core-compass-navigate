@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -592,7 +591,7 @@ export function DataTable<T extends { id: string | number }>({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">{title}</h3>
-        <Button onClick={handleAdd} onClick={() => {
+        <Button onClick={() => {
           // Log button click
           ApiService.logUserAction('click_add_button', { table: title });
           handleAdd();
