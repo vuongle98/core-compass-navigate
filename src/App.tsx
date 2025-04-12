@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Users from "./pages/Users";
 import Roles from "./pages/Roles";
@@ -18,6 +19,18 @@ import AuditLog from "./pages/AuditLog";
 import UserRequestLog from "./pages/UserRequestLog";
 import EventLog from "./pages/EventLog";
 import Profile from "./pages/Profile";
+import AuthService from "./services/AuthService";
+
+// Create a protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = AuthService.isAuthenticated();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -28,19 +41,20 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/roles" element={<Roles />} />
-          <Route path="/permissions" element={<Permissions />} />
-          <Route path="/tokens" element={<Tokens />} />
-          <Route path="/files" element={<Files />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/configuration" element={<Configuration />} />
-          <Route path="/feature-flags" element={<FeatureFlags />} />
-          <Route path="/audit-log" element={<AuditLog />} />
-          <Route path="/user-request-log" element={<UserRequestLog />} />
-          <Route path="/event-log" element={<EventLog />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+          <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
+          <Route path="/tokens" element={<ProtectedRoute><Tokens /></ProtectedRoute>} />
+          <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
+          <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
+          <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+          <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
+          <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

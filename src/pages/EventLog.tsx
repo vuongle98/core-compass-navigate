@@ -1,7 +1,17 @@
 
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
+
+interface Event {
+  id: number;
+  event: string;
+  source: string;
+  level: string;
+  timestamp: string;
+  message: string;
+}
 
 const EventLog = () => {
   // Mock data for system events
@@ -54,6 +64,9 @@ const EventLog = () => {
             data={events} 
             columns={columns} 
             title="System Events" 
+            pagination={true}
+            apiEndpoint="/api/events" // This would be your actual API endpoint
+            initialPageSize={10}
           />
         </div>
       </main>

@@ -11,13 +11,15 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { DataTablePagination, PaginationState } from "./DataTablePagination";
+import ApiService from "@/services/ApiService";
 
 interface Column<T> {
   header: string;
@@ -32,21 +34,40 @@ interface DataTableProps<T> {
   onAdd?: (data: Omit<T, "id">) => void;
   onEdit?: (data: T) => void;
   onDelete?: (id: string | number) => void;
+  // Pagination props
+  pagination?: boolean;
+  apiEndpoint?: string;
+  initialPageSize?: number;
+  pageSizeOptions?: number[];
 }
 
 export function DataTable<T extends { id: string | number }>({
-  data,
+  data: initialData,
   columns,
   title,
   onAdd,
   onEdit,
   onDelete,
+  pagination = false,
+  apiEndpoint,
+  initialPageSize = 10,
+  pageSizeOptions = [10, 20, 30, 50, 100],
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
+  
+  // Pagination state
+  const [paginationState, setPaginationState] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: initialPageSize,
+    pageCount: 1,
+    totalItems: initialData.length,
+  });
+  const [data, setData] = useState<T[]>(initialData);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Create a dynamic form schema based on columns
   const createFormSchema = () => {
@@ -68,6 +89,55 @@ export function DataTable<T extends { id: string | number }>({
     resolver: zodResolver(formSchema),
     defaultValues: {} as FormSchemaType,
   });
+
+  // Load paginated data from API if pagination is enabled and apiEndpoint is provided
+  useEffect(() => {
+    if (pagination && apiEndpoint) {
+      fetchPaginatedData();
+    }
+  }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize]);
+
+  const fetchPaginatedData = async () => {
+    if (!apiEndpoint) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await ApiService.getPaginated<T>(apiEndpoint, {
+        page: paginationState.pageIndex + 1, // API usually uses 1-based indexing
+        pageSize: paginationState.pageSize,
+      });
+      
+      setData(response.data);
+      setPaginationState({
+        ...paginationState,
+        pageCount: response.totalPages,
+        totalItems: response.totalItems,
+      });
+    } catch (error) {
+      console.error("Failed to fetch paginated data:", error);
+      toast.error("Failed to load data", {
+        description: "Could not retrieve the requested data. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle pagination changes
+  const handlePageChange = (page: number) => {
+    setPaginationState({
+      ...paginationState,
+      pageIndex: page,
+    });
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPaginationState({
+      ...paginationState,
+      pageSize: size,
+      pageIndex: 0, // Reset to first page when changing page size
+    });
+  };
 
   const handleAdd = () => {
     // Reset form when opening add dialog
@@ -95,9 +165,22 @@ export function DataTable<T extends { id: string | number }>({
     setIsDeleteDialogOpen(true);
   };
 
-  const handleAddSubmit = (values: FormSchemaType) => {
+  const handleAddSubmit = async (values: FormSchemaType) => {
     if (onAdd) {
       onAdd(values as unknown as Omit<T, "id">);
+    } else if (apiEndpoint) {
+      try {
+        await ApiService.post(apiEndpoint, values);
+        toast.success("Add action successful", {
+          description: "New item added successfully",
+        });
+        fetchPaginatedData(); // Refresh data after add
+      } catch (error) {
+        console.error("Add error:", error);
+        toast.error("Failed to add item", {
+          description: "There was an error while adding the item",
+        });
+      }
     } else {
       toast.success("Add action successful", {
         description: "New item added successfully",
@@ -106,25 +189,55 @@ export function DataTable<T extends { id: string | number }>({
     setIsAddDialogOpen(false);
   };
 
-  const handleEditSubmit = (values: FormSchemaType) => {
-    if (currentItem && onEdit) {
-      const updatedItem = { ...values, id: currentItem.id } as unknown as T;
-      onEdit(updatedItem);
-    } else {
-      toast.success("Edit action successful", {
-        description: `Item with ID: ${currentItem?.id} updated successfully`,
-      });
+  const handleEditSubmit = async (values: FormSchemaType) => {
+    if (currentItem) {
+      if (onEdit) {
+        const updatedItem = { ...values, id: currentItem.id } as unknown as T;
+        onEdit(updatedItem);
+      } else if (apiEndpoint) {
+        try {
+          await ApiService.put(`${apiEndpoint}/${currentItem.id}`, values);
+          toast.success("Edit action successful", {
+            description: `Item updated successfully`,
+          });
+          fetchPaginatedData(); // Refresh data after edit
+        } catch (error) {
+          console.error("Edit error:", error);
+          toast.error("Failed to update item", {
+            description: "There was an error while updating the item",
+          });
+        }
+      } else {
+        toast.success("Edit action successful", {
+          description: `Item with ID: ${currentItem?.id} updated successfully`,
+        });
+      }
     }
     setIsEditDialogOpen(false);
   };
 
-  const handleDeleteConfirm = () => {
-    if (currentItem && onDelete) {
-      onDelete(currentItem.id);
-    } else {
-      toast.success("Delete action successful", {
-        description: `Item with ID: ${currentItem?.id} deleted successfully`,
-      });
+  const handleDeleteConfirm = async () => {
+    if (currentItem) {
+      if (onDelete) {
+        onDelete(currentItem.id);
+      } else if (apiEndpoint) {
+        try {
+          await ApiService.delete(`${apiEndpoint}/${currentItem.id}`);
+          toast.success("Delete action successful", {
+            description: `Item deleted successfully`,
+          });
+          fetchPaginatedData(); // Refresh data after delete
+        } catch (error) {
+          console.error("Delete error:", error);
+          toast.error("Failed to delete item", {
+            description: "There was an error while deleting the item",
+          });
+        }
+      } else {
+        toast.success("Delete action successful", {
+          description: `Item with ID: ${currentItem?.id} deleted successfully`,
+        });
+      }
     }
     setIsDeleteDialogOpen(false);
   };
@@ -141,7 +254,13 @@ export function DataTable<T extends { id: string | number }>({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.length > 0 ? (
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={columns.length + 1} className="text-center py-8">
+              Loading data...
+            </TableCell>
+          </TableRow>
+        ) : data.length > 0 ? (
           data.map((item) => (
             <TableRow key={item.id as React.Key}>
               {columns.map((column) => (
@@ -175,7 +294,11 @@ export function DataTable<T extends { id: string | number }>({
   // Mobile view - stacked cards
   const renderMobileTable = () => (
     <div className="space-y-4">
-      {data.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-8 border rounded-md">
+          Loading data...
+        </div>
+      ) : data.length > 0 ? (
         data.map((item) => (
           <div key={item.id as React.Key} className="border rounded-md p-4 pb-2">
             {columns.map((column) => (
@@ -247,6 +370,15 @@ export function DataTable<T extends { id: string | number }>({
       </div>
       <div className="border rounded-md">
         {isMobile ? renderMobileTable() : renderDesktopTable()}
+        
+        {pagination && (
+          <DataTablePagination
+            pagination={paginationState}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={pageSizeOptions}
+          />
+        )}
       </div>
 
       {/* Add Dialog */}
