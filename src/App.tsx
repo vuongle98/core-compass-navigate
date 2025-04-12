@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./components/ThemeProvider";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -35,31 +36,33 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-          <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
-          <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
-          <Route path="/tokens" element={<ProtectedRoute><Tokens /></ProtectedRoute>} />
-          <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-          <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
-          <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
-          <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
-          <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
-          <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider defaultTheme="system" storageKey="app-theme">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+            <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+            <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
+            <Route path="/tokens" element={<ProtectedRoute><Tokens /></ProtectedRoute>} />
+            <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
+            <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
+            <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+            <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
+            <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

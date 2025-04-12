@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SidebarNav } from './SidebarNav';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface SidebarProps {
   className?: string;
@@ -24,14 +25,27 @@ export function Sidebar({ className }: SidebarProps) {
         {!collapsed && (
           <h2 className="text-lg font-semibold text-sidebar-foreground">CoreApp</h2>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </Button>
+        {collapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            className="mx-auto"
+          >
+            <ChevronRight size={18} />
+          </Button>
+        ) : (
+          <div className="flex items-center">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              <ChevronLeft size={18} />
+            </Button>
+          </div>
+        )}
       </div>
       <SidebarNav collapsed={collapsed} />
     </div>
