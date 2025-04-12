@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Pencil, Trash2 } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, ArrowUp, ArrowDown, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
@@ -20,11 +20,23 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { DataTablePagination, PaginationState } from "./DataTablePagination";
 import ApiService from "@/services/ApiService";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Column<T> {
   header: string;
   accessorKey: keyof T;
   cell?: (item: T) => React.ReactNode;
+  sortable?: boolean;
+  filterable?: boolean;
+}
+
+interface SortingState {
+  column: string | null;
+  direction: 'asc' | 'desc' | null;
+}
+
+interface FilterState {
+  [key: string]: string;
 }
 
 interface DataTableProps<T> {
@@ -58,6 +70,15 @@ export function DataTable<T extends { id: string | number }>({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
+  
+  // Sorting state
+  const [sorting, setSorting] = useState<SortingState>({
+    column: null,
+    direction: null
+  });
+  
+  // Filtering state
+  const [filters, setFilters] = useState<FilterState>({});
   
   // Ensure initialData is always an array
   const safeInitialData = Array.isArray(initialData) ? initialData : [];
@@ -93,12 +114,45 @@ export function DataTable<T extends { id: string | number }>({
     defaultValues: {} as FormSchemaType,
   });
 
+  // Handle sort toggle
+  const handleSort = (column: string) => {
+    setSorting(prev => {
+      // If clicking the same column, cycle through: asc -> desc -> none
+      if (prev.column === column) {
+        if (prev.direction === 'asc') return { column, direction: 'desc' };
+        if (prev.direction === 'desc') return { column: null, direction: null };
+        return { column, direction: 'asc' };
+      }
+      // If clicking a new column, start with ascending
+      return { column, direction: 'asc' };
+    });
+  };
+  
+  // Handle filter change
+  const handleFilterChange = (column: string, value: string) => {
+    setFilters(prev => {
+      if (value === '') {
+        // Remove the filter if empty
+        const newFilters = { ...prev };
+        delete newFilters[column];
+        return newFilters;
+      }
+      // Add or update the filter
+      return { ...prev, [column]: value };
+    });
+  };
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({});
+  };
+
   // Load paginated data from API if pagination is enabled and apiEndpoint is provided
   useEffect(() => {
     if (pagination && apiEndpoint) {
       fetchPaginatedData();
     }
-  }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize]);
+  }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters]);
 
   // Handle changes to initialData
   useEffect(() => {
@@ -112,9 +166,16 @@ export function DataTable<T extends { id: string | number }>({
     
     setIsLoading(true);
     try {
+      // Construct sort param in the format 'field:direction'
+      const sort = sorting.column && sorting.direction 
+        ? `${sorting.column}:${sorting.direction}`
+        : undefined;
+        
       const response = await ApiService.getPaginated<T>(apiEndpoint, {
         page: paginationState.pageIndex + 1, // API usually uses 1-based indexing
         pageSize: paginationState.pageSize,
+        sort,
+        filter: filters,
       });
       
       if (response && response.data) {
@@ -150,6 +211,12 @@ export function DataTable<T extends { id: string | number }>({
       ...paginationState,
       pageIndex: page,
     });
+    
+    // Log navigation event
+    ApiService.logUserAction('table_page_change', {
+      page,
+      table: title
+    });
   };
 
   const handlePageSizeChange = (size: number) => {
@@ -158,12 +225,21 @@ export function DataTable<T extends { id: string | number }>({
       pageSize: size,
       pageIndex: 0, // Reset to first page when changing page size
     });
+    
+    // Log page size change
+    ApiService.logUserAction('table_page_size_change', {
+      size,
+      table: title
+    });
   };
 
   const handleAdd = () => {
     // Reset form when opening add dialog
     form.reset({} as FormSchemaType);
     setIsAddDialogOpen(true);
+    
+    // Log user action
+    ApiService.logUserAction('open_add_dialog', { table: title });
   };
 
   const handleEdit = (item: T) => {
@@ -179,11 +255,23 @@ export function DataTable<T extends { id: string | number }>({
     
     form.reset(formValues);
     setIsEditDialogOpen(true);
+    
+    // Log user action
+    ApiService.logUserAction('open_edit_dialog', { 
+      table: title,
+      itemId: item.id
+    });
   };
 
   const handleDelete = (item: T) => {
     setCurrentItem(item);
     setIsDeleteDialogOpen(true);
+    
+    // Log user action
+    ApiService.logUserAction('open_delete_dialog', { 
+      table: title,
+      itemId: item.id
+    });
   };
 
   const handleAddSubmit = async (values: FormSchemaType) => {
@@ -208,6 +296,12 @@ export function DataTable<T extends { id: string | number }>({
       });
     }
     setIsAddDialogOpen(false);
+    
+    // Log user action
+    ApiService.logUserAction('add_item', { 
+      table: title,
+      values
+    });
   };
 
   const handleEditSubmit = async (values: FormSchemaType) => {
@@ -235,6 +329,13 @@ export function DataTable<T extends { id: string | number }>({
       }
     }
     setIsEditDialogOpen(false);
+    
+    // Log user action
+    ApiService.logUserAction('edit_item', { 
+      table: title,
+      itemId: currentItem?.id,
+      values
+    });
   };
 
   const handleDeleteConfirm = async () => {
@@ -261,6 +362,63 @@ export function DataTable<T extends { id: string | number }>({
       }
     }
     setIsDeleteDialogOpen(false);
+    
+    // Log user action
+    ApiService.logUserAction('delete_item', { 
+      table: title,
+      itemId: currentItem?.id
+    });
+  };
+
+  // Render a sort indicator for column headers
+  const renderSortIndicator = (columnKey: string) => {
+    if (sorting.column !== columnKey) return null;
+    
+    return sorting.direction === 'asc' 
+      ? <ArrowUp className="ml-1 h-4 w-4" /> 
+      : <ArrowDown className="ml-1 h-4 w-4" />;
+  };
+  
+  // Render filter popover for a column
+  const renderFilterPopover = (column: Column<T>) => {
+    const columnKey = String(column.accessorKey);
+    
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn("p-0 h-4 w-4", filters[columnKey] ? "text-primary" : "text-muted-foreground")}
+          >
+            <Filter className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-60 p-2">
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Filter {column.header}</h4>
+            <div className="flex">
+              <Input
+                placeholder={`Filter by ${column.header.toLowerCase()}`}
+                value={filters[columnKey] || ''}
+                onChange={(e) => handleFilterChange(columnKey, e.target.value)}
+                className="h-8"
+              />
+              {filters[columnKey] && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="px-2 ml-1" 
+                  onClick={() => handleFilterChange(columnKey, '')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   // Desktop view
@@ -269,7 +427,21 @@ export function DataTable<T extends { id: string | number }>({
       <TableHeader>
         <TableRow>
           {columns.map((column) => (
-            <TableHead key={column.header as string}>{column.header}</TableHead>
+            <TableHead 
+              key={column.header as string}
+              className={column.sortable ? "cursor-pointer select-none" : ""}
+              onClick={() => column.sortable ? handleSort(String(column.accessorKey)) : null}
+            >
+              <div className="flex items-center">
+                <span>{column.header}</span>
+                {column.sortable && renderSortIndicator(String(column.accessorKey))}
+                {column.filterable && (
+                  <span className="ml-2">
+                    {renderFilterPopover(column)}
+                  </span>
+                )}
+              </div>
+            </TableHead>
           ))}
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -380,15 +552,59 @@ export function DataTable<T extends { id: string | number }>({
     });
   };
 
+  // Active filters display
+  const renderActiveFilters = () => {
+    const activeFilters = Object.entries(filters);
+    if (activeFilters.length === 0) return null;
+    
+    return (
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <span className="text-sm font-medium">Filters:</span>
+        {activeFilters.map(([key, value]) => {
+          const column = columns.find(col => String(col.accessorKey) === key);
+          return (
+            <div key={key} className="bg-secondary text-secondary-foreground px-2 py-1 text-xs rounded-md flex items-center gap-1">
+              <span>{column?.header || key}: {value}</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-4 w-4 p-0" 
+                onClick={() => handleFilterChange(key, '')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        })}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 text-xs" 
+          onClick={clearFilters}
+        >
+          Clear all
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">{title}</h3>
-        <Button onClick={handleAdd}>
+        <Button onClick={handleAdd} onClick={() => {
+          // Log button click
+          ApiService.logUserAction('click_add_button', { table: title });
+          handleAdd();
+        }}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Add New
         </Button>
       </div>
+      
+      {/* Active filters */}
+      {renderActiveFilters()}
+      
       <div className="border rounded-md">
         {isMobile ? renderMobileTable() : renderDesktopTable()}
         
@@ -461,4 +677,9 @@ export function DataTable<T extends { id: string | number }>({
       </Dialog>
     </div>
   );
+}
+
+// Helper function for className conditionals
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
 }

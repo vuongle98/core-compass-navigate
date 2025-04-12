@@ -1,4 +1,3 @@
-
 import AuthService from "./AuthService";
 import { toast } from "sonner";
 
@@ -10,12 +9,24 @@ interface ApiRequestConfig extends RequestInit {
 interface PaginationParams {
   page?: number;
   pageSize?: number;
+  sort?: string;
+  filter?: Record<string, any>;
   [key: string]: any;
+}
+
+interface PerformanceLog {
+  endpoint: string;
+  method: string;
+  startTime: number;
+  duration: number;
+  status: number;
+  success: boolean;
 }
 
 class ApiService {
   private static instance: ApiService;
   private baseUrl: string;
+  private performanceLogs: PerformanceLog[] = [];
 
   private constructor() {
     this.baseUrl = import.meta.env.VITE_API_URL || "";
@@ -34,6 +45,32 @@ class ApiService {
    */
   public setBaseUrl(url: string): void {
     this.baseUrl = url;
+  }
+
+  /**
+   * Get performance logs
+   */
+  public getPerformanceLogs(): PerformanceLog[] {
+    return this.performanceLogs;
+  }
+
+  /**
+   * Clear performance logs
+   */
+  public clearPerformanceLogs(): void {
+    this.performanceLogs = [];
+  }
+
+  /**
+   * Log API performance metrics
+   */
+  private logPerformance(log: PerformanceLog): void {
+    this.performanceLogs.push(log);
+    // Keep only the last 100 logs
+    if (this.performanceLogs.length > 100) {
+      this.performanceLogs.shift();
+    }
+    console.log(`API ${log.method} ${log.endpoint} - ${log.duration}ms - Status: ${log.status}`);
   }
 
   /**
@@ -73,7 +110,7 @@ class ApiService {
   }
 
   /**
-   * Get data with pagination support
+   * Get data with pagination, sorting and filtering support
    */
   public async getPaginated<T>(endpoint: string, params: PaginationParams = {}): Promise<{
     data: T[];
@@ -82,13 +119,27 @@ class ApiService {
     currentPage: number;
     pageSize: number;
   }> {
-    const { page = 1, pageSize = 10, ...restParams } = params;
+    const { page = 1, pageSize = 10, sort, filter, ...restParams } = params;
     
-    const queryParams = {
+    const queryParams: Record<string, string> = {
       ...restParams,
       page: page.toString(),
       size: pageSize.toString(),
     };
+    
+    // Add sorting parameters if provided
+    if (sort) {
+      queryParams.sort = sort;
+    }
+    
+    // Add filtering parameters if provided
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams[`filter[${key}]`] = String(value);
+        }
+      });
+    }
     
     const config: ApiRequestConfig = {
       params: queryParams,
@@ -107,10 +158,12 @@ class ApiService {
   }
 
   /**
-   * Base request method with token refresh handling
+   * Base request method with token refresh handling and performance logging
    */
   private async request<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> {
     const { params, requiresAuth = true, ...fetchConfig } = config;
+    const startTime = performance.now();
+    const method = (config.method || 'GET').toUpperCase();
     
     // Construct URL with query parameters
     let url = this.baseUrl + endpoint;
@@ -151,11 +204,31 @@ class ApiService {
       }
     }
 
+    // Log the request for user action tracing
+    this.logUserAction('api_request', { 
+      endpoint, 
+      method,
+      timestamp: new Date().toISOString()
+    });
+
     // Make the request
     try {
       const response = await fetch(url, {
         ...fetchConfig,
         headers,
+      });
+
+      const endTime = performance.now();
+      const duration = Math.round(endTime - startTime);
+      
+      // Log performance metrics
+      this.logPerformance({
+        endpoint,
+        method,
+        startTime,
+        duration,
+        status: response.status,
+        success: response.ok
       });
 
       // Handle 401 Unauthorized - token might be expired
@@ -172,6 +245,16 @@ class ApiService {
             headers,
           });
 
+          const retryEndTime = performance.now();
+          this.logPerformance({
+            endpoint,
+            method,
+            startTime,
+            duration: Math.round(retryEndTime - startTime),
+            status: retryResponse.status,
+            success: retryResponse.ok
+          });
+
           return this.handleResponse<T>(retryResponse);
         } catch (error) {
           // If refresh fails, redirect to login
@@ -182,10 +265,38 @@ class ApiService {
 
       return this.handleResponse<T>(response);
     } catch (error) {
+      const endTime = performance.now();
+      
+      this.logPerformance({
+        endpoint,
+        method,
+        startTime,
+        duration: Math.round(endTime - startTime),
+        status: 0, // Network error or other failure
+        success: false
+      });
+      
       console.error("API request error:", error);
       this.handleError(error);
       throw error;
     }
+  }
+
+  /**
+   * Log user actions for analytics
+   */
+  public logUserAction(actionType: string, data: Record<string, any> = {}): void {
+    // Add common data
+    const logData = {
+      ...data,
+      timestamp: data.timestamp || new Date().toISOString(),
+      userId: AuthService.getCurrentUser()?.id || 'anonymous'
+    };
+    
+    console.log(`USER_ACTION: ${actionType}`, logData);
+    
+    // Here you could send the log to your analytics system
+    // Example: this.post('/analytics/log', { type: actionType, data: logData });
   }
 
   /**

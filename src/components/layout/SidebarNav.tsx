@@ -17,7 +17,7 @@ import {
   ChevronRight,
   Folder
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SidebarNavProps {
   collapsed: boolean;
@@ -38,10 +38,28 @@ type NavItem = {
 export function SidebarNav({ collapsed }: SidebarNavProps) {
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    overview: true,
     management: true,
-    logging: true,
-    system: true
+    content: false,
+    logging: false,
+    system: false
   });
+
+  // Auto-open group that contains the active route
+  useEffect(() => {
+    const currentPath = location.pathname;
+    
+    // Find which group contains the current path and open it
+    navGroups.forEach(group => {
+      const groupContainsCurrentPath = group.items.some(item => item.href === currentPath);
+      if (groupContainsCurrentPath) {
+        setOpenGroups(prev => ({
+          ...prev,
+          [group.name.toLowerCase()]: true
+        }));
+      }
+    });
+  }, [location.pathname]);
 
   const toggleGroup = (groupName: string) => {
     if (collapsed) return;
