@@ -13,7 +13,7 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   description,
-  showAddButton = true,
+  showAddButton = false,
   addButtonText = "Add New",
 }: PageHeaderProps) {
   const handleAdd = () => {

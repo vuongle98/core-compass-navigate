@@ -1,14 +1,19 @@
-
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  Eye, 
-  Download, 
-  Trash, 
+import {
+  Eye,
+  Download,
+  Trash,
   Info,
   Upload,
   Clock,
@@ -16,10 +21,10 @@ import {
   FileImage,
   FileAudio,
   FileVideo,
-  File as FileIcon
+  File as FileIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -47,13 +52,13 @@ interface FileItem {
 
 const FileTypeIcon = ({ type }: { type: string }) => {
   switch (type.toLowerCase()) {
-    case 'image':
+    case "image":
       return <FileImage className="h-4 w-4" />;
-    case 'audio':
+    case "audio":
       return <FileAudio className="h-4 w-4" />;
-    case 'video':
+    case "video":
       return <FileVideo className="h-4 w-4" />;
-    case 'pdf':
+    case "pdf":
       return <FileText className="h-4 w-4" />;
     default:
       return <FileIcon className="h-4 w-4" />;
@@ -68,65 +73,67 @@ const Files = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // Simulating data fetch with a delay for skeleton loading demo
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         // Log API request
-        ApiService.logUserAction('file_page_loaded', { timestamp: new Date().toISOString() });
-        
+        ApiService.logUserAction("file_page_loaded", {
+          timestamp: new Date().toISOString(),
+        });
+
         // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
         const mockFiles: FileItem[] = [
-          { 
-            id: 1, 
-            name: "annual-report.pdf", 
-            type: "PDF", 
+          {
+            id: 1,
+            name: "annual-report.pdf",
+            type: "PDF",
             size: "2.4 MB",
             uploadedBy: "Alice Smith",
             uploadedAt: "2023-04-10",
-            url: null
+            url: null,
           },
-          { 
-            id: 2, 
-            name: "user-avatar.png", 
-            type: "Image", 
+          {
+            id: 2,
+            name: "user-avatar.png",
+            type: "Image",
             size: "156 KB",
             uploadedBy: "Bob Johnson",
             uploadedAt: "2023-04-09",
-            url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500"
+            url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
           },
-          { 
-            id: 3, 
-            name: "data-export.csv", 
-            type: "CSV", 
+          {
+            id: 3,
+            name: "data-export.csv",
+            type: "CSV",
             size: "1.2 MB",
             uploadedBy: "Carol Davis",
             uploadedAt: "2023-04-08",
-            url: null
+            url: null,
           },
-          { 
-            id: 4, 
-            name: "product-photo.jpg", 
-            type: "Image", 
+          {
+            id: 4,
+            name: "product-photo.jpg",
+            type: "Image",
             size: "1.8 MB",
             uploadedBy: "Dave Wilson",
             uploadedAt: "2023-04-07",
-            url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500"
+            url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
           },
-          { 
-            id: 5, 
-            name: "marketing-banner.png", 
-            type: "Image", 
+          {
+            id: 5,
+            name: "marketing-banner.png",
+            type: "Image",
             size: "2.1 MB",
             uploadedBy: "Eve Brown",
             uploadedAt: "2023-04-06",
-            url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500"
+            url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
           },
         ];
-        
+
         setFiles(mockFiles);
       } catch (error) {
         console.error("Failed to fetch files:", error);
@@ -135,47 +142,47 @@ const Files = () => {
         setLoading(false);
       }
     };
-    
+
     fetchFiles();
   }, []);
-  
+
   const handleDragStart = (fileId: number) => {
     setDraggedFile(fileId);
-    ApiService.logUserAction('file_drag_started', { fileId });
+    ApiService.logUserAction("file_drag_started", { fileId });
   };
-  
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(true);
   };
-  
+
   const handleDragLeave = () => {
     setIsDraggingOver(false);
   };
-  
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
-    
+
     // Handle file drops
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files);
     }
     // Handle reordering (if draggedFile is set)
     else if (draggedFile !== null) {
-      ApiService.logUserAction('file_reordered', { fileId: draggedFile });
+      ApiService.logUserAction("file_reordered", { fileId: draggedFile });
       toast.success("File order updated");
     }
-    
+
     setDraggedFile(null);
   };
-  
+
   const handleFileUpload = (fileList: FileList) => {
     // Simulated optimistic UI update
     const newFiles: FileItem[] = [];
-    
+
     setIsUploading(true);
-    
+
     // Start progress simulation
     let progress = 0;
     const interval = setInterval(() => {
@@ -183,61 +190,64 @@ const Files = () => {
       if (progress > 100) {
         clearInterval(interval);
         setIsUploading(false);
-        
+
         // Add mock files after "upload" completes
         for (let i = 0; i < fileList.length; i++) {
           const file = fileList[i];
-          
+
           const newFile: FileItem = {
             id: Date.now() + i,
             name: file.name,
-            type: file.type.split('/')[0].charAt(0).toUpperCase() + file.type.split('/')[0].slice(1),
+            type:
+              file.type.split("/")[0].charAt(0).toUpperCase() +
+              file.type.split("/")[0].slice(1),
             size: (file.size / 1024).toFixed(2) + " KB",
             uploadedBy: "Current User",
             uploadedAt: new Date().toLocaleDateString(),
-            url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+            url: file.type.startsWith("image/")
+              ? URL.createObjectURL(file)
+              : null,
           };
-          
+
           newFiles.push(newFile);
         }
-        
+
         // Update files with new uploads
-        setFiles(prevFiles => [...newFiles, ...prevFiles]);
-        
+        setFiles((prevFiles) => [...newFiles, ...prevFiles]);
+
         toast.success(`${fileList.length} file(s) uploaded successfully`);
-        ApiService.logUserAction('files_uploaded', { count: fileList.length });
+        ApiService.logUserAction("files_uploaded", { count: fileList.length });
       }
       setUploadProgress(progress);
     }, 100);
   };
-  
+
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFileUpload(e.target.files);
     }
   };
-  
+
   const handleDeleteFile = (id: number) => {
     // Optimistic UI update - remove immediately
-    setFiles(prevFiles => prevFiles.filter(f => f.id !== id));
-    
+    setFiles((prevFiles) => prevFiles.filter((f) => f.id !== id));
+
     toast.success("File deleted successfully");
-    ApiService.logUserAction('file_deleted', { fileId: id });
+    ApiService.logUserAction("file_deleted", { fileId: id });
   };
 
   const columns = [
-    { 
-      header: "File Name", 
+    {
+      header: "File Name",
       accessorKey: "name" as const,
-      cell: ({ row }) => {
-        const file = row.original;
+      cell: (fileInfo) => {
         return (
           <div className="flex items-center space-x-2">
-            <FileTypeIcon type={file.type} />
-            <span>{file.name}</span>
+            <FileTypeIcon type={fileInfo.type} />
+            <span>{fileInfo.name}</span>
           </div>
         );
-      }
+      },
     },
     { header: "Type", accessorKey: "type" as const },
     { header: "Size", accessorKey: "size" as const },
@@ -246,23 +256,24 @@ const Files = () => {
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: ({ row }) => {
-        const file = row.original;
+      cell: (fileInfo) => {
         return (
           <div className="flex space-x-1">
-            {file.type === "Image" && (
+            {fileInfo.type === "Image" && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => {
-                        setPreviewFile(file);
-                        ApiService.logUserAction('file_preview_opened', { fileId: file.id });
+                        setPreviewFile(fileInfo);
+                        ApiService.logUserAction("file_preview_opened", {
+                          fileId: fileInfo.id,
+                        });
                       }}
                       draggable
-                      onDragStart={() => handleDragStart(file.id)}
+                      onDragStart={() => handleDragStart(fileInfo.id)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -271,16 +282,18 @@ const Files = () => {
                 </Tooltip>
               </TooltipProvider>
             )}
-            
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => {
                       toast.info("Download started");
-                      ApiService.logUserAction('file_download_started', { fileId: file.id });
+                      ApiService.logUserAction("file_download_started", {
+                        fileId: fileInfo.id,
+                      });
                     }}
                   >
                     <Download className="h-4 w-4" />
@@ -289,14 +302,14 @@ const Files = () => {
                 <TooltipContent>Download File</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => handleDeleteFile(file.id)}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteFile(fileInfo.id)}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
@@ -304,7 +317,7 @@ const Files = () => {
                 <TooltipContent>Delete File</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             <HoverCard>
               <HoverCardTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -313,13 +326,25 @@ const Files = () => {
               </HoverCardTrigger>
               <HoverCardContent className="w-80">
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">{file.name}</h4>
+                  <h4 className="text-sm font-semibold">{fileInfo.name}</h4>
                   <div className="text-sm">
-                    <p><span className="font-medium">Type:</span> {file.type}</p>
-                    <p><span className="font-medium">Size:</span> {file.size}</p>
-                    <p><span className="font-medium">Uploaded by:</span> {file.uploadedBy}</p>
-                    <p><span className="font-medium">Date:</span> {file.uploadedAt}</p>
-                    <p><span className="font-medium">ID:</span> {file.id}</p>
+                    <p>
+                      <span className="font-medium">Type:</span> {fileInfo.type}
+                    </p>
+                    <p>
+                      <span className="font-medium">Size:</span> {fileInfo.size}
+                    </p>
+                    <p>
+                      <span className="font-medium">Uploaded by:</span>{" "}
+                      {fileInfo.uploadedBy}
+                    </p>
+                    <p>
+                      <span className="font-medium">Date:</span>{" "}
+                      {fileInfo.uploadedAt}
+                    </p>
+                    <p>
+                      <span className="font-medium">ID:</span> {fileInfo.id}
+                    </p>
                   </div>
                 </div>
               </HoverCardContent>
@@ -331,35 +356,34 @@ const Files = () => {
   ];
 
   const renderFileSkeletons = () => {
-    return Array(5).fill(0).map((_, index) => (
-      <div key={index} className="flex items-center space-x-4 p-4 border-b">
-        <Skeleton className="h-8 w-8 rounded-full" />
-        <div className="space-y-2 flex-1">
-          <Skeleton className="h-4 w-1/4" />
-          <Skeleton className="h-4 w-1/3" />
-        </div>
-        <div className="flex space-x-2">
+    return Array(5)
+      .fill(0)
+      .map((_, index) => (
+        <div key={index} className="flex items-center space-x-4 p-4 border-b">
           <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+          <div className="flex space-x-2">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
         </div>
-      </div>
-    ));
+      ));
   };
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main 
+      <main
         className="flex-1 overflow-y-auto p-8"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <PageHeader 
-          title="Files" 
-          description="Manage uploaded files"
-        />
-        
+        <PageHeader title="Files" description="Manage uploaded files" />
+
         {isDraggingOver && (
           <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
             <div className="bg-background p-8 rounded-lg shadow-lg text-center">
@@ -368,7 +392,7 @@ const Files = () => {
             </div>
           </div>
         )}
-        
+
         {isUploading && (
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-2">
@@ -378,7 +402,7 @@ const Files = () => {
             <Progress value={uploadProgress} className="w-full h-2" />
           </div>
         )}
-        
+
         <div className="flex justify-end mb-4">
           <div className="relative">
             <input
@@ -394,30 +418,32 @@ const Files = () => {
             </Button>
           </div>
         </div>
-        
+
         {loading ? (
-          <div className="mt-6 border rounded-md">
-            {renderFileSkeletons()}
-          </div>
+          <div className="mt-6 border rounded-md">{renderFileSkeletons()}</div>
         ) : (
           <div className="mt-6">
             <DataTable data={files} columns={columns} title="File Management" />
           </div>
         )}
 
-        <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <Dialog
+          open={!!previewFile}
+          onOpenChange={(open) => !open && setPreviewFile(null)}
+        >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{previewFile?.name}</DialogTitle>
               <DialogDescription>
-                {previewFile?.size} • Uploaded by {previewFile?.uploadedBy} on {previewFile?.uploadedAt}
+                {previewFile?.size} • Uploaded by {previewFile?.uploadedBy} on{" "}
+                {previewFile?.uploadedAt}
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-center p-2">
               {previewFile?.url ? (
-                <img 
-                  src={previewFile.url} 
-                  alt={previewFile.name} 
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
                   className="max-h-[70vh] object-contain rounded-md"
                 />
               ) : (

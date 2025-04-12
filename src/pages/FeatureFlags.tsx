@@ -1,59 +1,67 @@
-
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import {
+  Pagination,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const FeatureFlags = () => {
   // Mock data
   const featureFlags = [
-    { 
-      id: 1, 
-      name: "new_dashboard", 
-      description: "Enable new dashboard interface", 
+    {
+      id: 1,
+      name: "new_dashboard",
+      description: "Enable new dashboard interface",
       enabled: true,
-      environment: "All"
+      environment: "All",
     },
-    { 
-      id: 2, 
-      name: "beta_features", 
-      description: "Enable beta features for testing", 
+    {
+      id: 2,
+      name: "beta_features",
+      description: "Enable beta features for testing",
       enabled: false,
-      environment: "Development"
+      environment: "Development",
     },
-    { 
-      id: 3, 
-      name: "advanced_analytics", 
-      description: "Enable advanced analytics module", 
+    {
+      id: 3,
+      name: "advanced_analytics",
+      description: "Enable advanced analytics module",
       enabled: true,
-      environment: "Production"
+      environment: "Production",
     },
-    { 
-      id: 4, 
-      name: "ai_suggestions", 
-      description: "Enable AI-powered suggestions", 
+    {
+      id: 4,
+      name: "ai_suggestions",
+      description: "Enable AI-powered suggestions",
       enabled: false,
-      environment: "All"
+      environment: "All",
     },
   ];
 
   const handleToggle = (id: number, currentValue: boolean) => {
-    toast.success(`Feature flag ${id} ${currentValue ? "disabled" : "enabled"}`);
+    toast.success(
+      `Feature flag ${id} ${currentValue ? "disabled" : "enabled"}`
+    );
   };
 
   const columns = [
     { header: "Flag Name", accessorKey: "name" as const },
     { header: "Description", accessorKey: "description" as const },
-    { 
-      header: "Status", 
+    {
+      header: "Status",
       accessorKey: "enabled" as const,
-      cell: (flag: typeof featureFlags[0]) => (
-        <Switch 
-          checked={flag.enabled} 
-          onCheckedChange={() => handleToggle(flag.id, flag.enabled)} 
+      cell: (flag: (typeof featureFlags)[0]) => (
+        <Switch
+          checked={flag.enabled}
+          onCheckedChange={() => handleToggle(flag.id, flag.enabled)}
         />
-      )
+      ),
     },
     { header: "Environment", accessorKey: "environment" as const },
   ];
@@ -62,13 +70,22 @@ const FeatureFlags = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader 
-          title="Feature Flags" 
+        <PageHeader
+          title="Feature Flags"
           description="Toggle application features"
+          showAddButton={false}
         />
-        
+
         <div className="mt-6">
-          <DataTable data={featureFlags} columns={columns} title="Feature Flag Management" />
+          <DataTable
+            data={featureFlags}
+            columns={columns}
+            title="Feature Flag Management"
+          />
+          <Pagination>
+            <PaginationPrevious></PaginationPrevious>
+            <PaginationNext></PaginationNext>
+          </Pagination>
         </div>
       </main>
     </div>
