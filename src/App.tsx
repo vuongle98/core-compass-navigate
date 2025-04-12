@@ -14,6 +14,10 @@ import Files from "./pages/Files";
 import Notifications from "./pages/Notifications";
 import Configuration from "./pages/Configuration";
 import FeatureFlags from "./pages/FeatureFlags";
+import AuditLog from "./pages/AuditLog";
+import UserRequestLog from "./pages/UserRequestLog";
+import EventLog from "./pages/EventLog";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +37,10 @@ const App = () => (
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/configuration" element={<Configuration />} />
           <Route path="/feature-flags" element={<FeatureFlags />} />
+          <Route path="/audit-log" element={<AuditLog />} />
+          <Route path="/user-request-log" element={<UserRequestLog />} />
+          <Route path="/event-log" element={<EventLog />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

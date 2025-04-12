@@ -9,12 +9,25 @@ import {
   Bell,
   Settings,
   Flag,
-  LayoutDashboard
+  LayoutDashboard,
+  ClipboardList,
+  Activity,
+  LogIn,
+  ChevronDown,
+  ChevronRight,
+  Folder
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SidebarNavProps {
   collapsed: boolean;
 }
+
+type NavGroup = {
+  name: string;
+  icon: React.ElementType;
+  items: NavItem[];
+};
 
 type NavItem = {
   name: string;
@@ -24,76 +37,185 @@ type NavItem = {
 
 export function SidebarNav({ collapsed }: SidebarNavProps) {
   const location = useLocation();
-  
-  const navItems: NavItem[] = [
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    management: true,
+    logging: true,
+    system: true
+  });
+
+  const toggleGroup = (groupName: string) => {
+    if (collapsed) return;
+    
+    setOpenGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
+  const navGroups: NavGroup[] = [
     {
-      name: 'Dashboard',
-      href: '/',
-      icon: LayoutDashboard,
+      name: "Overview",
+      icon: Folder,
+      items: [
+        {
+          name: "Dashboard",
+          href: "/",
+          icon: LayoutDashboard,
+        }
+      ]
     },
     {
-      name: 'Users',
-      href: '/users',
-      icon: Users,
+      name: "Management",
+      icon: Folder,
+      items: [
+        {
+          name: "Users",
+          href: "/users",
+          icon: Users,
+        },
+        {
+          name: "Roles",
+          href: "/roles",
+          icon: Shield,
+        },
+        {
+          name: "Permissions",
+          href: "/permissions",
+          icon: Key,
+        },
+        {
+          name: "Tokens",
+          href: "/tokens",
+          icon: Key,
+        }
+      ]
     },
     {
-      name: 'Roles',
-      href: '/roles',
-      icon: Shield,
+      name: "Content",
+      icon: Folder,
+      items: [
+        {
+          name: "Files",
+          href: "/files",
+          icon: FileText,
+        }
+      ]
     },
     {
-      name: 'Permissions',
-      href: '/permissions',
-      icon: Key,
+      name: "Logging",
+      icon: Folder,
+      items: [
+        {
+          name: "Audit Log",
+          href: "/audit-log",
+          icon: ClipboardList,
+        },
+        {
+          name: "User Request Log",
+          href: "/user-request-log",
+          icon: LogIn,
+        },
+        {
+          name: "Event Log",
+          href: "/event-log",
+          icon: Activity,
+        }
+      ]
     },
     {
-      name: 'Tokens',
-      href: '/tokens',
-      icon: Key,
-    },
-    {
-      name: 'Files',
-      href: '/files',
-      icon: FileText,
-    },
-    {
-      name: 'Notifications',
-      href: '/notifications',
-      icon: Bell,
-    },
-    {
-      name: 'Configuration',
-      href: '/configuration',
-      icon: Settings,
-    },
-    {
-      name: 'Feature Flags',
-      href: '/feature-flags',
-      icon: Flag,
-    },
+      name: "System",
+      icon: Folder,
+      items: [
+        {
+          name: "Notifications",
+          href: "/notifications",
+          icon: Bell,
+        },
+        {
+          name: "Configuration",
+          href: "/configuration",
+          icon: Settings,
+        },
+        {
+          name: "Feature Flags",
+          href: "/feature-flags",
+          icon: Flag,
+        }
+      ]
+    }
   ];
 
   return (
-    <nav className="flex-1 overflow-y-auto py-4">
-      <ul className="space-y-1 px-2">
-        {navItems.map((item) => (
-          <li key={item.name}>
-            <Link
-              to={item.href}
-              className={cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                location.pathname === item.href
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                collapsed ? 'justify-center' : ''
+    <div className="flex flex-col flex-1">
+      <nav className="flex-1 overflow-y-auto py-4">
+        <ul className="space-y-1 px-2">
+          {navGroups.map((group) => (
+            <li key={group.name} className="mb-2">
+              {/* Group header */}
+              <button
+                onClick={() => toggleGroup(group.name.toLowerCase())}
+                className={cn(
+                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "text-sidebar-foreground hover:bg-sidebar-accent/30",
+                  collapsed ? "justify-center" : ""
+                )}
+              >
+                <group.icon className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{group.name}</span>
+                    {openGroups[group.name.toLowerCase()] ? 
+                      <ChevronDown className="h-4 w-4" /> : 
+                      <ChevronRight className="h-4 w-4" />
+                    }
+                  </>
+                )}
+              </button>
+              
+              {/* Group items */}
+              {(openGroups[group.name.toLowerCase()] || collapsed) && (
+                <ul className={cn(
+                  "mt-1 space-y-1",
+                  collapsed ? "px-0" : "pl-7 pr-2"
+                )}>
+                  {group.items.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        to={item.href}
+                        className={cn(
+                          'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          location.pathname === item.href
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
+                          collapsed ? 'justify-center' : ''
+                        )}
+                      >
+                        <item.icon className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
+                        {!collapsed && <span>{item.name}</span>}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            >
-              <item.icon className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      
+      {/* User button at the bottom */}
+      <div className="p-2 border-t border-sidebar-border mt-auto">
+        <Link
+          to="/profile"
+          className={cn(
+            'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors w-full',
+            'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
+            collapsed ? 'justify-center' : ''
+          )}
+        >
+          <Users className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
+          {!collapsed && <span>Profile</span>}
+        </Link>
+      </div>
+    </div>
   );
 }
