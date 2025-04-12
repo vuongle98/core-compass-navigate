@@ -1,21 +1,17 @@
-
 import { toast } from "sonner";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresAt?: number; // Timestamp when the access token expires
-}
-
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn?: number; // Expiration in seconds
+  user?: User; // Store user data with tokens
 }
 
 class AuthService {
@@ -34,12 +30,18 @@ class AuthService {
   /**
    * Login user and store tokens
    */
-  public async login(credentials: LoginCredentials): Promise<boolean> {
+  public async login(email: string, password: string): Promise<boolean> {
     try {
       // For development/testing - use mock data instead of API call
-      // This bypasses the API call that's causing the HTML parsing error
       
-      // Generate mock tokens
+      // Generate mock tokens and user data
+      const mockUser: User = {
+        id: "user-" + Date.now(),
+        email: email,
+        name: email.split('@')[0],
+        role: "admin"
+      };
+      
       const mockResponse = {
         accessToken: "mock-access-token-" + Date.now(),
         refreshToken: "mock-refresh-token-" + Date.now(),
@@ -49,52 +51,18 @@ class AuthService {
       // Calculate expiration timestamp
       const expiresAt = Date.now() + mockResponse.expiresIn * 1000;
 
-      // Store tokens
+      // Store tokens and user data
       this.setTokens({
         accessToken: mockResponse.accessToken,
         refreshToken: mockResponse.refreshToken,
-        expiresAt
+        expiresAt,
+        user: mockUser
       });
 
       toast.success("Login successful");
       return true;
       
-      /* Commented out actual API call for now
-      // Example API call - replace with your actual API endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error("Login failed", {
-          description: error.message || "Invalid credentials",
-        });
-        return false;
-      }
-
-      const data: LoginResponse = await response.json();
-      
-      // Calculate expiration timestamp if expiresIn is provided
-      let expiresAt: number | undefined;
-      if (data.expiresIn) {
-        expiresAt = Date.now() + data.expiresIn * 1000;
-      }
-
-      // Store tokens
-      this.setTokens({
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresAt
-      });
-
-      toast.success("Login successful");
-      return true;
-      */
+      /* Commented out actual API call for now */
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed", {
@@ -102,6 +70,14 @@ class AuthService {
       });
       return false;
     }
+  }
+
+  /**
+   * Get current user data
+   */
+  public getCurrentUser(): User | null {
+    const tokens = this.getTokens();
+    return tokens?.user || null;
   }
 
   /**
@@ -172,7 +148,7 @@ class AuthService {
           return;
         }
 
-        const data: LoginResponse = await response.json();
+        const data = await response.json();
         
         // Calculate expiration timestamp if expiresIn is provided
         let expiresAt: number | undefined;
@@ -180,11 +156,12 @@ class AuthService {
           expiresAt = Date.now() + data.expiresIn * 1000;
         }
 
-        // Store new tokens
+        // Store new tokens, but keep existing user data
         this.setTokens({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken || tokens.refreshToken, // Use new refresh token or keep existing one
-          expiresAt
+          expiresAt,
+          user: tokens.user // Keep existing user data
         });
 
         resolve(data.accessToken);
