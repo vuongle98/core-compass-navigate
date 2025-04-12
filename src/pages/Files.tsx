@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -15,12 +14,12 @@ interface FileItem {
   uploadedBy: string;
   uploadedAt: string;
   url?: string;
+  actions?: string;
 }
 
 const Files = () => {
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   
-  // Mock data with URLs for preview
   const files: FileItem[] = [
     { 
       id: 1, 
@@ -77,7 +76,7 @@ const Files = () => {
     { header: "Upload Date", accessorKey: "uploadedAt" as const },
     {
       header: "Actions",
-      accessorKey: "actions" as const, // Added accessorKey property
+      accessorKey: "actions" as const,
       cell: ({ row }) => {
         const file = row.original;
         if (file.type === "Image") {
@@ -110,7 +109,6 @@ const Files = () => {
           <DataTable data={files} columns={columns} title="File Management" />
         </div>
 
-        {/* Image Preview Dialog */}
         <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
