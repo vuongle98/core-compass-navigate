@@ -21,8 +21,8 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     try {
-      // Call logout API endpoint
-      await ApiService.post('/api/auth/logout');
+      // Call logout API endpoint - adding empty object as second parameter since the post method expects data
+      await ApiService.post('/api/auth/logout', {});
       // Then perform client-side logout
       logout();
       toast.success("Logged out successfully");

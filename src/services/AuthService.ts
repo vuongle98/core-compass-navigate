@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import ApiService from "./ApiService";
 
@@ -69,13 +70,13 @@ class AuthService {
         toast.success("Login successful");
         return true;
       } else {
+        // Fixed: Removed the third argument that was causing the error
         const { data } = await ApiService.post<AuthTokens>(
           "/api/auth/token",
           {
             username,
             password,
-          },
-          { requiresAuth: false }
+          }
         );
 
         this.setTokens({
