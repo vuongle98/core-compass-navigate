@@ -3,7 +3,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AuthService from '@/services/AuthService';
 import { toast } from 'sonner';
 
-interface User {
+// Define the User interface in one place to avoid conflicts
+export interface User {
   id: string;
   email: string;
   name: string;
@@ -35,7 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (AuthService.isAuthenticated()) {
           // Get user info from the token or stored user data
           const currentUser = AuthService.getCurrentUser();
-          setUser(currentUser);
+          // Make sure we're setting the state with the correct User type
+          setUser(currentUser as User);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -55,7 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const success = await AuthService.login(email, password);
       if (success) {
         const currentUser = AuthService.getCurrentUser();
-        setUser(currentUser);
+        // Make sure we're setting the state with the correct User type
+        setUser(currentUser as User);
         return true;
       }
       return false;

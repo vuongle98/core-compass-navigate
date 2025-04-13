@@ -77,38 +77,38 @@ const AuditLog = () => {
   };
 
   const columns = [
-    { header: "Action", accessorKey: "action" as const },
-    { header: "User", accessorKey: "user" as const },
-    { header: "Timestamp", accessorKey: "timestamp" as const },
+    { header: "Action", accessorKey: "action" },
+    { header: "User", accessorKey: "user" },
+    { header: "Timestamp", accessorKey: "timestamp" },
     { 
       header: "Details", 
-      accessorKey: "details" as const,
-      cell: ({ row }: { row: { original: AuditLogItem } }) => (
-        <div className="max-w-[300px] truncate">{row.original.details}</div>
+      accessorKey: "details",
+      cell: (item: AuditLogItem) => (
+        <div className="max-w-[300px] truncate">{item.details}</div>
       )
     },
-    { header: "IP Address", accessorKey: "ip" as const },
+    { header: "IP Address", accessorKey: "ip" },
     { 
       header: "Actions",
-      id: "actions",
-      cell: ({ row }: { row: { original: AuditLogItem } }) => (
+      accessorKey: "id",
+      cell: (item: AuditLogItem) => (
         <ActionsMenu 
           actions={[
             {
               type: "view",
               label: "View Details",
-              onClick: () => viewDetails(row.original)
+              onClick: () => viewDetails(item)
             },
             {
               type: "download",
               label: "Export",
-              onClick: () => exportLog(row.original)
+              onClick: () => exportLog(item)
             },
             {
               type: "copy",
               label: "Copy ID",
               onClick: () => {
-                navigator.clipboard.writeText(row.original.id.toString());
+                navigator.clipboard.writeText(item.id.toString());
                 toast.success("Log ID copied to clipboard");
               }
             }

@@ -132,30 +132,30 @@ const Roles = () => {
   };
 
   const columns = [
-    { header: "Code", accessorKey: "code" as const },
-    { header: "Role Name", accessorKey: "name" as const },
-    { header: "Description", accessorKey: "description" as const },
-    { header: "User Count", accessorKey: "userCount" as const },
+    { header: "Code", accessorKey: "code" },
+    { header: "Role Name", accessorKey: "name" },
+    { header: "Description", accessorKey: "description" },
+    { header: "User Count", accessorKey: "userCount" },
     { 
       header: "Actions",
-      id: "actions",
-      cell: ({ row }: { row: { original: Role } }) => (
+      accessorKey: "id",
+      cell: (item: Role) => (
         <ActionsMenu 
           actions={[
             {
               type: "view",
               label: "View Details",
-              onClick: () => toast.info(`Viewing ${row.original.name}`)
+              onClick: () => toast.info(`Viewing ${item.name}`)
             },
             {
               type: "edit",
               label: "Edit",
-              onClick: () => openEditDialog(row.original)
+              onClick: () => openEditDialog(item)
             },
             {
               type: "delete",
               label: "Delete",
-              onClick: () => handleDelete(row.original.id)
+              onClick: () => handleDelete(item.id)
             }
           ]}
         />

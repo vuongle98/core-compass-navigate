@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -163,30 +162,30 @@ const Permissions = () => {
   };
 
   const columns = [
-    { header: "Code", accessorKey: "code" as const },
-    { header: "Permission", accessorKey: "name" as const },
-    { header: "Description", accessorKey: "description" as const },
-    { header: "Module", accessorKey: "module" as const },
+    { header: "Code", accessorKey: "code" },
+    { header: "Permission", accessorKey: "name" },
+    { header: "Description", accessorKey: "description" },
+    { header: "Module", accessorKey: "module" },
     { 
       header: "Actions",
-      id: "actions",
-      cell: ({ row }: { row: { original: Permission } }) => (
+      accessorKey: "id",
+      cell: (item: Permission) => (
         <ActionsMenu 
           actions={[
             {
               type: "view",
               label: "View Details",
-              onClick: () => toast.info(`Viewing ${row.original.name}`)
+              onClick: () => toast.info(`Viewing ${item.name}`)
             },
             {
               type: "edit",
               label: "Edit",
-              onClick: () => openEditDialog(row.original)
+              onClick: () => openEditDialog(item)
             },
             {
               type: "delete",
               label: "Delete",
-              onClick: () => handleDelete(row.original.id)
+              onClick: () => handleDelete(item.id)
             }
           ]}
         />

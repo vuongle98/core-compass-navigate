@@ -130,7 +130,16 @@ class ApiService {
       size: number;
     }>(endpoint, config);
 
-    return response;
+    return {
+      ...response,
+      data: {
+        content: response.data.data,
+        totalElements: response.data.totalElements,
+        totalPages: response.data.totalPages,
+        number: response.data.number,
+        size: response.data.size
+      }
+    };
   }
 
   private async request<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
