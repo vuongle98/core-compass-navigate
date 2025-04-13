@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SidebarNav } from './SidebarNav';
 import { ThemeToggle } from '../ThemeToggle';
+import { UserMenu } from './UserMenu';
 
 interface SidebarProps {
   className?: string;
@@ -16,7 +17,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col',
+        'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen sticky top-0',
         collapsed ? 'w-16' : 'w-64',
         className
       )}
@@ -25,29 +26,29 @@ export function Sidebar({ className }: SidebarProps) {
         {!collapsed && (
           <h2 className="text-lg font-semibold text-sidebar-foreground">CoreApp</h2>
         )}
-        {collapsed ? (
+        <div className="flex items-center ml-auto">
+          {!collapsed && <ThemeToggle />}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
-            className="mx-auto"
+            className={collapsed ? "mx-auto" : ""}
           >
-            <ChevronRight size={18} />
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </Button>
-        ) : (
-          <div className="flex items-center">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              <ChevronLeft size={18} />
-            </Button>
-          </div>
-        )}
+        </div>
       </div>
       <SidebarNav collapsed={collapsed} />
+      <div className="mt-auto p-2 border-t border-sidebar-border">
+        {!collapsed ? (
+          <div className="flex items-center justify-between">
+            <UserMenu />
+            {collapsed ? null : <span className="text-sm text-muted-foreground">v1.0.0</span>}
+          </div>
+        ) : (
+          <UserMenu />
+        )}
+      </div>
     </div>
   );
 }

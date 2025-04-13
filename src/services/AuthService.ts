@@ -6,6 +6,9 @@ interface User {
   email: string;
   name: string;
   roles: string[];
+  role?: string;
+  joinDate?: string;
+  lastLogin?: string;
 }
 
 interface AuthTokens {
@@ -35,15 +38,15 @@ class AuthService {
   public async login(username: string, password: string): Promise<boolean> {
     try {
       // For development/testing - use mock data instead of API call
-
-      // Generate mock tokens and user data
-
       if (username === "test" && password === "test") {
         const mockUser: User = {
           id: "user-" + Date.now(),
           email: username,
           name: username.split("@")[0] || username,
           roles: ["SUPER_ADMIN"],
+          role: "Administrator", // Added role field
+          joinDate: "January 15, 2023",
+          lastLogin: new Date().toLocaleString()
         };
 
         const mockResponse = {
@@ -84,8 +87,6 @@ class AuthService {
         toast.success("Login successful");
         return true;
       }
-
-      /* Commented out actual API call for now */
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed", {
@@ -104,12 +105,24 @@ class AuthService {
   }
 
   /**
+   * Update the current user data in storage
+   */
+  public updateCurrentUser(userData: Partial<User>): void {
+    const tokens = this.getTokens();
+    if (tokens && tokens.user) {
+      this.setTokens({
+        ...tokens,
+        user: { ...tokens.user, ...userData }
+      });
+    }
+  }
+
+  /**
    * Logout user and clear tokens
    */
   public logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
-    // Redirect to login page
-    window.location.href = "/login";
+    // Redirect to login page is now handled by the logout function in AuthContext
   }
 
   /**

@@ -1,11 +1,30 @@
 
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
+import { ActionsMenu } from "@/components/common/ActionsMenu";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface AuditLogItem {
+  id: number;
+  action: string;
+  user: string;
+  timestamp: string;
+  details: string;
+  ip: string;
+}
 
 const AuditLog = () => {
   // Mock data for audit logs
-  const logs = [
+  const [logs, setLogs] = useState<AuditLogItem[]>([
     { 
       id: 1, 
       action: "User Created", 
@@ -30,14 +49,73 @@ const AuditLog = () => {
       details: "System configuration 'backup_schedule' was updated",
       ip: "192.168.1.1"
     },
-  ];
+  ]);
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+
+  const viewDetails = (log: AuditLogItem) => {
+    setSelectedLog(log);
+    setDetailsOpen(true);
+  };
+
+  const exportLog = (log: AuditLogItem) => {
+    // In a real application, this would trigger a download
+    const content = `ID: ${log.id}\nAction: ${log.action}\nUser: ${log.user}\nTimestamp: ${log.timestamp}\nDetails: ${log.details}\nIP: ${log.ip}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${log.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Log entry exported");
+  };
 
   const columns = [
     { header: "Action", accessorKey: "action" as const },
     { header: "User", accessorKey: "user" as const },
     { header: "Timestamp", accessorKey: "timestamp" as const },
-    { header: "Details", accessorKey: "details" as const },
+    { 
+      header: "Details", 
+      accessorKey: "details" as const,
+      cell: ({ row }: { row: { original: AuditLogItem } }) => (
+        <div className="max-w-[300px] truncate">{row.original.details}</div>
+      )
+    },
     { header: "IP Address", accessorKey: "ip" as const },
+    { 
+      header: "Actions",
+      id: "actions",
+      cell: ({ row }: { row: { original: AuditLogItem } }) => (
+        <ActionsMenu 
+          actions={[
+            {
+              type: "view",
+              label: "View Details",
+              onClick: () => viewDetails(row.original)
+            },
+            {
+              type: "download",
+              label: "Export",
+              onClick: () => exportLog(row.original)
+            },
+            {
+              type: "copy",
+              label: "Copy ID",
+              onClick: () => {
+                navigator.clipboard.writeText(row.original.id.toString());
+                toast.success("Log ID copied to clipboard");
+              }
+            }
+          ]}
+        />
+      )
+    }
   ];
 
   return (
@@ -57,6 +135,42 @@ const AuditLog = () => {
             pagination={true}
           />
         </div>
+
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Audit Log Details</DialogTitle>
+              <DialogDescription>
+                Complete information about this audit log entry
+              </DialogDescription>
+            </DialogHeader>
+            {selectedLog && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="font-semibold">ID:</div>
+                  <div>{selectedLog.id}</div>
+                  
+                  <div className="font-semibold">Action:</div>
+                  <div>{selectedLog.action}</div>
+                  
+                  <div className="font-semibold">User:</div>
+                  <div>{selectedLog.user}</div>
+                  
+                  <div className="font-semibold">Timestamp:</div>
+                  <div>{selectedLog.timestamp}</div>
+                  
+                  <div className="font-semibold">IP Address:</div>
+                  <div>{selectedLog.ip}</div>
+                  
+                  <div className="font-semibold col-span-2">Details:</div>
+                  <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900">
+                    {selectedLog.details}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

@@ -1,6 +1,25 @@
+
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { ActionsMenu } from "@/components/common/ActionsMenu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import ApiService from "@/services/ApiService";
 
 interface Permission {
   id: number;
@@ -11,8 +30,7 @@ interface Permission {
 }
 
 const Permissions = () => {
-  // Mock data
-  const permissions: Array<Permission> = [
+  const [permissions, setPermissions] = useState<Array<Permission>>([
     {
       id: 1,
       code: "CREATE_USER",
@@ -36,13 +54,144 @@ const Permissions = () => {
       description: "Create roles",
       module: "Roles",
     },
-  ];
+  ]);
+  
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [formData, setFormData] = useState<Partial<Permission>>({
+    code: "",
+    name: "",
+    description: "",
+    module: ""
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      module: value
+    }));
+  };
+
+  const modules = ["Users", "Roles", "Permissions", "Files", "Configuration", "System"];
+
+  const openCreateDialog = () => {
+    setEditingPermission(null);
+    setFormData({
+      code: "",
+      name: "",
+      description: "",
+      module: ""
+    });
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (permission: Permission) => {
+    setEditingPermission(permission);
+    setFormData({
+      code: permission.code,
+      name: permission.name,
+      description: permission.description,
+      module: permission.module
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (editingPermission) {
+        // Update existing permission
+        await ApiService.put(`/api/permission/${editingPermission.id}`, formData);
+        
+        // Optimistic UI update
+        setPermissions(prev => 
+          prev.map(permission => 
+            permission.id === editingPermission.id 
+              ? { ...permission, ...formData } as Permission
+              : permission
+          )
+        );
+        
+        toast.success("Permission updated successfully");
+      } else {
+        // Create new permission
+        const response = await ApiService.post("/api/permission", formData);
+        
+        // Add new permission to state with a temporary ID
+        const newPermission = {
+          ...formData,
+          id: Date.now(), // Temporary ID for optimistic UI
+        } as Permission;
+        
+        setPermissions(prev => [...prev, newPermission]);
+        
+        toast.success("Permission created successfully");
+      }
+      
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Permission operation failed:", error);
+      toast.error(editingPermission ? "Failed to update permission" : "Failed to create permission");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await ApiService.delete(`/api/permission/${id}`);
+      
+      // Optimistic UI update
+      setPermissions(prev => prev.filter(permission => permission.id !== id));
+      
+      toast.success("Permission deleted successfully");
+    } catch (error) {
+      console.error("Delete operation failed:", error);
+      toast.error("Failed to delete permission");
+    }
+  };
 
   const columns = [
     { header: "Code", accessorKey: "code" as const },
     { header: "Permission", accessorKey: "name" as const },
     { header: "Description", accessorKey: "description" as const },
     { header: "Module", accessorKey: "module" as const },
+    { 
+      header: "Actions",
+      id: "actions",
+      cell: ({ row }: { row: { original: Permission } }) => (
+        <ActionsMenu 
+          actions={[
+            {
+              type: "view",
+              label: "View Details",
+              onClick: () => toast.info(`Viewing ${row.original.name}`)
+            },
+            {
+              type: "edit",
+              label: "Edit",
+              onClick: () => openEditDialog(row.original)
+            },
+            {
+              type: "delete",
+              label: "Delete",
+              onClick: () => handleDelete(row.original.id)
+            }
+          ]}
+        />
+      )
+    }
   ];
 
   return (
@@ -54,7 +203,15 @@ const Permissions = () => {
           description="Manage system permissions"
         />
 
-        <div className="mt-6">
+        <div className="flex justify-between items-center my-6">
+          <div></div>
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Permission
+          </Button>
+        </div>
+
+        <div className="mt-4">
           <DataTable
             data={permissions}
             columns={columns}
@@ -63,6 +220,87 @@ const Permissions = () => {
             apiEndpoint="/api/permission"
           />
         </div>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingPermission ? "Edit Permission" : "Create New Permission"}</DialogTitle>
+              <DialogDescription>
+                {editingPermission 
+                  ? "Make changes to the permission details below."
+                  : "Enter the details for the new permission."}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="code">Code</Label>
+                  <Input
+                    id="code"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    placeholder="PERMISSION_CODE"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="resource:action"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Permission description"
+                    rows={2}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="module">Module</Label>
+                  <Select 
+                    value={formData.module} 
+                    onValueChange={handleSelectChange}
+                  >
+                    <SelectTrigger id="module">
+                      <SelectValue placeholder="Select module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map((module) => (
+                        <SelectItem key={module} value={module}>
+                          {module}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Processing..." : (editingPermission ? "Save Changes" : "Create Permission")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

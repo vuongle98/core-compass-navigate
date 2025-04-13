@@ -1,12 +1,15 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AuthService from '@/services/AuthService';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
   email: string;
   name: string;
   role: string;
+  joinDate?: string;
+  lastLogin?: string;
 }
 
 interface AuthContextType {
@@ -15,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUserProfile: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -57,6 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     } catch (error) {
       console.error('Login error:', error);
+      toast.error("Login failed", {
+        description: "Please check your credentials and try again."
+      });
       return false;
     } finally {
       setIsLoading(false);
@@ -68,6 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUserProfile = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      
+      // Update stored user data in AuthService
+      AuthService.updateCurrentUser(updatedUser);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -75,7 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
-        logout
+        logout,
+        updateUserProfile
       }}
     >
       {children}
