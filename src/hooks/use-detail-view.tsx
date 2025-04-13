@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,6 +6,7 @@ interface DetailViewOptions<T> {
   modalThreshold?: number;
   detailRoute?: string;
   formatDetailRoute?: (item: T) => string;
+  onCloseCallback?: () => void;
 }
 
 export function useDetailView<T extends { id: string | number }>(options: DetailViewOptions<T> = {}) {
@@ -15,6 +17,8 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
     detailRoute,
     // Custom function to generate the detail route
     formatDetailRoute,
+    // Callback function when modal is closed
+    onCloseCallback,
   } = options;
   
   const navigate = useNavigate();
@@ -49,6 +53,10 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
 
   const closeModal = () => {
     setIsModalOpen(false);
+    // Execute the callback if provided
+    if (onCloseCallback) {
+      onCloseCallback();
+    }
     setTimeout(() => setSelectedItem(null), 300); // Clear data after animation finishes
   };
 

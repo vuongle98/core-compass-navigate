@@ -20,6 +20,7 @@ interface DetailViewModalProps {
   className?: string;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl" | "full";
+  showCloseButton?: boolean;
 }
 
 export function DetailViewModal({
@@ -30,6 +31,7 @@ export function DetailViewModal({
   className,
   children,
   size = "md",
+  showCloseButton = true,
 }: DetailViewModalProps) {
   const sizeClasses = {
     sm: "max-w-sm",
@@ -39,8 +41,13 @@ export function DetailViewModal({
     full: "max-w-screen-lg",
   };
 
+  // Handle the modal closing properly
+  const handleClose = () => {
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         className={cn(sizeClasses[size], "max-h-[85vh] flex flex-col", className)}
       >
@@ -49,15 +56,17 @@ export function DetailViewModal({
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
+          {showCloseButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-4 top-4"
+              onClick={handleClose}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+          )}
         </div>
         <ScrollArea className="flex-1 mt-4">{children}</ScrollArea>
       </DialogContent>
