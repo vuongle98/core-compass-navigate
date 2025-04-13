@@ -2,6 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MiniToastContainer } from "@/components/ui/mini-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -37,7 +38,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+});
 
 const App = () => (
   <ThemeProvider defaultTheme="system" storageKey="app-theme">
@@ -46,6 +55,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <MiniToastContainer />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />

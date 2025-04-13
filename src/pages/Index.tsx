@@ -1,8 +1,16 @@
+
+import { useState } from "react";
+import { DateRange } from "react-day-picker";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { ActiveUsers } from "@/components/dashboard/ActiveUsers";
+import { RecentLoginsWidget } from "@/components/dashboard/RecentLoginsWidget";
+import { SystemAlertsWidget } from "@/components/dashboard/SystemAlertsWidget";
+import { PerformanceGraph } from "@/components/dashboard/PerformanceGraph";
+import { UpcomingEventsWidget } from "@/components/dashboard/UpcomingEventsWidget";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -15,6 +23,12 @@ import {
 } from "lucide-react";
 
 const Index = () => {
+  // Date range state for filtering dashboard data
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: new Date(),
+  });
+
   // Mock data for dashboard metrics
   const stats = [
     {
@@ -83,7 +97,7 @@ const Index = () => {
     { name: "Sun", value: 3 },
   ];
 
-  const nitificationsData = [
+  const notificationsData = [
     { name: "Mon", value: 100 },
     { name: "Tue", value: 221 },
     { name: "Wed", value: 124 },
@@ -91,6 +105,17 @@ const Index = () => {
     { name: "Fri", value: 102 },
     { name: "Sat", value: 912 },
     { name: "Sun", value: 783 },
+  ];
+
+  // Performance metrics data
+  const performanceData = [
+    { name: "00:00", cpu: 42, memory: 65, responseTime: 120 },
+    { name: "04:00", cpu: 28, memory: 59, responseTime: 100 },
+    { name: "08:00", cpu: 55, memory: 70, responseTime: 150 },
+    { name: "12:00", cpu: 90, memory: 85, responseTime: 200 },
+    { name: "16:00", cpu: 85, memory: 82, responseTime: 180 },
+    { name: "20:00", cpu: 70, memory: 75, responseTime: 160 },
+    { name: "24:00", cpu: 45, memory: 68, responseTime: 130 },
   ];
 
   // Mock active users data
@@ -136,7 +161,15 @@ const Index = () => {
           title="Dashboard"
           description="Welcome to the Core Application Dashboard"
           showAddButton={false}
-        />
+        >
+          {/* Date range picker for filtering dashboard data */}
+          <div className="w-[300px]">
+            <DateRangePicker
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+            />
+          </div>
+        </PageHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
           {stats.map((stat) => (
@@ -152,8 +185,29 @@ const Index = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-          <Link to="/users" className="col-span-2 block">
+        {/* First row of widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <SystemAlertsWidget />
+          <RecentLoginsWidget />
+          <UpcomingEventsWidget />
+        </div>
+
+        {/* Performance graphs row */}
+        <div className="mt-6">
+          <PerformanceGraph
+            title="System Performance"
+            data={performanceData}
+            metrics={[
+              { key: "cpu", label: "CPU Usage (%)", color: "#8B5CF6" },
+              { key: "memory", label: "Memory Usage (%)", color: "#0EA5E9" },
+              { key: "responseTime", label: "Response Time (ms)", color: "#F97316" },
+            ]}
+          />
+        </div>
+
+        {/* Activity charts row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <Link to="/users" className="block">
             <ActivityChart
               title="User Activity (Last 7 Days)"
               data={userActivityData}
@@ -161,7 +215,7 @@ const Index = () => {
               className="transition-transform hover:scale-105 cursor-pointer"
             />
           </Link>
-          <Link to="/files" className="col-span-2 block">
+          <Link to="/files" className="block">
             <ActivityChart
               title="File Uploads (Last 7 Days)"
               data={fileUploadsData}
@@ -169,15 +223,19 @@ const Index = () => {
               className="transition-transform hover:scale-105 cursor-pointer"
             />
           </Link>
-          <Link to="/notifications" className="col-span-2 block">
+          <Link to="/notifications" className="block">
             <ActivityChart
               title="Notifications (Last 7 Days)"
-              data={nitificationsData}
-              color="#OACEF9"
+              data={notificationsData}
+              color="#F97316"
               className="transition-transform hover:scale-105 cursor-pointer"
             />
           </Link>
-          <Link to="/users" className="col-span-2 block">
+        </div>
+
+        {/* Active users */}
+        <div className="mt-6">
+          <Link to="/users" className="block">
             <ActiveUsers
               users={activeUsers}
               className="transition-transform hover:scale-105 cursor-pointer"

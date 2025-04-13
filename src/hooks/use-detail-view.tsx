@@ -1,0 +1,61 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+interface DetailViewOptions<T> {
+  modalThreshold?: number;
+  detailRoute?: string;
+  formatDetailRoute?: (item: T) => string;
+}
+
+export function useDetailView<T extends { id: string | number }>(options: DetailViewOptions<T> = {}) {
+  const {
+    // For objects smaller than this size (in properties), use modal, otherwise redirect
+    modalThreshold = 10,
+    // Base route for detail pages
+    detailRoute,
+    // Custom function to generate the detail route
+    formatDetailRoute,
+  } = options;
+  
+  const navigate = useNavigate();
+  const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openDetail = (item: T) => {
+    const itemSize = Object.keys(item).length;
+    
+    // If the item is small enough, show it in a modal
+    if (itemSize <= modalThreshold) {
+      setSelectedItem(item);
+      setIsModalOpen(true);
+      return;
+    }
+    
+    // Otherwise, navigate to a dedicated page
+    let detailUrl: string;
+    
+    if (formatDetailRoute) {
+      detailUrl = formatDetailRoute(item);
+    } else if (detailRoute) {
+      detailUrl = `${detailRoute}/${item.id}`;
+    } else {
+      // Default pattern if no route is specified
+      const baseRoute = window.location.pathname;
+      detailUrl = `${baseRoute}/${item.id}`;
+    }
+    
+    navigate(detailUrl);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedItem(null), 300); // Clear data after animation finishes
+  };
+
+  return {
+    selectedItem,
+    isModalOpen,
+    openDetail,
+    closeModal,
+  };
+}
