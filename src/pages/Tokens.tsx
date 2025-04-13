@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { ActionsMenu } from "@/components/common/ActionsMenu";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { toast } from "sonner";
 import { useDetailView } from "@/hooks/use-detail-view";
@@ -82,17 +82,17 @@ const Tokens = () => {
   const getActionItems = (token: Token) => {
     return [
       {
-        type: "view",
+        type: "view" as ActionType,
         label: "View Token",
         onClick: () => openTokenDetail(token),
       },
       {
-        type: "edit",
+        type: "edit" as ActionType,
         label: "Regenerate Token",
         onClick: () => handleRegenerateToken(token.id),
       },
       {
-        type: "delete",
+        type: "delete" as ActionType,
         label: "Revoke Token",
         onClick: () => handleRevokeToken(token.id),
       },
@@ -111,7 +111,11 @@ const Tokens = () => {
   };
 
   const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilter(newFilters);
+    // Ensure we maintain the expected structure for filter state
+    setFilter({
+      status: newFilters.status || "",
+      search: newFilters.search || "",
+    });
   };
 
   const resetFilters = () => {
