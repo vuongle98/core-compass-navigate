@@ -47,11 +47,14 @@ export function DetailViewModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent
         className={cn(sizeClasses[size], "max-h-[85vh] flex flex-col", className)}
-        onPointerDownOutside={handleClose} // Ensure clicking outside closes the modal
-        onEscapeKeyDown={handleClose} // Ensure pressing escape closes the modal
       >
         <div className="flex justify-between items-start">
           <DialogHeader className="pr-8">

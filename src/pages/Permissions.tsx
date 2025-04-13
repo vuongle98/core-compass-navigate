@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ActionsMenu } from "@/components/common/ActionsMenu";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,33 @@ const Permissions = () => {
     module: ""
   });
 
+  const [filter, setFilter] = useState({
+    module: "",
+    search: "",
+  });
+
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search permissions...",
+    },
+    {
+      id: "module",
+      label: "Module",
+      type: "select",
+      options: [
+        { value: "Users", label: "Users" },
+        { value: "Roles", label: "Roles" },
+        { value: "Permissions", label: "Permissions" },
+        { value: "Files", label: "Files" },
+        { value: "Configuration", label: "Configuration" },
+        { value: "System", label: "System" },
+      ],
+    },
+  ];
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -111,10 +138,8 @@ const Permissions = () => {
 
     try {
       if (editingPermission) {
-        // Update existing permission
         await ApiService.put(`/api/permission/${editingPermission.id}`, formData);
         
-        // Optimistic UI update
         setPermissions(prev => 
           prev.map(permission => 
             permission.id === editingPermission.id 
@@ -125,13 +150,11 @@ const Permissions = () => {
         
         toast.success("Permission updated successfully");
       } else {
-        // Create new permission
         const response = await ApiService.post("/api/permission", formData);
         
-        // Add new permission to state with a temporary ID
         const newPermission = {
           ...formData,
-          id: Date.now(), // Temporary ID for optimistic UI
+          id: Date.now(),
         } as Permission;
         
         setPermissions(prev => [...prev, newPermission]);
@@ -152,7 +175,6 @@ const Permissions = () => {
     try {
       await ApiService.delete(`/api/permission/${id}`);
       
-      // Optimistic UI update
       setPermissions(prev => prev.filter(permission => permission.id !== id));
       
       toast.success("Permission deleted successfully");
@@ -162,11 +184,32 @@ const Permissions = () => {
     }
   };
 
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilter({
+      module: newFilters.module || "",
+      search: newFilters.search || "",
+    });
+  };
+
+  const resetFilters = () => {
+    setFilter({ module: "", search: "" });
+  };
+
+  const filteredPermissions = permissions.filter(permission => {
+    return (
+      (filter.module === "" || permission.module === filter.module) &&
+      (filter.search === "" || 
+        permission.name.toLowerCase().includes(filter.search.toLowerCase()) ||
+        permission.code.toLowerCase().includes(filter.search.toLowerCase()) ||
+        permission.description.toLowerCase().includes(filter.search.toLowerCase()))
+    );
+  });
+
   const columns: Column<Permission>[] = [
-    { header: "Code", accessorKey: "code" },
-    { header: "Permission", accessorKey: "name" },
-    { header: "Description", accessorKey: "description" },
-    { header: "Module", accessorKey: "module" },
+    { header: "Code", accessorKey: "code", sortable: true, filterable: true },
+    { header: "Permission", accessorKey: "name", sortable: true, filterable: true },
+    { header: "Description", accessorKey: "description", sortable: true },
+    { header: "Module", accessorKey: "module", sortable: true, filterable: true },
     { 
       header: "Actions",
       accessorKey: "id" as keyof Permission,
@@ -174,17 +217,17 @@ const Permissions = () => {
         <ActionsMenu 
           actions={[
             {
-              type: "view",
+              type: "view" as ActionType,
               label: "View Details",
               onClick: () => toast.info(`Viewing ${item.name}`)
             },
             {
-              type: "edit",
+              type: "edit" as ActionType,
               label: "Edit",
               onClick: () => openEditDialog(item)
             },
             {
-              type: "delete",
+              type: "delete" as ActionType,
               label: "Delete",
               onClick: () => handleDelete(item.id)
             }
@@ -201,7 +244,15 @@ const Permissions = () => {
         <PageHeader
           title="Permissions"
           description="Manage system permissions"
-        />
+        >
+          <DataFilters
+            filters={filter}
+            options={filterOptions}
+            onChange={handleFilterChange}
+            onReset={resetFilters}
+            className="mt-2"
+          />
+        </PageHeader>
 
         <div className="flex justify-between items-center my-6">
           <div></div>
@@ -213,7 +264,7 @@ const Permissions = () => {
 
         <div className="mt-4">
           <DataTable
-            data={permissions}
+            data={filteredPermissions}
             columns={columns}
             title="Permission Management"
             pagination={true}

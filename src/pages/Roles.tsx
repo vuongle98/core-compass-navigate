@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ActionsMenu } from "@/components/common/ActionsMenu";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,30 @@ const Roles = () => {
     description: ""
   });
 
+  const [filter, setFilter] = useState({
+    userCount: "",
+    search: "",
+  });
+
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search roles...",
+    },
+    {
+      id: "userCount",
+      label: "User Count",
+      type: "select",
+      options: [
+        { value: "low", label: "Low (0-10)" },
+        { value: "medium", label: "Medium (11-30)" },
+        { value: "high", label: "High (31+)" },
+      ],
+    },
+  ];
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -79,10 +103,8 @@ const Roles = () => {
 
     try {
       if (editingRole) {
-        // Update existing role
         await ApiService.put(`/api/role/${editingRole.id}`, formData);
         
-        // Optimistic UI update
         setRoles(prev => 
           prev.map(role => 
             role.id === editingRole.id 
@@ -93,13 +115,11 @@ const Roles = () => {
         
         toast.success("Role updated successfully");
       } else {
-        // Create new role
         const response = await ApiService.post("/api/role", formData);
         
-        // Add new role to state with a temporary ID (in a real app, you'd use the ID from the response)
         const newRole = {
           ...formData,
-          id: Date.now(), // Temporary ID for optimistic UI
+          id: Date.now(),
           userCount: 0
         } as Role;
         
@@ -121,7 +141,6 @@ const Roles = () => {
     try {
       await ApiService.delete(`/api/role/${id}`);
       
-      // Optimistic UI update
       setRoles(prev => prev.filter(role => role.id !== id));
       
       toast.success("Role deleted successfully");
@@ -131,11 +150,39 @@ const Roles = () => {
     }
   };
 
+  const handleFilterChange = (newFilters: Record<string, string>) => {
+    setFilter({
+      userCount: newFilters.userCount || "",
+      search: newFilters.search || "",
+    });
+  };
+
+  const resetFilters = () => {
+    setFilter({ userCount: "", search: "" });
+  };
+
+  const filteredRoles = roles.filter(role => {
+    const userCountFilter = filter.userCount ? (() => {
+      if (filter.userCount === "low") return role.userCount >= 0 && role.userCount <= 10;
+      if (filter.userCount === "medium") return role.userCount > 10 && role.userCount <= 30;
+      if (filter.userCount === "high") return role.userCount > 30;
+      return true;
+    })() : true;
+
+    const searchFilter = filter.search ? (
+      role.name.toLowerCase().includes(filter.search.toLowerCase()) ||
+      (role.code && role.code.toLowerCase().includes(filter.search.toLowerCase())) ||
+      role.description.toLowerCase().includes(filter.search.toLowerCase())
+    ) : true;
+
+    return userCountFilter && searchFilter;
+  });
+
   const columns: Column<Role>[] = [
-    { header: "Code", accessorKey: "code" },
-    { header: "Role Name", accessorKey: "name" },
-    { header: "Description", accessorKey: "description" },
-    { header: "User Count", accessorKey: "userCount" },
+    { header: "Code", accessorKey: "code", sortable: true },
+    { header: "Role Name", accessorKey: "name", sortable: true, filterable: true },
+    { header: "Description", accessorKey: "description", sortable: true },
+    { header: "User Count", accessorKey: "userCount", sortable: true },
     { 
       header: "Actions",
       accessorKey: "id" as keyof Role,
@@ -143,17 +190,17 @@ const Roles = () => {
         <ActionsMenu 
           actions={[
             {
-              type: "view",
+              type: "view" as ActionType,
               label: "View Details",
               onClick: () => toast.info(`Viewing ${item.name}`)
             },
             {
-              type: "edit",
+              type: "edit" as ActionType,
               label: "Edit",
               onClick: () => openEditDialog(item)
             },
             {
-              type: "delete",
+              type: "delete" as ActionType,
               label: "Delete",
               onClick: () => handleDelete(item.id)
             }
@@ -170,7 +217,15 @@ const Roles = () => {
         <PageHeader
           title="Roles"
           description="Define user roles in your application"
-        />
+        >
+          <DataFilters
+            filters={filter}
+            options={filterOptions}
+            onChange={handleFilterChange}
+            onReset={resetFilters}
+            className="mt-2"
+          />
+        </PageHeader>
 
         <div className="flex justify-between items-center my-6">
           <div></div>
@@ -182,7 +237,7 @@ const Roles = () => {
 
         <div className="mt-4">
           <DataTable
-            data={roles}
+            data={filteredRoles}
             columns={columns}
             title="Role Management"
             pagination={true}

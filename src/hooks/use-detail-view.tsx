@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface DetailViewOptions<T> {
@@ -23,6 +24,14 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Clean up effect when component unmounts
+  useEffect(() => {
+    return () => {
+      setSelectedItem(null);
+      setIsModalOpen(false);
+    };
+  }, []);
 
   const openDetail = (item: T) => {
     const itemSize = Object.keys(item).length;
@@ -51,15 +60,18 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
   };
 
   const closeModal = () => {
+    // First set modal to closed
     setIsModalOpen(false);
     
-    // Clear selectedItem immediately to prevent interaction issues
-    setSelectedItem(null);
-    
-    // Execute the callback if provided
-    if (onCloseCallback) {
-      onCloseCallback();
-    }
+    // Use a small timeout to ensure the modal animation completes before clearing the selected item
+    setTimeout(() => {
+      setSelectedItem(null);
+      
+      // Execute the callback if provided
+      if (onCloseCallback) {
+        onCloseCallback();
+      }
+    }, 100);
   };
 
   return {
