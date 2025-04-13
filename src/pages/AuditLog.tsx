@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/ui/DataTable";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
 import { toast } from "sonner";
 import {
@@ -76,7 +76,7 @@ const AuditLog = () => {
     toast.success("Log entry exported");
   };
 
-  const columns = [
+  const columns: Column<AuditLogItem>[] = [
     { header: "Action", accessorKey: "action" },
     { header: "User", accessorKey: "user" },
     { header: "Timestamp", accessorKey: "timestamp" },
@@ -90,7 +90,7 @@ const AuditLog = () => {
     { header: "IP Address", accessorKey: "ip" },
     { 
       header: "Actions",
-      accessorKey: "id",
+      accessorKey: "id" as keyof AuditLogItem,
       cell: (item: AuditLogItem) => (
         <ActionsMenu 
           actions={[

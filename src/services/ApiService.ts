@@ -1,297 +1,261 @@
-import AuthService from "./AuthService";
-import { toast } from "sonner";
 
-interface ApiRequestConfig extends RequestInit {
-  params?: Record<string, string | number | boolean>;
-  requiresAuth?: boolean;
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+
+// Configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.example.com';
+const API_TIMEOUT = 30000; // 30 seconds
+
+// Type definitions for API responses
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+  statusText: string;
 }
 
-interface PaginationParams {
+interface PaginatedData<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+interface PaginationOptions {
   page?: number;
   pageSize?: number;
   sort?: string;
-  filter?: Record<string, any>;
+  filter?: Record<string, string | number | boolean>;
+}
+
+interface UserActionData {
   [key: string]: any;
 }
 
-interface PerformanceLog {
-  endpoint: string;
-  method: string;
-  startTime: number;
-  duration: number;
-  status: number;
-  success: boolean;
-}
+// Helper function to simulate API delay in development
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-interface ApiResponse<T> {
-  data: T;
-  error: any;
-  message: string;
-  success: boolean;
-}
+// Configure axios instance
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-class ApiService {
-  private static instance: ApiService;
-  private baseUrl: string;
-  private performanceLogs: PerformanceLog[] = [];
-
-  private constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || "";
-  }
-
-  public static getInstance(): ApiService {
-    if (!ApiService.instance) {
-      ApiService.instance = new ApiService();
+// Add request interceptor for auth token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return ApiService.instance;
-  }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  public setBaseUrl(url: string): void {
-    this.baseUrl = url;
-  }
-
-  public getPerformanceLogs(): PerformanceLog[] {
-    return this.performanceLogs;
-  }
-
-  public clearPerformanceLogs(): void {
-    this.performanceLogs = [];
-  }
-
-  private logPerformance(log: PerformanceLog): void {
-    this.performanceLogs.push(log);
-    if (this.performanceLogs.length > 100) {
-      this.performanceLogs.shift();
-    }
-    console.log(`API ${log.method} ${log.endpoint} - ${log.duration}ms - Status: ${log.status}`);
-  }
-
-  public async get<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { ...config, method: "GET" });
-  }
-
-  public async post<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      ...config,
-      method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  public async put<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      ...config,
-      method: "PUT",
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  }
-
-  public async delete<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { ...config, method: "DELETE" });
-  }
-
-  public async getPaginated<T>(endpoint: string, params: PaginationParams = {}): Promise<ApiResponse<{
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    number: number;
-    size: number;
-  }>> {
-    const { page = 0, pageSize = 10, sort, filter, ...restParams } = params;
-    
-    const queryParams: Record<string, string> = {
-      ...restParams,
-      page: page.toString(),
-      size: pageSize.toString(),
-    };
-    
-    if (sort) {
-      queryParams.sort = sort;
-    }
-    
-    if (filter) {
-      Object.entries(filter).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          queryParams[`filter[${key}]`] = String(value);
-        }
-      });
-    }
-    
-    const config: ApiRequestConfig = {
-      params: queryParams,
-      requiresAuth: true,
-    };
-
-    const response = await this.get<{
-      data: T[];
-      totalElements: number;
-      totalPages: number;
-      number: number;
-      size: number;
-    }>(endpoint, config);
-
-    return {
-      ...response,
-      data: {
-        content: response.data.data,
-        totalElements: response.data.totalElements,
-        totalPages: response.data.totalPages,
-        number: response.data.number,
-        size: response.data.size
+// Add response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle specific error codes
+    if (error.response) {
+      const { status } = error.response;
+      
+      // Auth errors
+      if (status === 401) {
+        // Token expired or invalid
+        // Redirect to login or refresh token
+        console.log('Authentication error - redirecting to login');
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login';
       }
-    };
-  }
-
-  private async request<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
-    const { params, requiresAuth = true, ...fetchConfig } = config;
-    const startTime = performance.now();
-    const method = (config.method || 'GET').toUpperCase();
-    
-    let url = this.baseUrl + endpoint;
-    if (params) {
-      const queryString = Object.entries(params)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
-        .join("&");
       
-      url += `${url.includes("?") ? "&" : "?"}${queryString}`;
-    }
-
-    const headers = new Headers(fetchConfig.headers);
-    
-    if (!headers.has("Content-Type") && fetchConfig.body) {
-      headers.set("Content-Type", "application/json");
-    }
-    
-    if (requiresAuth) {
-      if (AuthService.isAuthenticated() && AuthService.needsRefresh()) {
-        try {
-          await AuthService.refreshToken();
-        } catch (error) {
-          console.error("Token refresh failed", error);
-        }
+      // Permission errors
+      if (status === 403) {
+        console.error('Permission denied');
+        // Show permission denied message
       }
-
-      const token = AuthService.getAccessToken();
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      } else if (requiresAuth) {
-        AuthService.logout();
-        throw new Error("Authentication required");
+      
+      // Not found
+      if (status === 404) {
+        console.error('Resource not found');
+        // Handle not found
       }
-    }
-
-    this.logUserAction('api_request', { 
-      endpoint, 
-      method,
-      timestamp: new Date().toISOString()
-    });
-
-    try {
-      const response = await fetch(url, {
-        ...fetchConfig,
-        headers,
-      });
-
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
       
-      this.logPerformance({
-        endpoint,
-        method,
-        startTime,
-        duration,
-        status: response.status,
-        success: response.ok
-      });
-
-      if (response.status === 401 && requiresAuth) {
-        try {
-          const newToken = await AuthService.refreshToken();
-          
-          headers.set("Authorization", `Bearer ${newToken}`);
-          
-          const retryResponse = await fetch(url, {
-            ...fetchConfig,
-            headers,
-          });
-
-          const retryEndTime = performance.now();
-          this.logPerformance({
-            endpoint,
-            method,
-            startTime,
-            duration: Math.round(retryEndTime - startTime),
-            status: retryResponse.status,
-            success: retryResponse.ok
-          });
-
-          return this.handleResponse<T>(retryResponse);
-        } catch (error) {
-          AuthService.logout();
-          throw new Error("Session expired. Please login again.");
-        }
+      // Validation errors
+      if (status === 422) {
+        console.error('Validation failed', error.response.data);
+        // Return validation errors to form
       }
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      const endTime = performance.now();
       
-      this.logPerformance({
-        endpoint,
-        method,
-        startTime,
-        duration: Math.round(endTime - startTime),
-        status: 0,
-        success: false
-      });
-      
-      console.error("API request error:", error);
-      this.handleError(error);
-      throw error;
+      // Server errors
+      if (status >= 500) {
+        console.error('Server error', error.response.data);
+        // Show server error notification
+      }
+    } else if (error.request) {
+      // Network error (no response received)
+      console.error('Network error - no response received');
+      // Show network error notification
+    } else {
+      // Something happened in setting up the request
+      console.error('Error', error.message);
     }
-  }
-
-  public logUserAction(actionType: string, data: Record<string, any> = {}): void {
-    const logData = {
-      ...data,
-      timestamp: data.timestamp || new Date().toISOString(),
-      userId: AuthService.getCurrentUser()?.id || 'anonymous'
-    };
     
-    console.log(`USER_ACTION: ${actionType}`, logData);
+    return Promise.reject(error);
   }
+);
 
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ 
-        message: "An unexpected error occurred" 
-      }));
+// Generic request function
+const makeRequest = async <T>(
+  url: string, 
+  options: AxiosRequestConfig = {}
+): Promise<ApiResponse<T>> => {
+  try {
+    // For development without a real API, simulate responses
+    if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_MOCK_API === 'true') {
+      await sleep(300);
       
-      throw {
-        status: response.status,
-        message: error.message || response.statusText,
+      // Log the request for development
+      console.log(`API ${options.method || 'GET'} ${url} - 200ms - Status: 200`);
+      
+      return {
+        data: {} as T,
+        status: 200,
+        statusText: 'OK',
       };
     }
-
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      return await response.json();
-    }
     
-    return {} as ApiResponse<T>;
+    // Make the actual API call
+    const startTime = Date.now();
+    const response: AxiosResponse<T> = await apiClient(url, options);
+    const duration = Date.now() - startTime;
+    
+    // Log response time for performance monitoring
+    console.log(`API ${options.method || 'GET'} ${url} - ${duration}ms - Status: ${response.status}`);
+    console.log('API response:', response.data);
+    
+    return {
+      data: response.data,
+      status: response.status,
+      statusText: response.statusText,
+    };
+  } catch (error) {
+    // Error handling is done in the axios interceptor
+    throw error;
   }
+};
 
-  private handleError(error: any): void {
-    let message = "An unexpected error occurred";
-    
-    if (error.message) {
-      message = error.message;
+// HTTP method wrappers
+const get = async <T>(url: string, params?: object): Promise<ApiResponse<T>> => {
+  return makeRequest<T>(url, { method: 'GET', params });
+};
+
+const post = async <T>(url: string, data: object): Promise<ApiResponse<T>> => {
+  return makeRequest<T>(url, { method: 'POST', data });
+};
+
+const put = async <T>(url: string, data: object): Promise<ApiResponse<T>> => {
+  return makeRequest<T>(url, { method: 'PUT', data });
+};
+
+const patch = async <T>(url: string, data: object): Promise<ApiResponse<T>> => {
+  return makeRequest<T>(url, { method: 'PATCH', data });
+};
+
+const del = async <T>(url: string): Promise<ApiResponse<T>> => {
+  return makeRequest<T>(url, { method: 'DELETE' });
+};
+
+// Pagination helper
+const getPaginated = async <T>(endpoint: string, options: PaginationOptions = {}): Promise<ApiResponse<PaginatedData<T>>> => {
+  try {
+    // Mock response for development
+    if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_MOCK_API === 'true') {
+      await sleep(500);
+      
+      // Return mock data in the correct format expected by the DataTable component
+      return {
+        data: {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          number: options.page || 0,
+          size: options.pageSize || 10,
+        },
+        status: 200,
+        statusText: 'OK',
+      };
     }
     
-    toast.error("API Error", {
-      description: message,
+    // Build query parameters for pagination, sorting, and filtering
+    const queryParams = new URLSearchParams();
+    
+    if (options.page !== undefined) {
+      queryParams.append('page', options.page.toString());
+    }
+    
+    if (options.pageSize !== undefined) {
+      queryParams.append('size', options.pageSize.toString());
+    }
+    
+    if (options.sort) {
+      queryParams.append('sort', options.sort);
+    }
+    
+    // Add filters if present
+    if (options.filter && Object.keys(options.filter).length > 0) {
+      Object.entries(options.filter).forEach(([key, value]) => {
+        queryParams.append(`filter[${key}]`, value.toString());
+      });
+    }
+    
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    
+    // Make the request
+    const response = await makeRequest<PaginatedData<T>>(`${endpoint}${queryString}`, {
+      method: 'GET'
     });
+    
+    return response;
+  } catch (error) {
+    console.error('Error fetching paginated data:', error);
+    throw error;
   }
-}
+};
 
-export default ApiService.getInstance();
+// User action logging for analytics
+const logUserAction = (action: string, data: UserActionData = {}) => {
+  // Add timestamp and user info
+  const eventData = {
+    ...data,
+    timestamp: new Date().toISOString(),
+    userId: localStorage.getItem('userId') || `user-${Date.now()}`
+  };
+  
+  // Log to console in development
+  console.info('USER_ACTION:', action, eventData);
+  
+  // In a real app, send to analytics service or API
+  if (process.env.NODE_ENV === 'production') {
+    post('/api/analytics/events', {
+      action,
+      data: eventData
+    }).catch(err => console.error('Failed to log user action:', err));
+  }
+};
+
+// Export the API service
+const ApiService = {
+  get,
+  post,
+  put,
+  patch,
+  delete: del,
+  getPaginated,
+  logUserAction
+};
+
+export default ApiService;

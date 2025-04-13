@@ -21,9 +21,9 @@ import { DataTablePagination, PaginationState } from "./DataTablePagination";
 import ApiService from "@/services/ApiService";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
-  accessorKey: keyof T;
+  accessorKey: keyof T | string;
   cell?: (item: T) => React.ReactNode;
   sortable?: boolean;
   filterable?: boolean;
@@ -70,19 +70,15 @@ export function DataTable<T extends { id: string | number }>({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
   
-  // Sorting state
   const [sorting, setSorting] = useState<SortingState>({
     column: null,
     direction: null
   });
   
-  // Filtering state
   const [filters, setFilters] = useState<FilterState>({});
   
-  // Ensure initialData is always an array
   const safeInitialData = Array.isArray(initialData) ? initialData : [];
   
-  // Pagination state
   const [paginationState, setPaginationState] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: initialPageSize,
@@ -93,11 +89,9 @@ export function DataTable<T extends { id: string | number }>({
   const [isLoading, setIsLoading] = useState(false);
   const [hasActions, setHasActions] = useState(false);
 
-  // Create a dynamic form schema based on columns
   const createFormSchema = () => {
     const schemaObject: Record<string, any> = {};
     columns.forEach((column) => {
-      // Skip id field in schema
       if (column.accessorKey === 'id') return;
 
       const key = String(column.accessorKey);
@@ -114,35 +108,28 @@ export function DataTable<T extends { id: string | number }>({
     defaultValues: {} as FormSchemaType,
   });
 
-  // Handle sort toggle
   const handleSort = (column: string) => {
     setSorting(prev => {
-      // If clicking the same column, cycle through: asc -> desc -> none
       if (prev.column === column) {
         if (prev.direction === 'asc') return { column, direction: 'desc' };
         if (prev.direction === 'desc') return { column: null, direction: null };
         return { column, direction: 'asc' };
       }
-      // If clicking a new column, start with ascending
       return { column, direction: 'asc' };
     });
   };
   
-  // Handle filter change
   const handleFilterChange = (column: string, value: string) => {
     setFilters(prev => {
       if (value === '') {
-        // Remove the filter if empty
         const newFilters = { ...prev };
         delete newFilters[column];
         return newFilters;
       }
-      // Add or update the filter
       return { ...prev, [column]: value };
     });
   };
   
-  // Clear all filters
   const clearFilters = () => {
     setFilters({});
   };
@@ -154,13 +141,12 @@ export function DataTable<T extends { id: string | number }>({
     try {
       await new Promise(r => setTimeout(r, 300));
 
-      // Construct sort param in the format 'field:direction'
       const sort = sorting.column && sorting.direction 
         ? `${sorting.column}:${sorting.direction}`
         : undefined;
         
       const response = await ApiService.getPaginated<T>(apiEndpoint, {
-        page: paginationState.pageIndex, // API usually uses 1-based indexing
+        page: paginationState.pageIndex,
         pageSize: paginationState.pageSize,
         sort,
         filter: filters,
@@ -174,7 +160,6 @@ export function DataTable<T extends { id: string | number }>({
           totalItems: response.data.totalElements || 0,
         });
       } else {
-        // Fallback to initial data if API response is invalid
         setData(safeInitialData);
         console.warn("API returned invalid data format");
         toast.error("Failed to load data", {
@@ -183,7 +168,6 @@ export function DataTable<T extends { id: string | number }>({
       }
     } catch (error) {
       console.error("Failed to fetch paginated data:", error);
-      // Fallback to initial data on error
       setData(safeInitialData);
       toast.error("Failed to load data", {
         description: "Could not retrieve the requested data. Please try again.",
@@ -193,8 +177,6 @@ export function DataTable<T extends { id: string | number }>({
     }
   }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, safeInitialData]);
 
-
-  // Load paginated data from API if pagination is enabled and apiEndpoint is provided
   useEffect(() => {
     if (pagination && apiEndpoint) {
       fetchPaginatedData();
@@ -208,21 +190,18 @@ export function DataTable<T extends { id: string | number }>({
     }
   }, [columns]);
 
-  // Handle changes to initialData
   useEffect(() => {
     if (!pagination || !apiEndpoint) {
       setData(Array.isArray(initialData) ? initialData : []);
     }
   }, [initialData, pagination, apiEndpoint]);
 
-  // Handle pagination changes
   const handlePageChange = (page: number) => {
     setPaginationState({
       ...paginationState,
       pageIndex: page,
     });
     
-    // Log navigation event
     ApiService.logUserAction('table_page_change', {
       page,
       table: title
@@ -233,10 +212,9 @@ export function DataTable<T extends { id: string | number }>({
     setPaginationState({
       ...paginationState,
       pageSize: size,
-      pageIndex: 0, // Reset to first page when changing page size
+      pageIndex: 0,
     });
     
-    // Log page size change
     ApiService.logUserAction('table_page_size_change', {
       size,
       table: title
@@ -244,18 +222,15 @@ export function DataTable<T extends { id: string | number }>({
   };
 
   const handleAdd = () => {
-    // Reset form when opening add dialog
     form.reset({} as FormSchemaType);
     setIsAddDialogOpen(true);
     
-    // Log user action
     ApiService.logUserAction('open_add_dialog', { table: title });
   };
 
   const handleEdit = (item: T) => {
     setCurrentItem(item);
     
-    // Convert all values to strings for the form
     const formValues = {} as FormSchemaType;
     Object.keys(item).forEach((key) => {
       if (key !== 'id') {
@@ -266,7 +241,6 @@ export function DataTable<T extends { id: string | number }>({
     form.reset(formValues);
     setIsEditDialogOpen(true);
     
-    // Log user action
     ApiService.logUserAction('open_edit_dialog', { 
       table: title,
       itemId: item.id
@@ -277,7 +251,6 @@ export function DataTable<T extends { id: string | number }>({
     setCurrentItem(item);
     setIsDeleteDialogOpen(true);
     
-    // Log user action
     ApiService.logUserAction('open_delete_dialog', { 
       table: title,
       itemId: item.id
@@ -293,7 +266,7 @@ export function DataTable<T extends { id: string | number }>({
         toast.success("Add action successful", {
           description: "New item added successfully",
         });
-        fetchPaginatedData(); // Refresh data after add
+        fetchPaginatedData();
       } catch (error) {
         console.error("Add error:", error);
         toast.error("Failed to add item", {
@@ -307,7 +280,6 @@ export function DataTable<T extends { id: string | number }>({
     }
     setIsAddDialogOpen(false);
     
-    // Log user action
     ApiService.logUserAction('add_item', { 
       table: title,
       values
@@ -325,7 +297,7 @@ export function DataTable<T extends { id: string | number }>({
           toast.success("Edit action successful", {
             description: `Item updated successfully`,
           });
-          fetchPaginatedData(); // Refresh data after edit
+          fetchPaginatedData();
         } catch (error) {
           console.error("Edit error:", error);
           toast.error("Failed to update item", {
@@ -340,7 +312,6 @@ export function DataTable<T extends { id: string | number }>({
     }
     setIsEditDialogOpen(false);
     
-    // Log user action
     ApiService.logUserAction('edit_item', { 
       table: title,
       itemId: currentItem?.id,
@@ -358,7 +329,7 @@ export function DataTable<T extends { id: string | number }>({
           toast.success("Delete action successful", {
             description: `Item deleted successfully`,
           });
-          fetchPaginatedData(); // Refresh data after delete
+          fetchPaginatedData();
         } catch (error) {
           console.error("Delete error:", error);
           toast.error("Failed to delete item", {
@@ -373,14 +344,12 @@ export function DataTable<T extends { id: string | number }>({
     }
     setIsDeleteDialogOpen(false);
     
-    // Log user action
     ApiService.logUserAction('delete_item', { 
       table: title,
       itemId: currentItem?.id
     });
   };
 
-  // Render a sort indicator for column headers
   const renderSortIndicator = (columnKey: string) => {
     if (sorting.column !== columnKey) return null;
     
@@ -389,7 +358,6 @@ export function DataTable<T extends { id: string | number }>({
       : <ArrowDown className="ml-1 h-4 w-4" />;
   };
   
-  // Render filter popover for a column
   const renderFilterPopover = (column: Column<T>) => {
     const columnKey = String(column.accessorKey);
     
@@ -431,7 +399,6 @@ export function DataTable<T extends { id: string | number }>({
     );
   };
 
-  // Desktop view
   const renderDesktopTable = () => (
     <Table>
       <TableHeader>
@@ -467,10 +434,10 @@ export function DataTable<T extends { id: string | number }>({
           data.map((item) => (
             <TableRow key={item.id as React.Key}>
               {columns.map((column) => (
-                <TableCell key={`${item.id}-${column.accessorKey as string}`}>
+                <TableCell key={`${item.id}-${String(column.accessorKey)}`}>
                   {column.cell
                     ? column.cell(item)
-                    : (item[column.accessorKey] as React.ReactNode)}
+                    : (item[column.accessorKey as keyof T] as React.ReactNode)}
                 </TableCell>
               ))}
               {!hasActions && <TableCell className="text-right space-x-2">
@@ -494,7 +461,6 @@ export function DataTable<T extends { id: string | number }>({
     </Table>
   );
 
-  // Mobile view - stacked cards
   const renderMobileTable = () => (
     <div className="space-y-4">
       {isLoading ? (
@@ -506,7 +472,7 @@ export function DataTable<T extends { id: string | number }>({
           <div key={item.id as React.Key} className="border rounded-md p-4 pb-2">
             {columns.map((column) => (
               <div 
-                key={`${item.id}-${column.accessorKey as string}`}
+                key={`${item.id}-${String(column.accessorKey)}`}
                 className="flex justify-between items-center py-2 border-b last:border-b-0"
               >
                 <span className="font-medium text-sm text-muted-foreground">
@@ -515,7 +481,7 @@ export function DataTable<T extends { id: string | number }>({
                 <span className="text-right">
                   {column.cell
                     ? column.cell(item)
-                    : (item[column.accessorKey] as React.ReactNode)}
+                    : (item[column.accessorKey as keyof T] as React.ReactNode)}
                 </span>
               </div>
             ))}
@@ -537,10 +503,8 @@ export function DataTable<T extends { id: string | number }>({
     </div>
   );
 
-  // Form dialog for add/edit
   const renderFormFields = () => {
     return columns.map((column) => {
-      // Skip rendering form field for id
       if (column.accessorKey === 'id') return null;
       
       const key = String(column.accessorKey);
@@ -562,7 +526,6 @@ export function DataTable<T extends { id: string | number }>({
     });
   };
 
-  // Active filters display
   const renderActiveFilters = () => {
     const activeFilters = Object.entries(filters);
     if (activeFilters.length === 0) return null;
@@ -603,7 +566,6 @@ export function DataTable<T extends { id: string | number }>({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">{title}</h3>
         <Button onClick={() => {
-          // Log button click
           ApiService.logUserAction('click_add_button', { table: title });
           handleAdd();
         }}>
@@ -612,7 +574,6 @@ export function DataTable<T extends { id: string | number }>({
         </Button>
       </div>
       
-      {/* Active filters */}
       {renderActiveFilters()}
       
       <div className="border rounded-md">
@@ -628,7 +589,6 @@ export function DataTable<T extends { id: string | number }>({
         )}
       </div>
 
-      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -648,7 +608,6 @@ export function DataTable<T extends { id: string | number }>({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -668,7 +627,6 @@ export function DataTable<T extends { id: string | number }>({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -689,7 +647,6 @@ export function DataTable<T extends { id: string | number }>({
   );
 }
 
-// Helper function for className conditionals
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }

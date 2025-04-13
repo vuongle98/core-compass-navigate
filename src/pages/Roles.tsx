@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/ui/DataTable";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
@@ -131,14 +131,14 @@ const Roles = () => {
     }
   };
 
-  const columns = [
+  const columns: Column<Role>[] = [
     { header: "Code", accessorKey: "code" },
     { header: "Role Name", accessorKey: "name" },
     { header: "Description", accessorKey: "description" },
     { header: "User Count", accessorKey: "userCount" },
     { 
       header: "Actions",
-      accessorKey: "id",
+      accessorKey: "id" as keyof Role,
       cell: (item: Role) => (
         <ActionsMenu 
           actions={[
