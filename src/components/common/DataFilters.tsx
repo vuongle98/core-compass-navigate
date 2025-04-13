@@ -35,7 +35,9 @@ export function DataFilters({
   className = "",
 }: DataFiltersProps) {
   const updateFilter = (id: string, value: string) => {
-    onChange({ ...filters, [id]: value });
+    // For select filters, convert "all" value to empty string
+    const newValue = value === "all" ? "" : value;
+    onChange({ ...filters, [id]: newValue });
   };
 
   const hasActiveFilters = Object.values(filters).some(

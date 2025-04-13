@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -53,11 +52,14 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
 
   const closeModal = () => {
     setIsModalOpen(false);
+    
+    // Clear selectedItem immediately to prevent interaction issues
+    setSelectedItem(null);
+    
     // Execute the callback if provided
     if (onCloseCallback) {
       onCloseCallback();
     }
-    setTimeout(() => setSelectedItem(null), 300); // Clear data after animation finishes
   };
 
   return {
