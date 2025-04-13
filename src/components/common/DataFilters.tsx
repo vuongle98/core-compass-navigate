@@ -73,14 +73,14 @@ export function DataFilters({
           return (
             <Select
               key={option.id}
-              value={filters[option.id] || ""}
+              value={filters[option.id] || "all"}
               onValueChange={(value) => updateFilter(option.id, value)}
             >
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder={option.label} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All {option.label}</SelectItem>
+                <SelectItem value="all">All {option.label}</SelectItem>
                 {option.options.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}

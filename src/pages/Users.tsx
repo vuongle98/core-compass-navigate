@@ -207,28 +207,28 @@ const Users = () => {
               )}
             </div>
             <Select
-              value={filter.status}
-              onValueChange={(value) => setFilter({ ...filter, status: value })}
+              value={filter.status || "all"}
+              onValueChange={(value) => setFilter({ ...filter, status: value === "all" ? "" : value })}
             >
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
 
             <Select
-              value={filter.role}
-              onValueChange={(value) => setFilter({ ...filter, role: value })}
+              value={filter.role || "all"}
+              onValueChange={(value) => setFilter({ ...filter, role: value === "all" ? "" : value })}
             >
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Roles</SelectItem>
+                <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="User">User</SelectItem>
                 <SelectItem value="Editor">Editor</SelectItem>
