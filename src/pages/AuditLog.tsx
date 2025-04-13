@@ -125,6 +125,7 @@ const AuditLog = () => {
         <PageHeader 
           title="Audit Log" 
           description="Track system-wide changes and security events"
+          showAddButton={false}
         />
         
         <div className="mt-6">
@@ -133,6 +134,7 @@ const AuditLog = () => {
             columns={columns} 
             title="Audit Events" 
             pagination={true}
+            showAddButton={false}
           />
         </div>
 

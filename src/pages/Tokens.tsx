@@ -169,7 +169,7 @@ const Tokens = () => {
         <PageHeader
           title="API Tokens"
           description="Manage API access tokens"
-          showAddButton={true}
+          showAddButton={false}
         >
           <DataFilters
             filters={filter}
@@ -187,6 +187,7 @@ const Tokens = () => {
             title="Token Management"
             pagination={true}
             apiEndpoint="/api/token"
+            showAddButton={false}
           />
         </div>
 

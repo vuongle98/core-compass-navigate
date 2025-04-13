@@ -50,6 +50,7 @@ interface DataTableProps<T> {
   apiEndpoint?: string;
   initialPageSize?: number;
   pageSizeOptions?: number[];
+  showAddButton?: boolean;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -63,6 +64,7 @@ export function DataTable<T extends { id: string | number }>({
   apiEndpoint,
   initialPageSize = 10,
   pageSizeOptions = [10, 20, 30, 50, 100],
+  showAddButton = true,
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -184,7 +186,7 @@ export function DataTable<T extends { id: string | number }>({
   }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, fetchPaginatedData]);
 
   useEffect(() => {
-    if (columns.some(col => col.accessorKey === 'actions')) {
+    if (columns.some(col => col.header === 'Actions')) {
       setHasActions(true);
       console.log("Actions column detected, setting hasActions to true");
     }
@@ -565,13 +567,13 @@ export function DataTable<T extends { id: string | number }>({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">{title}</h3>
-        <Button onClick={() => {
+        {showAddButton && <Button onClick={() => {
           ApiService.logUserAction('click_add_button', { table: title });
           handleAdd();
         }}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Add New
-        </Button>
+        </Button>}
       </div>
       
       {renderActiveFilters()}

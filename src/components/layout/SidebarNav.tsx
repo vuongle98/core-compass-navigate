@@ -105,13 +105,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
           name: "Tokens",
           href: "/tokens",
           icon: Key,
-        }
-      ]
-    },
-    {
-      name: "Content",
-      icon: Folder,
-      items: [
+        },
         {
           name: "Files",
           href: "/files",
@@ -219,21 +213,6 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
           ))}
         </ul>
       </nav>
-      
-      {/* User button at the bottom */}
-      <div className="p-2 border-t border-sidebar-border mt-auto">
-        <Link
-          to="/profile"
-          className={cn(
-            'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors w-full',
-            'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-            collapsed ? 'justify-center' : ''
-          )}
-        >
-          <Users className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
-          {!collapsed && <span>Profile</span>}
-        </Link>
-      </div>
     </div>
   );
 }

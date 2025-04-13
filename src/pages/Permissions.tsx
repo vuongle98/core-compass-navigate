@@ -254,14 +254,6 @@ const Permissions = () => {
           />
         </PageHeader>
 
-        <div className="flex justify-between items-center my-6">
-          <div></div>
-          <Button onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Permission
-          </Button>
-        </div>
-
         <div className="mt-4">
           <DataTable
             data={filteredPermissions}

@@ -227,13 +227,6 @@ const Roles = () => {
           />
         </PageHeader>
 
-        <div className="flex justify-between items-center my-6">
-          <div></div>
-          <Button onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Role
-          </Button>
-        </div>
 
         <div className="mt-4">
           <DataTable

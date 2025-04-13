@@ -392,7 +392,7 @@ const Files = () => {
           </div>
         )}
 
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 mt-4">
           <div className="relative">
             <input
               type="file"
@@ -415,6 +415,7 @@ const Files = () => {
             title="File Management"
             pagination={true}
             apiEndpoint="/api/file"
+            showAddButton={false}
           />
         </div>
 

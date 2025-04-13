@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -8,7 +7,7 @@ import { useDetailView } from "@/hooks/use-detail-view";
 import { UserProfile } from "@/components/users/UserProfile";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -24,7 +23,7 @@ interface User {
   username: string;
   email: string;
   roles: string[];
-  status: string;
+  locked: boolean;
 }
 
 const Users = () => {
@@ -35,33 +34,33 @@ const Users = () => {
       username: "Alice Smith",
       email: "alice@example.com",
       roles: ["Admin"],
-      status: "Active",
+      locked: false,
     },
     {
       id: 2,
       username: "Bob Johnson",
       email: "bob@example.com",
       roles: ["User"],
-      status: "Active",
+      locked: false,
     },
     {
       id: 3,
       username: "Carol Davis",
       email: "carol@example.com",
       roles: ["Editor"],
-      status: "Inactive",
+      locked: true,
     },
     {
       id: 4,
       username: "Dave Wilson",
       email: "dave@example.com",
       roles: ["User"],
-      status: "Active",
+      locked: false,
     },
   ]);
 
   const [filter, setFilter] = useState({
-    status: "",
+    locked: "",
     role: "",
     search: "",
   });
@@ -99,18 +98,24 @@ const Users = () => {
     openUserProfile(user);
   };
 
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter((user) => {
     return (
-      (filter.status === "" || user.status === filter.status) &&
+      (filter.locked === "" ||
+        user.locked === (filter.locked as unknown as boolean)) &&
       (filter.role === "" || user.roles.includes(filter.role)) &&
-      (filter.search === "" || 
+      (filter.search === "" ||
         user.username.toLowerCase().includes(filter.search.toLowerCase()) ||
         user.email.toLowerCase().includes(filter.search.toLowerCase()))
     );
   });
 
   const getActionItems = (user: User) => {
-    const actions: { type: ActionType; label: string; onClick: () => void; disabled?: boolean }[] = [
+    const actions: {
+      type: ActionType;
+      label: string;
+      onClick: () => void;
+      disabled?: boolean;
+    }[] = [
       {
         type: "view",
         label: "View Profile",
@@ -132,44 +137,52 @@ const Users = () => {
   };
 
   const columns = [
-    { header: "Name", accessorKey: "username" as const, sortable: true, filterable: true },
-    { header: "Email", accessorKey: "email" as const, sortable: true, filterable: true },
-    { 
-      header: "Role", 
-      accessorKey: "roles" as const, 
-      sortable: true, 
+    {
+      header: "Name",
+      accessorKey: "username" as const,
+      sortable: true,
       filterable: true,
-      cell: (user: User) => user.roles.join(", ")
+    },
+    {
+      header: "Email",
+      accessorKey: "email" as const,
+      sortable: true,
+      filterable: true,
+    },
+    {
+      header: "Role",
+      accessorKey: "roles" as const,
+      sortable: true,
+      filterable: true,
+      cell: (user: User) => user.roles.join(", "),
     },
     {
       header: "Status",
-      accessorKey: "status" as const,
-      sortable: true, 
+      accessorKey: "locked" as const,
+      sortable: true,
       filterable: true,
       cell: (user: User) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            user.status === "Active"
+            user.locked === true
               ? "bg-green-100 text-green-800"
               : "bg-gray-100 text-gray-800"
           }`}
         >
-          {user.status}
+          {user.locked ? "Locked" : "Active"}
         </span>
       ),
     },
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: (user: User) => (
-        <ActionsMenu actions={getActionItems(user)} />
-      ),
+      cell: (user: User) => <ActionsMenu actions={getActionItems(user)} />,
     },
   ];
 
   const resetFilters = () => {
     setFilter({
-      status: "",
+      locked: "",
       role: "",
       search: "",
     });
@@ -192,7 +205,9 @@ const Users = () => {
               <Input
                 placeholder="Search users..."
                 value={filter.search}
-                onChange={(e) => setFilter({ ...filter, search: e.target.value })}
+                onChange={(e) =>
+                  setFilter({ ...filter, search: e.target.value })
+                }
                 className="pl-8 w-[200px] md:w-[300px]"
               />
               {filter.search && (
@@ -207,8 +222,10 @@ const Users = () => {
               )}
             </div>
             <Select
-              value={filter.status || "all"}
-              onValueChange={(value) => setFilter({ ...filter, status: value === "all" ? "" : value })}
+              value={filter.locked || "all"}
+              onValueChange={(value) =>
+                setFilter({ ...filter, locked: value === "all" ? "" : value })
+              }
             >
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Status" />
@@ -222,7 +239,9 @@ const Users = () => {
 
             <Select
               value={filter.role || "all"}
-              onValueChange={(value) => setFilter({ ...filter, role: value === "all" ? "" : value })}
+              onValueChange={(value) =>
+                setFilter({ ...filter, role: value === "all" ? "" : value })
+              }
             >
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Role" />
@@ -235,7 +254,7 @@ const Users = () => {
               </SelectContent>
             </Select>
 
-            {(filter.status || filter.role || filter.search) && (
+            {(filter.locked || filter.role || filter.search) && (
               <Button variant="ghost" onClick={resetFilters}>
                 <X className="mr-2 h-4 w-4" />
                 Clear Filters

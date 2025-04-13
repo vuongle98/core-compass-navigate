@@ -60,6 +60,7 @@ const UserRequestLog = () => {
         <PageHeader
           title="User Request Log"
           description="Monitor API requests and performance metrics"
+          showAddButton={false}
         />
 
         <div className="mt-6">
@@ -68,6 +69,7 @@ const UserRequestLog = () => {
             columns={columns}
             title="API Requests"
             pagination={true}
+            showAddButton={false}
           />
         </div>
       </main>

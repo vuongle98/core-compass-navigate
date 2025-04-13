@@ -72,6 +72,7 @@ const EventLog = () => {
         <PageHeader 
           title="Event Log" 
           description="View system events and application logs"
+          showAddButton={false}
         />
         
         <div className="mt-6">
@@ -81,6 +82,7 @@ const EventLog = () => {
             title="System Events" 
             pagination={true}
             initialPageSize={10}
+            showAddButton={false}
           />
         </div>
       </main>
