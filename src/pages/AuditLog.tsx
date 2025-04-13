@@ -54,6 +54,7 @@ const AuditLog = () => {
             data={logs} 
             columns={columns} 
             title="Audit Events" 
+            pagination={true}
           />
         </div>
       </main>

@@ -42,6 +42,8 @@ const Login = () => {
         values.username,
         values.password
       );
+
+      console.log("Login success:", success);
       
       if (success) {
         navigate("/");

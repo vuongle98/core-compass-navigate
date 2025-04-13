@@ -1,18 +1,19 @@
-
 import { toast } from "sonner";
+import ApiService from "./ApiService";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
+  roles: string[];
 }
 
 interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
+  token: string;
+  refresh: string;
   expiresAt?: number; // Timestamp when the access token expires
   user?: User; // Store user data with tokens
+  type?: string; // Optional token field
 }
 
 class AuthService {
@@ -34,35 +35,56 @@ class AuthService {
   public async login(username: string, password: string): Promise<boolean> {
     try {
       // For development/testing - use mock data instead of API call
-      
+
       // Generate mock tokens and user data
-      const mockUser: User = {
-        id: "user-" + Date.now(),
-        email: username,
-        name: username.split('@')[0] || username,
-        role: "admin"
-      };
-      
-      const mockResponse = {
-        accessToken: "mock-access-token-" + Date.now(),
-        refreshToken: "mock-refresh-token-" + Date.now(),
-        expiresIn: 3600 // 1 hour
-      };
-      
-      // Calculate expiration timestamp
-      const expiresAt = Date.now() + mockResponse.expiresIn * 1000;
 
-      // Store tokens and user data
-      this.setTokens({
-        accessToken: mockResponse.accessToken,
-        refreshToken: mockResponse.refreshToken,
-        expiresAt,
-        user: mockUser
-      });
+      if (username === "test" && password === "test") {
+        const mockUser: User = {
+          id: "user-" + Date.now(),
+          email: username,
+          name: username.split("@")[0] || username,
+          roles: ["SUPER_ADMIN"],
+        };
 
-      toast.success("Login successful");
-      return true;
-      
+        const mockResponse = {
+          token: "mock-access-token-" + Date.now(),
+          refresh: "mock-refresh-token-" + Date.now(),
+          expiresIn: 3600, // 1 hour
+        };
+
+        // Calculate expiration timestamp
+        const expiresAt = Date.now() + mockResponse.expiresIn * 1000;
+
+        // Store tokens and user data
+        this.setTokens({
+          token: mockResponse.token,
+          refresh: mockResponse.refresh,
+          expiresAt,
+          user: mockUser,
+        });
+
+        toast.success("Login successful");
+        return true;
+      } else {
+        const { data } = await ApiService.post<AuthTokens>(
+          "/api/auth/token",
+          {
+            username,
+            password,
+          },
+          { requiresAuth: false }
+        );
+
+        this.setTokens({
+          token: data.token,
+          refresh: data.refresh,
+          expiresAt: data.expiresAt,
+          user: data.user,
+        });
+        toast.success("Login successful");
+        return true;
+      }
+
       /* Commented out actual API call for now */
     } catch (error) {
       console.error("Login error:", error);
@@ -95,7 +117,7 @@ class AuthService {
    */
   public getAccessToken(): string | null {
     const tokens = this.getTokens();
-    return tokens ? tokens.accessToken : null;
+    return tokens ? tokens.token : null;
   }
 
   /**
@@ -104,14 +126,14 @@ class AuthService {
   public isAuthenticated(): boolean {
     const tokens = this.getTokens();
     if (!tokens) return false;
-    
+
     // If we have an expiration time, check if the token is still valid
     if (tokens.expiresAt) {
       return tokens.expiresAt > Date.now();
     }
-    
+
     // If no expiration time is stored, just check if we have an access token
-    return !!tokens.accessToken;
+    return !!tokens.token;
   }
 
   /**
@@ -127,21 +149,24 @@ class AuthService {
     this.refreshPromise = new Promise(async (resolve, reject) => {
       try {
         const tokens = this.getTokens();
-        
-        if (!tokens || !tokens.refreshToken) {
+
+        if (!tokens || !tokens.refresh) {
           this.logout();
           reject("No refresh token available");
           return;
         }
 
         // Example API call - replace with your actual refresh endpoint
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/auth/refresh`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || ""}/auth/refresh`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh: tokens.refresh }),
+          }
+        );
 
         if (!response.ok) {
           this.logout();
@@ -150,7 +175,7 @@ class AuthService {
         }
 
         const data = await response.json();
-        
+
         // Calculate expiration timestamp if expiresIn is provided
         let expiresAt: number | undefined;
         if (data.expiresIn) {
@@ -159,13 +184,13 @@ class AuthService {
 
         // Store new tokens, but keep existing user data
         this.setTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken || tokens.refreshToken, // Use new refresh token or keep existing one
+          token: data.token,
+          refresh: data.refresh || tokens.refresh, // Use new refresh token or keep existing one
           expiresAt,
-          user: tokens.user // Keep existing user data
+          user: tokens.user, // Keep existing user data
         });
 
-        resolve(data.accessToken);
+        resolve(data.token);
       } catch (error) {
         console.error("Token refresh error:", error);
         this.logout();
@@ -184,7 +209,7 @@ class AuthService {
   public needsRefresh(): boolean {
     const tokens = this.getTokens();
     if (!tokens || !tokens.expiresAt) return false;
-    
+
     // Refresh if less than 5 minutes remaining
     const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
     return tokens.expiresAt - Date.now() < bufferTime;

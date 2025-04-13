@@ -67,7 +67,6 @@ const FileTypeIcon = ({ type }: { type: string }) => {
 
 const Files = () => {
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [draggedFile, setDraggedFile] = useState<number | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -77,70 +76,60 @@ const Files = () => {
   // Simulating data fetch with a delay for skeleton loading demo
   useEffect(() => {
     const fetchFiles = async () => {
-      try {
-        // Log API request
-        ApiService.logUserAction("file_page_loaded", {
-          timestamp: new Date().toISOString(),
-        });
+      // Log API request
+      ApiService.logUserAction("file_page_loaded", {
+        timestamp: new Date().toISOString(),
+      });
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+      const mockFiles: FileItem[] = [
+        {
+          id: 1,
+          name: "annual-report.pdf",
+          type: "PDF",
+          size: "2.4 MB",
+          uploadedBy: "Alice Smith",
+          uploadedAt: "2023-04-10",
+          url: null,
+        },
+        {
+          id: 2,
+          name: "user-avatar.png",
+          type: "Image",
+          size: "156 KB",
+          uploadedBy: "Bob Johnson",
+          uploadedAt: "2023-04-09",
+          url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
+        },
+        {
+          id: 3,
+          name: "data-export.csv",
+          type: "CSV",
+          size: "1.2 MB",
+          uploadedBy: "Carol Davis",
+          uploadedAt: "2023-04-08",
+          url: null,
+        },
+        {
+          id: 4,
+          name: "product-photo.jpg",
+          type: "Image",
+          size: "1.8 MB",
+          uploadedBy: "Dave Wilson",
+          uploadedAt: "2023-04-07",
+          url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
+        },
+        {
+          id: 5,
+          name: "marketing-banner.png",
+          type: "Image",
+          size: "2.1 MB",
+          uploadedBy: "Eve Brown",
+          uploadedAt: "2023-04-06",
+          url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
+        },
+      ];
 
-        const mockFiles: FileItem[] = [
-          {
-            id: 1,
-            name: "annual-report.pdf",
-            type: "PDF",
-            size: "2.4 MB",
-            uploadedBy: "Alice Smith",
-            uploadedAt: "2023-04-10",
-            url: null,
-          },
-          {
-            id: 2,
-            name: "user-avatar.png",
-            type: "Image",
-            size: "156 KB",
-            uploadedBy: "Bob Johnson",
-            uploadedAt: "2023-04-09",
-            url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
-          },
-          {
-            id: 3,
-            name: "data-export.csv",
-            type: "CSV",
-            size: "1.2 MB",
-            uploadedBy: "Carol Davis",
-            uploadedAt: "2023-04-08",
-            url: null,
-          },
-          {
-            id: 4,
-            name: "product-photo.jpg",
-            type: "Image",
-            size: "1.8 MB",
-            uploadedBy: "Dave Wilson",
-            uploadedAt: "2023-04-07",
-            url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
-          },
-          {
-            id: 5,
-            name: "marketing-banner.png",
-            type: "Image",
-            size: "2.1 MB",
-            uploadedBy: "Eve Brown",
-            uploadedAt: "2023-04-06",
-            url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
-          },
-        ];
-
-        setFiles(mockFiles);
-      } catch (error) {
-        console.error("Failed to fetch files:", error);
-        toast.error("Failed to load files");
-      } finally {
-        setLoading(false);
-      }
+      setFiles(mockFiles);
     };
 
     fetchFiles();
@@ -419,13 +408,15 @@ const Files = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="mt-6 border rounded-md">{renderFileSkeletons()}</div>
-        ) : (
-          <div className="mt-6">
-            <DataTable data={files} columns={columns} title="File Management" />
-          </div>
-        )}
+        <div className="mt-6">
+          <DataTable
+            data={files}
+            columns={columns}
+            title="File Management"
+            pagination={true}
+            apiEndpoint="/api/file"
+          />
+        </div>
 
         <Dialog
           open={!!previewFile}

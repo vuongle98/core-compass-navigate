@@ -23,6 +23,13 @@ interface PerformanceLog {
   success: boolean;
 }
 
+interface ApiResponse<T> {
+  data: T;
+  error: any;
+  message: string;
+  success: boolean;
+}
+
 class ApiService {
   private static instance: ApiService;
   private baseUrl: string;
@@ -59,11 +66,11 @@ class ApiService {
     console.log(`API ${log.method} ${log.endpoint} - ${log.duration}ms - Status: ${log.status}`);
   }
 
-  public async get<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> {
+  public async get<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: "GET" });
   }
 
-  public async post<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> {
+  public async post<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...config,
       method: "POST",
@@ -71,7 +78,7 @@ class ApiService {
     });
   }
 
-  public async put<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<T> {
+  public async put<T>(endpoint: string, data?: any, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...config,
       method: "PUT",
@@ -79,18 +86,18 @@ class ApiService {
     });
   }
 
-  public async delete<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> {
+  public async delete<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: "DELETE" });
   }
 
-  public async getPaginated<T>(endpoint: string, params: PaginationParams = {}): Promise<{
-    data: T[];
-    totalItems: number;
+  public async getPaginated<T>(endpoint: string, params: PaginationParams = {}): Promise<ApiResponse<{
+    content: T[];
+    totalElements: number;
     totalPages: number;
-    currentPage: number;
-    pageSize: number;
-  }> {
-    const { page = 1, pageSize = 10, sort, filter, ...restParams } = params;
+    number: number;
+    size: number;
+  }>> {
+    const { page = 0, pageSize = 10, sort, filter, ...restParams } = params;
     
     const queryParams: Record<string, string> = {
       ...restParams,
@@ -117,16 +124,16 @@ class ApiService {
 
     const response = await this.get<{
       data: T[];
-      totalItems: number;
+      totalElements: number;
       totalPages: number;
-      currentPage: number;
-      pageSize: number;
+      number: number;
+      size: number;
     }>(endpoint, config);
 
     return response;
   }
 
-  private async request<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> {
+  private async request<T>(endpoint: string, config: ApiRequestConfig = {}): Promise<ApiResponse<T>> {
     const { params, requiresAuth = true, ...fetchConfig } = config;
     const startTime = performance.now();
     const method = (config.method || 'GET').toUpperCase();
@@ -245,7 +252,7 @@ class ApiService {
     console.log(`USER_ACTION: ${actionType}`, logData);
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
+  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ 
         message: "An unexpected error occurred" 
@@ -262,7 +269,7 @@ class ApiService {
       return await response.json();
     }
     
-    return {} as T;
+    return {} as ApiResponse<T>;
   }
 
   private handleError(error: any): void {

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Pencil, Trash2, ArrowUp, ArrowDown, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -91,6 +91,7 @@ export function DataTable<T extends { id: string | number }>({
   });
   const [data, setData] = useState<T[]>(safeInitialData);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasActions, setHasActions] = useState(false);
 
   // Create a dynamic form schema based on columns
   const createFormSchema = () => {
@@ -98,7 +99,7 @@ export function DataTable<T extends { id: string | number }>({
     columns.forEach((column) => {
       // Skip id field in schema
       if (column.accessorKey === 'id') return;
-      
+
       const key = String(column.accessorKey);
       schemaObject[key] = z.string().min(1, `${column.header} is required`);
     });
@@ -146,43 +147,31 @@ export function DataTable<T extends { id: string | number }>({
     setFilters({});
   };
 
-  // Load paginated data from API if pagination is enabled and apiEndpoint is provided
-  useEffect(() => {
-    if (pagination && apiEndpoint) {
-      fetchPaginatedData();
-    }
-  }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters]);
-
-  // Handle changes to initialData
-  useEffect(() => {
-    if (!pagination || !apiEndpoint) {
-      setData(Array.isArray(initialData) ? initialData : []);
-    }
-  }, [initialData, pagination, apiEndpoint]);
-
-  const fetchPaginatedData = async () => {
+  const fetchPaginatedData = useCallback(async () => {
     if (!apiEndpoint) return;
     
     setIsLoading(true);
     try {
+      await new Promise(r => setTimeout(r, 300));
+
       // Construct sort param in the format 'field:direction'
       const sort = sorting.column && sorting.direction 
         ? `${sorting.column}:${sorting.direction}`
         : undefined;
         
       const response = await ApiService.getPaginated<T>(apiEndpoint, {
-        page: paginationState.pageIndex + 1, // API usually uses 1-based indexing
+        page: paginationState.pageIndex, // API usually uses 1-based indexing
         pageSize: paginationState.pageSize,
         sort,
         filter: filters,
       });
-      
+      console.log("API response:", response);
       if (response && response.data) {
-        setData(response.data);
+        setData(response.data.content || []);
         setPaginationState({
           ...paginationState,
-          pageCount: response.totalPages || 1,
-          totalItems: response.totalItems || 0,
+          pageCount: response.data.totalPages || 1,
+          totalItems: response.data.totalElements || 0,
         });
       } else {
         // Fallback to initial data if API response is invalid
@@ -202,7 +191,29 @@ export function DataTable<T extends { id: string | number }>({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, safeInitialData]);
+
+
+  // Load paginated data from API if pagination is enabled and apiEndpoint is provided
+  useEffect(() => {
+    if (pagination && apiEndpoint) {
+      fetchPaginatedData();
+    }
+  }, [pagination, apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, fetchPaginatedData]);
+
+  useEffect(() => {
+    if (columns.some(col => col.accessorKey === 'actions')) {
+      setHasActions(true);
+      console.log("Actions column detected, setting hasActions to true");
+    }
+  }, [columns]);
+
+  // Handle changes to initialData
+  useEffect(() => {
+    if (!pagination || !apiEndpoint) {
+      setData(Array.isArray(initialData) ? initialData : []);
+    }
+  }, [initialData, pagination, apiEndpoint]);
 
   // Handle pagination changes
   const handlePageChange = (page: number) => {
@@ -442,7 +453,7 @@ export function DataTable<T extends { id: string | number }>({
               </div>
             </TableHead>
           ))}
-          <TableHead className="text-right">Actions</TableHead>
+          {!hasActions && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -462,14 +473,14 @@ export function DataTable<T extends { id: string | number }>({
                     : (item[column.accessorKey] as React.ReactNode)}
                 </TableCell>
               ))}
-              <TableCell className="text-right space-x-2">
+              {!hasActions && <TableCell className="text-right space-x-2">
                 <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDelete(item)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              </TableCell>
+              </TableCell>}
             </TableRow>
           ))
         ) : (

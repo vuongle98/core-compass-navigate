@@ -16,7 +16,7 @@ interface Event {
 
 const EventLog = () => {
   // Initial static events data for fallback
-  const staticEvents = [
+  const staticEvents: Event[] = [
     { 
       id: 1, 
       event: "System Startup", 
@@ -80,7 +80,6 @@ const EventLog = () => {
             columns={columns} 
             title="System Events" 
             pagination={true}
-            apiEndpoint="/api/events" // This would be your actual API endpoint
             initialPageSize={10}
           />
         </div>

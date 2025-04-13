@@ -3,9 +3,18 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 
+interface Configuration {
+  id: number;
+  key: string;
+  value: string;
+  type: string;
+  lastModified: string;
+  environment: string;
+}
+
 const Configuration = () => {
   // Mock data
-  const configurations = [
+  const configurations: Configuration[] = [
     { 
       id: 1, 
       key: "SYSTEM_NAME", 
@@ -58,7 +67,7 @@ const Configuration = () => {
         />
         
         <div className="mt-6">
-          <DataTable data={configurations} columns={columns} title="Configuration Management" />
+          <DataTable data={configurations} columns={columns} title="Configuration Management" pagination={true} apiEndpoint="/api/configuration"/>
         </div>
       </main>
     </div>

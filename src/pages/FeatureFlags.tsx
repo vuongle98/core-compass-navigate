@@ -11,9 +11,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+interface FeatureFlag {
+  id: number;
+  name: string;
+  description: string;
+  enabled: boolean;
+  environment: string;
+}
+
 const FeatureFlags = () => {
   // Mock data
-  const featureFlags = [
+  const featureFlags: FeatureFlag[] = [
     {
       id: 1,
       name: "new_dashboard",
@@ -81,6 +89,8 @@ const FeatureFlags = () => {
             data={featureFlags}
             columns={columns}
             title="Feature Flag Management"
+            pagination={true}
+            apiEndpoint="/api/featureFlag"
           />
           <Pagination>
             <PaginationPrevious></PaginationPrevious>

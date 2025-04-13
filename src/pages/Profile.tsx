@@ -4,9 +4,18 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+interface UserProfile {
+  name: string;
+  email: string;
+  role: string;
+  joinDate: string;
+  lastLogin: string;
+}
+
+
 const Profile = () => {
   // Mock user data
-  const user = {
+  const user: UserProfile = {
     name: "John Doe",
     email: "john.doe@example.com",
     role: "Administrator",
