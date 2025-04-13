@@ -2,7 +2,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.example.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.example.com';
 const API_TIMEOUT = 30000; // 30 seconds
 
 // Type definitions for API responses
@@ -115,7 +115,7 @@ const makeRequest = async <T>(
 ): Promise<ApiResponse<T>> => {
   try {
     // For development without a real API, simulate responses
-    if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_MOCK_API === 'true') {
+    if (import.meta.env.DEV || import.meta.env.VITE_MOCK_API === 'true') {
       await sleep(300);
       
       // Log the request for development
@@ -173,7 +173,7 @@ const del = async <T>(url: string): Promise<ApiResponse<T>> => {
 const getPaginated = async <T>(endpoint: string, options: PaginationOptions = {}): Promise<ApiResponse<PaginatedData<T>>> => {
   try {
     // Mock response for development
-    if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_MOCK_API === 'true') {
+    if (import.meta.env.DEV || import.meta.env.VITE_MOCK_API === 'true') {
       await sleep(500);
       
       // Return mock data in the correct format expected by the DataTable component
@@ -239,7 +239,7 @@ const logUserAction = (action: string, data: UserActionData = {}) => {
   console.info('USER_ACTION:', action, eventData);
   
   // In a real app, send to analytics service or API
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     post('/api/analytics/events', {
       action,
       data: eventData
