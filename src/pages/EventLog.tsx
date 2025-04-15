@@ -241,15 +241,15 @@ const EventLog = () => {
     { 
       header: "#", 
       accessorKey: "id",
-      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+      cell: (item: Event) => <span className="text-muted-foreground">{item.id}</span>
     },
     { header: "Event", accessorKey: "event" as const },
     { header: "Source", accessorKey: "source" as const },
     { 
       header: "Level", 
       accessorKey: "level" as const,
-      cell: (info: any) => {
-        const level = info.getValue();
+      cell: (item: Event) => {
+        const level = item.level;
         let variant: "default" | "secondary" | "destructive" | "outline" = "default";
         
         if (level === "Warning") {
@@ -269,16 +269,16 @@ const EventLog = () => {
     { 
       header: "Message", 
       accessorKey: "message" as const,
-      cell: (info: any) => (
-        <div className="max-w-xs truncate">{info.getValue()}</div>
+      cell: (item: Event) => (
+        <div className="max-w-xs truncate">{item.message}</div>
       )
     },
     { header: "User", accessorKey: "user" as const },
     { 
       header: "Details", 
       accessorKey: "details" as const,
-      cell: (info: any) => (
-        <div className="max-w-xs truncate text-xs text-muted-foreground">{info.getValue()}</div>
+      cell: (item: Event) => (
+        <div className="max-w-xs truncate text-xs text-muted-foreground">{item.details}</div>
       )
     },
   ];
