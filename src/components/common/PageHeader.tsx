@@ -9,6 +9,7 @@ interface PageHeaderProps {
   description?: string;
   showAddButton?: boolean;
   addButtonText?: string;
+  actions?: ReactNode;
   button?: ReactNode;
   children?: ReactNode;
 }
@@ -18,6 +19,7 @@ export function PageHeader({
   description,
   showAddButton = false,
   addButtonText = "Add New",
+  actions,
   button,
   children,
 }: PageHeaderProps) {
@@ -36,6 +38,7 @@ export function PageHeader({
       <div className="flex items-center gap-4">
         {children}
         {button}
+        {actions}
         {showAddButton && (
           <Button onClick={handleAdd}>
             <PlusCircle className="h-4 w-4 mr-2" />

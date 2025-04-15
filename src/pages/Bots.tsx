@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -30,7 +29,6 @@ interface Bot {
   description?: string;
 }
 
-// Define column type to match DataTable expectations
 interface Column {
   header: string;
   accessorKey: string;
@@ -81,7 +79,7 @@ const Bots = () => {
 
   const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
     try {
-      await ApiService.post("/api/bots", data, {});
+      await ApiService.post("/api/bots", data);
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
       refetch();
@@ -128,7 +126,6 @@ const Bots = () => {
       }
     ];
 
-    // Add conditional actions based on bot status
     if (bot.status === "inactive") {
       actions.push({
         type: "play" as ActionType,
@@ -164,7 +161,6 @@ const Bots = () => {
       label: "Delete",
       onClick: () => {
         if (confirm("Are you sure you want to delete this bot?")) {
-          // Implementation for delete operation would go here
           console.log("Delete bot:", bot.id);
         }
       },
@@ -265,7 +261,6 @@ const Bots = () => {
           )}
         </div>
         
-        {/* Bot Detail Modal */}
         <DetailViewModal
           isOpen={isModalOpen}
           onClose={closeModal}
@@ -275,7 +270,6 @@ const Bots = () => {
           {selectedBot && <BotDetail bot={selectedBot} onRefresh={refetch} />}
         </DetailViewModal>
         
-        {/* Create Bot Modal */}
         <DetailViewModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
