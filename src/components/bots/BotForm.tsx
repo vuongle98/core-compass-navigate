@@ -15,12 +15,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Define the form schema
+// Define the form schema with conditional fields based on bot type
 const botFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   token: z.string().min(10, "Please enter a valid Telegram bot token"),
-  webhook_url: z.string().url("Please enter a valid URL"),
+  type: z.enum(["WEBHOOK", "LONG_POLLING"]),
+  webhook_url: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+  polling_interval: z.number().min(5).optional(),
   description: z.string().optional(),
 });
 
@@ -34,13 +43,16 @@ interface BotFormProps {
 
 export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [botType, setBotType] = useState(initialData?.type || "WEBHOOK");
   
   const form = useForm<BotFormValues>({
     resolver: zodResolver(botFormSchema),
     defaultValues: {
       name: initialData?.name || "",
       token: initialData?.token || "",
+      type: initialData?.type || "WEBHOOK",
       webhook_url: initialData?.webhook_url || "",
+      polling_interval: initialData?.polling_interval || 30,
       description: initialData?.description || "",
     },
   });
@@ -88,23 +100,80 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
-          name="webhook_url"
+          name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Webhook URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/webhook" {...field} />
-              </FormControl>
+              <FormLabel>Bot Type</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  setBotType(value as "WEBHOOK" | "LONG_POLLING");
+                  field.onChange(value);
+                }}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bot type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                  <SelectItem value="LONG_POLLING">Long Polling</SelectItem>
+                </SelectContent>
+              </Select>
               <FormDescription>
-                URL where Telegram will send updates for this bot
+                How the bot will receive updates from Telegram
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        {botType === "WEBHOOK" && (
+          <FormField
+            control={form.control}
+            name="webhook_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Webhook URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com/webhook" {...field} />
+                </FormControl>
+                <FormDescription>
+                  URL where Telegram will send updates for this bot
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {botType === "LONG_POLLING" && (
+          <FormField
+            control={form.control}
+            name="polling_interval"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Polling Interval (seconds)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={5}
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  How often the bot should check for updates (minimum 5 seconds)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         
         <FormField
           control={form.control}

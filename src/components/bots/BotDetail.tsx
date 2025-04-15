@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,10 @@ import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import { BotInfo } from "./BotInfo";
+import { BotStatus } from "./BotStatus";
+import { BotScheduledMessages } from "./BotScheduledMessages";
 
 interface Bot {
   id: number;
@@ -26,24 +30,6 @@ interface Bot {
   last_polling_time?: string;
 }
 
-interface BotStatus {
-  bot_id: number;
-  is_running: boolean;
-  memory_usage?: string;
-  cpu_usage?: string;
-  uptime?: string;
-}
-
-interface ScheduledMessage {
-  id: number;
-  bot_id: number;
-  message: string;
-  schedule_time: string;
-  status: "pending" | "sent" | "failed";
-  recipient: string;
-  created_at: string;
-}
-
 interface BotDetailProps {
   bot: Bot;
   onRefresh: () => void;
@@ -51,6 +37,7 @@ interface BotDetailProps {
 
 export function BotDetail({ bot, onRefresh }: BotDetailProps) {
   const [activeTab, setActiveTab] = useState("info");
+  const navigate = useNavigate();
 
   const handleBotAction = async (action: string) => {
     try {
@@ -92,7 +79,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
   });
   
   // Find the status for this specific bot from the array of statuses
-  const botStatus = botStatuses ? botStatuses.find((status: BotStatus) => status.bot_id === bot.id) : null;
+  const botStatus = botStatuses && Array.isArray(botStatuses) ? botStatuses.find((status: BotStatus) => status.bot_id === bot.id) : null;
 
   const refreshData = () => {
     refetchMessages();
@@ -118,188 +105,19 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         </TabsList>
         
         <TabsContent value="info">
-          <Card>
-            <CardContent className="pt-6">
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                  <dd className="mt-1 text-lg">{bot.name}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Status</dt>
-                  <dd className="mt-1">
-                    <Badge
-                      variant={
-                        bot.status === "active"
-                          ? "default"
-                          : bot.status === "inactive"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {bot.status.charAt(0).toUpperCase() + bot.status.slice(1)}
-                    </Badge>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Type</dt>
-                  <dd className="mt-1">
-                    <Badge variant="outline">{bot.type}</Badge>
-                  </dd>
-                </div>
-                {bot.type === "WEBHOOK" && bot.webhook_url && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Webhook URL</dt>
-                    <dd className="mt-1 text-sm break-all">{bot.webhook_url}</dd>
-                  </div>
-                )}
-                {bot.type === "LONG_POLLING" && bot.polling_interval && (
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Polling Interval</dt>
-                    <dd className="mt-1 text-sm">{bot.polling_interval} seconds</dd>
-                  </div>
-                )}
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Token</dt>
-                  <dd className="mt-1 text-sm">
-                    <code className="bg-muted px-1 py-0.5 rounded">
-                      {bot.token.substring(0, 10)}...
-                    </code>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Created At</dt>
-                  <dd className="mt-1 text-sm">{new Date(bot.created_at).toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Updated At</dt>
-                  <dd className="mt-1 text-sm">{new Date(bot.updated_at).toLocaleString()}</dd>
-                </div>
-                {bot.scheduled && (
-                  <div className="col-span-2">
-                    <dt className="text-sm font-medium text-muted-foreground">Scheduled</dt>
-                    <dd className="mt-1 text-sm">This bot has scheduled tasks</dd>
-                  </div>
-                )}
-                {bot.description && (
-                  <div className="col-span-2">
-                    <dt className="text-sm font-medium text-muted-foreground">Description</dt>
-                    <dd className="mt-1 text-sm">{bot.description}</dd>
-                  </div>
-                )}
-              </dl>
-            </CardContent>
-          </Card>
+          <BotInfo bot={bot} />
         </TabsContent>
         
         <TabsContent value="status">
-          <Card>
-            <CardHeader>
-              <CardTitle>Runtime Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingStatus ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-              ) : botStatus ? (
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Current Status</dt>
-                    <dd className="mt-1">
-                      <Badge variant={botStatus.is_running ? "default" : "secondary"}>
-                        {botStatus.is_running ? "Running" : "Stopped"}
-                      </Badge>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Memory Usage</dt>
-                    <dd className="mt-1 text-sm">{botStatus.memory_usage || "N/A"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">CPU Usage</dt>
-                    <dd className="mt-1 text-sm">{botStatus.cpu_usage || "N/A"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm font-medium text-muted-foreground">Uptime</dt>
-                    <dd className="mt-1 text-sm">{botStatus.uptime || "N/A"}</dd>
-                  </div>
-                  {bot.type === "LONG_POLLING" && bot.last_polling_time && (
-                    <div>
-                      <dt className="text-sm font-medium text-muted-foreground">Last Polling Time</dt>
-                      <dd className="mt-1 text-sm">{new Date(bot.last_polling_time).toLocaleString()}</dd>
-                    </div>
-                  )}
-                </dl>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No status information available
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BotStatus botStatus={botStatus} bot={bot} isLoading={isLoadingStatus} />
         </TabsContent>
         
         <TabsContent value="messages">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scheduled Messages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingMessages ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ) : scheduledMessages && scheduledMessages.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>#</TableHead>
-                        <TableHead>Message</TableHead>
-                        <TableHead>Recipient</TableHead>
-                        <TableHead>Schedule Time</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {scheduledMessages.map((message) => (
-                        <TableRow key={message.id}>
-                          <TableCell>{message.id}</TableCell>
-                          <TableCell>
-                            <div className="max-w-xs truncate">{message.message}</div>
-                          </TableCell>
-                          <TableCell>{message.recipient}</TableCell>
-                          <TableCell>{new Date(message.schedule_time).toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                message.status === "sent"
-                                  ? "default"
-                                  : message.status === "pending"
-                                  ? "secondary"
-                                  : "destructive"
-                              }
-                            >
-                              {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  No scheduled messages available
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BotScheduledMessages 
+            messages={scheduledMessages} 
+            isLoading={isLoadingMessages} 
+            botId={bot.id} 
+          />
         </TabsContent>
       </Tabs>
       
@@ -332,11 +150,29 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
           </Button>
         )}
         
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => navigate(`/bots/${bot.id}/edit`)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit Bot
         </Button>
       </div>
     </div>
   );
+}
+
+interface BotStatus {
+  bot_id: number;
+  is_running: boolean;
+  memory_usage?: string;
+  cpu_usage?: string;
+  uptime?: string;
+}
+
+interface ScheduledMessage {
+  id: number;
+  bot_id: number;
+  message: string;
+  schedule_time: string;
+  status: "pending" | "sent" | "failed";
+  recipient: string;
+  created_at: string;
 }

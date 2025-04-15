@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigate } from "react-router-dom";
 import { 
   PlusCircle, 
   Bot, 
@@ -30,23 +30,18 @@ import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { BotDetail } from "@/components/bots/BotDetail";
 import { BotForm } from "@/components/bots/BotForm";
-import { 
+import { BotStatsCards } from "@/components/bots/BotStatsCards";
+import { BotBulkActions } from "@/components/bots/BotBulkActions";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import ApiService from "@/services/ApiService";
 
-interface Bot {
+export interface Bot {
   id: number;
   name: string;
   token: string;
@@ -60,6 +55,7 @@ interface Bot {
   messages_count?: number;
   platform?: string;
   type: "WEBHOOK" | "LONG_POLLING";
+  polling_interval?: number;
 }
 
 interface Column {
@@ -69,12 +65,6 @@ interface Column {
   cell?: (item: Bot) => JSX.Element;
   sortable?: boolean;
   filterable?: boolean;
-}
-
-interface BulkAction {
-  label: string;
-  icon: React.ReactNode;
-  action: (ids: number[]) => void;
 }
 
 const mockBots: Bot[] = [
@@ -177,44 +167,48 @@ const Bots = () => {
   } = useQuery({
     queryKey: ["bots", filters, pagination.pageIndex, pagination.pageSize],
     queryFn: async () => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      console.log("Fetching bots with params:", {
-        filters,
-        page: pagination.pageIndex,
-        size: pagination.pageSize
-      });
-      
-      let filteredBots = [...mockBots];
-      
-      if (filters.status) {
-        filteredBots = filteredBots.filter(bot => bot.status === filters.status);
+      try {
+        const response = await ApiService.get<any>(`/api/bots?page=${pagination.pageIndex}&size=${pagination.pageSize}&status=${filters.status}&type=${filters.type}&search=${filters.search}`);
+        return response.data;
+      } catch (error) {
+        console.log("Failed to fetch from API, using mock data:", error);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log("Fetching bots with params:", {
+          filters,
+          page: pagination.pageIndex,
+          size: pagination.pageSize
+        });
+        
+        let filteredBots = [...mockBots];
+        
+        if (filters.status) {
+          filteredBots = filteredBots.filter(bot => bot.status === filters.status);
+        }
+        
+        if (filters.type) {
+          filteredBots = filteredBots.filter(bot => bot.type === filters.type);
+        }
+        
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredBots = filteredBots.filter(bot => 
+            bot.name.toLowerCase().includes(searchLower) || 
+            bot.description?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        return {
+          content: filteredBots.slice(
+            pagination.pageIndex * pagination.pageSize, 
+            (pagination.pageIndex + 1) * pagination.pageSize
+          ),
+          totalElements: filteredBots.length,
+          totalPages: Math.ceil(filteredBots.length / pagination.pageSize),
+          number: pagination.pageIndex,
+          size: pagination.pageSize
+        };
       }
-      
-      if (filters.type) {
-        filteredBots = filteredBots.filter(bot => bot.type === filters.type);
-      }
-      
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredBots = filteredBots.filter(bot => 
-          bot.name.toLowerCase().includes(searchLower) || 
-          bot.description?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      const paginatedData = {
-        content: filteredBots.slice(
-          pagination.pageIndex * pagination.pageSize, 
-          (pagination.pageIndex + 1) * pagination.pageSize
-        ),
-        totalElements: filteredBots.length,
-        totalPages: Math.ceil(filteredBots.length / pagination.pageSize),
-        number: pagination.pageIndex,
-        size: pagination.pageSize
-      };
-      
-      return paginatedData;
     }
   });
 
@@ -252,7 +246,9 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await ApiService.post(`/api/bots/${botId}/${action}`, {}).catch(() => {
+        return new Promise(resolve => setTimeout(resolve, 500));
+      });
       
       toast.success(`Bot ${action} action completed`);
       refetch();
@@ -488,31 +484,31 @@ const Bots = () => {
   const getTotalMessagesCount = () => botsData?.content.reduce((sum, bot) => sum + (bot.messages_count || 0), 0) || 0;
   const getTotalUsersCount = () => botsData?.content.reduce((sum, bot) => sum + (bot.users_count || 0), 0) || 0;
 
-  const bulkActions: BulkAction[] = [
+  const bulkActions = [
     {
       label: 'Delete Selected',
       icon: <Trash2 className="h-4 w-4" />,
-      action: (ids) => handleBulkAction('delete')
+      action: () => handleBulkAction('delete')
     },
     {
       label: 'Archive Selected',
       icon: <Archive className="h-4 w-4" />,
-      action: (ids) => handleBulkAction('archive')
+      action: () => handleBulkAction('archive')
     },
     {
       label: 'Start Selected',
       icon: <Play className="h-4 w-4" />,
-      action: (ids) => handleBulkAction('start')
+      action: () => handleBulkAction('start')
     },
     {
       label: 'Stop Selected',
       icon: <Square className="h-4 w-4" />,
-      action: (ids) => handleBulkAction('stop')
+      action: () => handleBulkAction('stop')
     },
     {
       label: 'Export Selected',
       icon: <Download className="h-4 w-4" />,
-      action: (ids) => handleBulkAction('export')
+      action: () => handleBulkAction('export')
     },
   ];
 
@@ -526,24 +522,10 @@ const Bots = () => {
           actions={
             <div className="flex space-x-2">
               {selectedBots.length > 0 ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="default">
-                      Bulk Actions ({selectedBots.length})
-                      <MoreHorizontal className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {bulkActions.map((action, index) => (
-                      <DropdownMenuItem key={index} onClick={() => action.action(selectedBots)}>
-                        {action.icon}
-                        <span className="ml-2">{action.label}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <BotBulkActions 
+                  selectedCount={selectedBots.length} 
+                  actions={bulkActions}
+                />
               ) : (
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -554,59 +536,12 @@ const Bots = () => {
           }
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Bots</CardTitle>
-              <CardDescription>Active and inactive</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Bot className="h-5 w-5 mr-2 text-primary" />
-                <div className="text-2xl font-bold">{botsData?.totalElements || 0}</div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Active Bots</CardTitle>
-              <CardDescription>Currently running</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
-                <div className="text-2xl font-bold">{getActiveBotsCount()}</div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <CardDescription>Across all bots</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-blue-500" />
-                <div className="text-2xl font-bold">{getTotalUsersCount().toLocaleString()}</div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
-              <CardDescription>Processed by bots</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-purple-500" />
-                <div className="text-2xl font-bold">{getTotalMessagesCount().toLocaleString()}</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <BotStatsCards 
+          totalBots={botsData?.totalElements || 0}
+          activeBots={getActiveBotsCount()}
+          totalUsers={getTotalUsersCount()}
+          totalMessages={getTotalMessagesCount()}
+        />
         
         <div className="mt-6">
           <DataFilters 
