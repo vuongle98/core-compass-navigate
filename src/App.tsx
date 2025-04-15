@@ -21,6 +21,9 @@ import AuditLog from "./pages/AuditLog";
 import UserRequestLog from "./pages/UserRequestLog";
 import EventLog from "./pages/EventLog";
 import Profile from "./pages/Profile";
+import Bots from "./pages/Bots";
+import BotEdit from "./pages/BotEdit";
+import BotSchedule from "./pages/BotSchedule";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Create a protected route component using our new useAuth hook
@@ -72,6 +75,9 @@ const App = () => (
               <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
               <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/bots" element={<ProtectedRoute><Bots /></ProtectedRoute>} />
+              <Route path="/bots/:id/edit" element={<ProtectedRoute><BotEdit /></ProtectedRoute>} />
+              <Route path="/bots/:id/schedule" element={<ProtectedRoute><BotSchedule /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

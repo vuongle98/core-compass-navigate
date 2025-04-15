@@ -15,7 +15,8 @@ import {
   LogIn,
   ChevronDown,
   ChevronRight,
-  Folder
+  Folder,
+  Bot
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -110,6 +111,11 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
           name: "Files",
           href: "/files",
           icon: FileText,
+        },
+        {
+          name: "Bots",
+          href: "/bots",
+          icon: Bot,
         }
       ]
     },
