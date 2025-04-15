@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -106,7 +105,7 @@ const Tokens = () => {
   };
 
   const handleRevokeToken = (id: number) => {
-    setTokens(tokens.filter(token => token.id !== id));
+    setTokens(tokens.filter((token) => token.id !== id));
     toast.success("Token revoked successfully");
   };
 
@@ -123,15 +122,23 @@ const Tokens = () => {
   };
 
   // Apply filters
-  const filteredTokens = tokens.filter(token => {
+  const filteredTokens = tokens.filter((token) => {
     return (
       (filter.status === "" || token.status === filter.status) &&
-      (filter.search === "" || 
+      (filter.search === "" ||
         token.name.toLowerCase().includes(filter.search.toLowerCase()))
     );
   });
 
   const columns = [
+    {
+      header: "#",
+      accessorKey: "id",
+      cell: (item: Token) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
+    },
     { header: "Token Name", accessorKey: "name", sortable: true },
     { header: "Last Used", accessorKey: "lastUsed", sortable: true },
     { header: "Expires", accessorKey: "expires", sortable: true },
@@ -154,9 +161,7 @@ const Tokens = () => {
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (token: Token) => (
-        <ActionsMenu actions={getActionItems(token)} />
-      ),
+      cell: (token: Token) => <ActionsMenu actions={getActionItems(token)} />,
     },
   ];
 
@@ -165,7 +170,7 @@ const Tokens = () => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs />
-        
+
         <PageHeader
           title="API Tokens"
           description="Manage API access tokens"
@@ -198,6 +203,7 @@ const Tokens = () => {
             onClose={closeTokenDetail}
             title="Token Details"
             size="md"
+            showCloseButton={false}
           >
             <div className="space-y-4">
               <div>

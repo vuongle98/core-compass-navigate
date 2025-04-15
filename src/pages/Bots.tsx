@@ -7,12 +7,12 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  PlusCircle, 
-  Bot, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
+import {
+  PlusCircle,
+  Bot,
+  Calendar,
+  CheckCircle2,
+  Clock,
   AlertCircle,
   Trash2,
   Archive,
@@ -21,7 +21,7 @@ import {
   MoreHorizontal,
   Play,
   Square,
-  X
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionType, ActionsMenu } from "@/components/common/ActionsMenu";
@@ -81,7 +81,7 @@ const mockBots: Bot[] = [
     users_count: 1542,
     messages_count: 27835,
     platform: "Telegram",
-    type: "WEBHOOK"
+    type: "WEBHOOK",
   },
   {
     id: 2,
@@ -95,7 +95,7 @@ const mockBots: Bot[] = [
     users_count: 856,
     messages_count: 12405,
     platform: "Telegram",
-    type: "LONG_POLLING"
+    type: "LONG_POLLING",
   },
   {
     id: 3,
@@ -110,7 +110,7 @@ const mockBots: Bot[] = [
     users_count: 243,
     messages_count: 4129,
     platform: "Telegram",
-    type: "WEBHOOK"
+    type: "WEBHOOK",
   },
   {
     id: 4,
@@ -124,7 +124,7 @@ const mockBots: Bot[] = [
     users_count: 1021,
     messages_count: 18762,
     platform: "Telegram",
-    type: "LONG_POLLING"
+    type: "LONG_POLLING",
   },
   {
     id: 5,
@@ -139,8 +139,8 @@ const mockBots: Bot[] = [
     users_count: 12,
     messages_count: 567,
     platform: "Telegram",
-    type: "WEBHOOK"
-  }
+    type: "WEBHOOK",
+  },
 ];
 
 const Bots = () => {
@@ -150,76 +150,88 @@ const Bots = () => {
     type: "",
     search: "",
   });
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { isModalOpen, selectedItem: selectedBot, openDetail, closeModal } = useDetailView<Bot>();
+  const {
+    isModalOpen,
+    selectedItem: selectedBot,
+    openDetail,
+    closeModal,
+  } = useDetailView<Bot>({ modalThreshold: 15, detailRoute: "/detail-bot" });
   const [selectedBots, setSelectedBots] = useState<number[]>([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 10
+    pageSize: 10,
   });
-  
+
   const {
     data: botsData,
     isLoading,
     isError,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ["bots", filters, pagination.pageIndex, pagination.pageSize],
     queryFn: async () => {
       try {
-        const response = await ApiService.get<any>(`/api/bots?page=${pagination.pageIndex}&size=${pagination.pageSize}&status=${filters.status}&type=${filters.type}&search=${filters.search}`);
+        const response = await ApiService.get<any>(
+          `/api/bots?page=${pagination.pageIndex}&size=${pagination.pageSize}&status=${filters.status}&type=${filters.type}&search=${filters.search}`
+        );
         return response.data;
       } catch (error) {
         console.log("Failed to fetch from API, using mock data:", error);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         console.log("Fetching bots with params:", {
           filters,
           page: pagination.pageIndex,
-          size: pagination.pageSize
+          size: pagination.pageSize,
         });
-        
+
         let filteredBots = [...mockBots];
-        
+
         if (filters.status) {
-          filteredBots = filteredBots.filter(bot => bot.status === filters.status);
-        }
-        
-        if (filters.type) {
-          filteredBots = filteredBots.filter(bot => bot.type === filters.type);
-        }
-        
-        if (filters.search) {
-          const searchLower = filters.search.toLowerCase();
-          filteredBots = filteredBots.filter(bot => 
-            bot.name.toLowerCase().includes(searchLower) || 
-            bot.description?.toLowerCase().includes(searchLower)
+          filteredBots = filteredBots.filter(
+            (bot) => bot.status === filters.status
           );
         }
-        
+
+        if (filters.type) {
+          filteredBots = filteredBots.filter(
+            (bot) => bot.type === filters.type
+          );
+        }
+
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredBots = filteredBots.filter(
+            (bot) =>
+              bot.name.toLowerCase().includes(searchLower) ||
+              bot.description?.toLowerCase().includes(searchLower)
+          );
+        }
+
         return {
           content: filteredBots.slice(
-            pagination.pageIndex * pagination.pageSize, 
+            pagination.pageIndex * pagination.pageSize,
             (pagination.pageIndex + 1) * pagination.pageSize
           ),
           totalElements: filteredBots.length,
           totalPages: Math.ceil(filteredBots.length / pagination.pageSize),
           number: pagination.pageIndex,
-          size: pagination.pageSize
+          size: pagination.pageSize,
         };
       }
-    }
+    },
   });
 
   const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       ...newFilters,
     }));
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      pageIndex: 0
+      pageIndex: 0,
     }));
   };
 
@@ -231,10 +243,12 @@ const Bots = () => {
     });
   };
 
-  const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
+  const handleCreateBot = async (
+    data: Omit<Bot, "id" | "created_at" | "updated_at" | "status">
+  ) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
       refetch();
@@ -247,9 +261,9 @@ const Bots = () => {
   const handleBotAction = async (botId: number, action: string) => {
     try {
       await ApiService.post(`/api/bots/${botId}/${action}`, {}).catch(() => {
-        return new Promise(resolve => setTimeout(resolve, 500));
+        return new Promise((resolve) => setTimeout(resolve, 500));
       });
-      
+
       toast.success(`Bot ${action} action completed`);
       refetch();
     } catch (error) {
@@ -265,7 +279,7 @@ const Bots = () => {
     }
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
       toast.success(`${action} completed for ${selectedBots.length} bots`);
       setSelectedBots([]);
@@ -282,9 +296,12 @@ const Bots = () => {
       inactive: { variant: "secondary", label: "Inactive" },
       error: { variant: "destructive", label: "Error" },
     };
-    
-    const { variant, label } = variants[status] || { variant: "outline", label: status };
-    
+
+    const { variant, label } = variants[status] || {
+      variant: "outline",
+      label: status,
+    };
+
     return <Badge variant={variant}>{label}</Badge>;
   };
 
@@ -293,9 +310,12 @@ const Bots = () => {
       WEBHOOK: { variant: "outline", label: "Webhook" },
       LONG_POLLING: { variant: "outline", label: "Long Polling" },
     };
-    
-    const { variant, label } = variants[type] || { variant: "outline", label: type };
-    
+
+    const { variant, label } = variants[type] || {
+      variant: "outline",
+      label: type,
+    };
+
     return <Badge variant={variant}>{label}</Badge>;
   };
 
@@ -310,7 +330,7 @@ const Bots = () => {
         type: "edit" as ActionType,
         label: "Edit",
         onClick: () => navigate(`/bots/${bot.id}/edit`),
-      }
+      },
     ];
 
     if (bot.status === "inactive") {
@@ -331,7 +351,7 @@ const Bots = () => {
 
     if (!bot.scheduled) {
       actions.push({
-        type: "calendar-clock" as ActionType, 
+        type: "calendar-clock" as ActionType,
         label: "Schedule",
         onClick: () => navigate(`/bots/${bot.id}/schedule`),
       });
@@ -357,32 +377,32 @@ const Bots = () => {
   };
 
   const handlePageChange = (pageIndex: number) => {
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      pageIndex
+      pageIndex,
     }));
   };
 
   const handlePageSizeChange = (pageSize: number) => {
     setPagination({
       pageIndex: 0,
-      pageSize
+      pageSize,
     });
   };
 
   const handleSelectItem = (id: number | string, selected: boolean) => {
-    setSelectedBots(prev => {
+    setSelectedBots((prev) => {
       if (selected) {
         return [...prev, id as number];
       } else {
-        return prev.filter(itemId => itemId !== id);
+        return prev.filter((itemId) => itemId !== id);
       }
     });
   };
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allIds = botsData?.content.map(bot => bot.id) || [];
+      const allIds = botsData?.content.map((bot) => bot.id) || [];
       setSelectedBots(allIds);
     } else {
       setSelectedBots([]);
@@ -393,58 +413,60 @@ const Bots = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: Bot) => <span className="text-muted-foreground">{item.id}</span>,
-      sortable: true
+      cell: (item: Bot) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
     },
-    { 
-      header: "Name", 
+    {
+      header: "Name",
       accessorKey: "name",
       cell: (item: Bot) => <div className="font-medium">{item.name}</div>,
       sortable: true,
-      filterable: true
+      filterable: true,
     },
-    { 
-      header: "Type", 
+    {
+      header: "Type",
       accessorKey: "type",
       cell: (item: Bot) => getTypeBadge(item.type),
       sortable: true,
-      filterable: true
+      filterable: true,
     },
-    { 
-      header: "Status", 
+    {
+      header: "Status",
       accessorKey: "status",
       cell: (item: Bot) => getStatusBadge(item.status),
       sortable: true,
-      filterable: true
+      filterable: true,
     },
-    { 
-      header: "Users", 
+    {
+      header: "Users",
       accessorKey: "users_count",
       cell: (item: Bot) => (
         <div className="font-medium">{item.users_count?.toLocaleString()}</div>
       ),
-      sortable: true
+      sortable: true,
     },
-    { 
-      header: "Messages", 
+    {
+      header: "Messages",
       accessorKey: "messages_count",
       cell: (item: Bot) => (
-        <div className="font-medium">{item.messages_count?.toLocaleString()}</div>
+        <div className="font-medium">
+          {item.messages_count?.toLocaleString()}
+        </div>
       ),
-      sortable: true
+      sortable: true,
     },
-    { 
-      header: "Created At", 
+    {
+      header: "Created At",
       accessorKey: "created_at",
-      sortable: true
+      sortable: true,
     },
     {
       header: "Actions",
       id: "actions",
       accessorKey: "id",
-      cell: (item: Bot) => (
-        <ActionsMenu actions={getActionItems(item)} />
-      ),
+      cell: (item: Bot) => <ActionsMenu actions={getActionItems(item)} />,
     },
   ];
 
@@ -456,8 +478,8 @@ const Bots = () => {
       options: [
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
-        { value: "error", label: "Error" }
-      ]
+        { value: "error", label: "Error" },
+      ],
     },
     {
       id: "type",
@@ -465,50 +487,57 @@ const Bots = () => {
       type: "select",
       options: [
         { value: "WEBHOOK", label: "Webhook" },
-        { value: "LONG_POLLING", label: "Long Polling" }
-      ]
+        { value: "LONG_POLLING", label: "Long Polling" },
+      ],
     },
     {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search bots..."
-    }
+      placeholder: "Search bots...",
+    },
   ];
 
   const ButtonSkeleton = () => {
     return <Skeleton className="h-10 w-24" />;
   };
 
-  const getActiveBotsCount = () => botsData?.content.filter(bot => bot.status === "active").length || 0;
-  const getTotalMessagesCount = () => botsData?.content.reduce((sum, bot) => sum + (bot.messages_count || 0), 0) || 0;
-  const getTotalUsersCount = () => botsData?.content.reduce((sum, bot) => sum + (bot.users_count || 0), 0) || 0;
+  const getActiveBotsCount = () =>
+    botsData?.content.filter((bot) => bot.status === "active").length || 0;
+  const getTotalMessagesCount = () =>
+    botsData?.content.reduce(
+      (sum, bot) => sum + (bot.messages_count || 0),
+      0
+    ) || 0;
+  const getTotalUsersCount = () =>
+    botsData?.content.reduce((sum, bot) => sum + (bot.users_count || 0), 0) ||
+    0;
 
   const bulkActions = [
     {
-      label: 'Delete Selected',
+      label: "Delete Selected",
       icon: <Trash2 className="h-4 w-4" />,
-      action: () => handleBulkAction('delete')
+      action: () => handleBulkAction("delete"),
     },
     {
-      label: 'Archive Selected',
+      label: "Archive Selected",
       icon: <Archive className="h-4 w-4" />,
-      action: () => handleBulkAction('archive')
+      action: () => handleBulkAction("archive"),
     },
     {
-      label: 'Start Selected',
+      label: "Start Selected",
       icon: <Play className="h-4 w-4" />,
-      action: () => handleBulkAction('start')
+      action: () => handleBulkAction("start"),
     },
     {
-      label: 'Stop Selected',
+      label: "Stop Selected",
       icon: <Square className="h-4 w-4" />,
-      action: () => handleBulkAction('stop')
+      action: () => handleBulkAction("stop"),
     },
     {
-      label: 'Export Selected',
+      label: "Export Selected",
       icon: <Download className="h-4 w-4" />,
-      action: () => handleBulkAction('export')
+      action: () => handleBulkAction("export"),
     },
   ];
 
@@ -516,14 +545,14 @@ const Bots = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader 
-          title="Telegram Bots" 
+        <PageHeader
+          title="Telegram Bots"
           description="Manage your Telegram bots"
           actions={
             <div className="flex space-x-2">
               {selectedBots.length > 0 ? (
-                <BotBulkActions 
-                  selectedCount={selectedBots.length} 
+                <BotBulkActions
+                  selectedCount={selectedBots.length}
                   actions={bulkActions}
                 />
               ) : (
@@ -535,22 +564,22 @@ const Bots = () => {
             </div>
           }
         />
-        
-        <BotStatsCards 
+
+        <BotStatsCards
           totalBots={botsData?.totalElements || 0}
           activeBots={getActiveBotsCount()}
           totalUsers={getTotalUsersCount()}
           totalMessages={getTotalMessagesCount()}
         />
-        
+
         <div className="mt-6">
-          <DataFilters 
+          <DataFilters
             filters={filters}
             options={filterOptions}
             onChange={handleFilterChange}
             onReset={resetFilters}
           />
-          
+
           {isLoading ? (
             <div className="space-y-3 mt-6">
               <ButtonSkeleton />
@@ -563,9 +592,9 @@ const Bots = () => {
               Failed to load bots. Please try again.
             </div>
           ) : (
-            <DataTable 
-              data={botsData?.content || []} 
-              columns={columns} 
+            <DataTable
+              data={botsData?.content || []}
+              columns={columns}
               title="Telegram Bots"
               pagination={true}
               selectedItems={selectedBots}
@@ -579,16 +608,17 @@ const Bots = () => {
             />
           )}
         </div>
-        
+
         <DetailViewModal
           isOpen={isModalOpen}
           onClose={closeModal}
           title={selectedBot?.name || "Bot Details"}
           size="lg"
+          showCloseButton={false}
         >
           {selectedBot && <BotDetail bot={selectedBot} onRefresh={refetch} />}
         </DetailViewModal>
-        
+
         <DetailViewModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}

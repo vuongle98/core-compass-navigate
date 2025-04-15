@@ -76,7 +76,7 @@ class AuthService {
           {
             username,
             password,
-          }
+          },
         );
 
         this.setTokens({

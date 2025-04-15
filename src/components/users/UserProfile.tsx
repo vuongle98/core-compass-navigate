@@ -157,7 +157,8 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       isOpen={isOpen}
       onClose={onClose}
       title="User Profile"
-      size="lg"
+      size="full"
+      showCloseButton={false}
     >
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">

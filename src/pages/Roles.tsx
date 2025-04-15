@@ -30,19 +30,35 @@ interface Role {
 
 const Roles = () => {
   const [roles, setRoles] = useState<Role[]>([
-    { id: 1, code: "ADMIN", name: "Admin", description: "Full system access", userCount: 5 },
-    { id: 2, name: "Editor", description: "Can edit but not delete", userCount: 12 },
+    {
+      id: 1,
+      code: "ADMIN",
+      name: "Admin",
+      description: "Full system access",
+      userCount: 5,
+    },
+    {
+      id: 2,
+      name: "Editor",
+      description: "Can edit but not delete",
+      userCount: 12,
+    },
     { id: 3, name: "Viewer", description: "Read-only access", userCount: 45 },
-    { id: 4, name: "Manager", description: "Department management", userCount: 8 },
+    {
+      id: 4,
+      name: "Manager",
+      description: "Department management",
+      userCount: 8,
+    },
   ]);
-  
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [formData, setFormData] = useState<Partial<Role>>({
     code: "",
     name: "",
-    description: ""
+    description: "",
   });
 
   const [filter, setFilter] = useState({
@@ -69,11 +85,13 @@ const Roles = () => {
     },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -82,7 +100,7 @@ const Roles = () => {
     setFormData({
       code: "",
       name: "",
-      description: ""
+      description: "",
     });
     setDialogOpen(true);
   };
@@ -92,7 +110,7 @@ const Roles = () => {
     setFormData({
       code: role.code || "",
       name: role.name,
-      description: role.description
+      description: role.description,
     });
     setDialogOpen(true);
   };
@@ -104,34 +122,36 @@ const Roles = () => {
     try {
       if (editingRole) {
         await ApiService.put(`/api/role/${editingRole.id}`, formData);
-        
-        setRoles(prev => 
-          prev.map(role => 
-            role.id === editingRole.id 
-              ? { ...role, ...formData, userCount: role.userCount } 
+
+        setRoles((prev) =>
+          prev.map((role) =>
+            role.id === editingRole.id
+              ? { ...role, ...formData, userCount: role.userCount }
               : role
           )
         );
-        
+
         toast.success("Role updated successfully");
       } else {
         const response = await ApiService.post("/api/role", formData);
-        
+
         const newRole = {
           ...formData,
           id: Date.now(),
-          userCount: 0
+          userCount: 0,
         } as Role;
-        
-        setRoles(prev => [...prev, newRole]);
-        
+
+        setRoles((prev) => [...prev, newRole]);
+
         toast.success("Role created successfully");
       }
-      
+
       setDialogOpen(false);
     } catch (error) {
       console.error("Role operation failed:", error);
-      toast.error(editingRole ? "Failed to update role" : "Failed to create role");
+      toast.error(
+        editingRole ? "Failed to update role" : "Failed to create role"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -140,9 +160,9 @@ const Roles = () => {
   const handleDelete = async (id: number) => {
     try {
       await ApiService.delete(`/api/role/${id}`);
-      
-      setRoles(prev => prev.filter(role => role.id !== id));
-      
+
+      setRoles((prev) => prev.filter((role) => role.id !== id));
+
       toast.success("Role deleted successfully");
     } catch (error) {
       console.error("Delete operation failed:", error);
@@ -161,53 +181,71 @@ const Roles = () => {
     setFilter({ userCount: "", search: "" });
   };
 
-  const filteredRoles = roles.filter(role => {
-    const userCountFilter = filter.userCount ? (() => {
-      if (filter.userCount === "low") return role.userCount >= 0 && role.userCount <= 10;
-      if (filter.userCount === "medium") return role.userCount > 10 && role.userCount <= 30;
-      if (filter.userCount === "high") return role.userCount > 30;
-      return true;
-    })() : true;
+  const filteredRoles = roles.filter((role) => {
+    const userCountFilter = filter.userCount
+      ? (() => {
+          if (filter.userCount === "low")
+            return role.userCount >= 0 && role.userCount <= 10;
+          if (filter.userCount === "medium")
+            return role.userCount > 10 && role.userCount <= 30;
+          if (filter.userCount === "high") return role.userCount > 30;
+          return true;
+        })()
+      : true;
 
-    const searchFilter = filter.search ? (
-      role.name.toLowerCase().includes(filter.search.toLowerCase()) ||
-      (role.code && role.code.toLowerCase().includes(filter.search.toLowerCase())) ||
-      role.description.toLowerCase().includes(filter.search.toLowerCase())
-    ) : true;
+    const searchFilter = filter.search
+      ? role.name.toLowerCase().includes(filter.search.toLowerCase()) ||
+        (role.code &&
+          role.code.toLowerCase().includes(filter.search.toLowerCase())) ||
+        role.description.toLowerCase().includes(filter.search.toLowerCase())
+      : true;
 
     return userCountFilter && searchFilter;
   });
 
   const columns: Column<Role>[] = [
+    {
+      header: "#",
+      accessorKey: "id",
+      cell: (item: Role) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
+    },
     { header: "Code", accessorKey: "code", sortable: true },
-    { header: "Role Name", accessorKey: "name", sortable: true, filterable: true },
+    {
+      header: "Role Name",
+      accessorKey: "name",
+      sortable: true,
+      filterable: true,
+    },
     { header: "Description", accessorKey: "description", sortable: true },
     { header: "User Count", accessorKey: "userCount", sortable: true },
-    { 
+    {
       header: "Actions",
-      accessorKey: "id" as keyof Role,
+      accessorKey: "actions" as keyof Role,
       cell: (item: Role) => (
-        <ActionsMenu 
+        <ActionsMenu
           actions={[
             {
               type: "view" as ActionType,
               label: "View Details",
-              onClick: () => toast.info(`Viewing ${item.name}`)
+              onClick: () => toast.info(`Viewing ${item.name}`),
             },
             {
               type: "edit" as ActionType,
               label: "Edit",
-              onClick: () => openEditDialog(item)
+              onClick: () => openEditDialog(item),
             },
             {
               type: "delete" as ActionType,
               label: "Delete",
-              onClick: () => handleDelete(item.id)
-            }
+              onClick: () => handleDelete(item.id),
+            },
           ]}
         />
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -227,7 +265,6 @@ const Roles = () => {
           />
         </PageHeader>
 
-
         <div className="mt-4">
           <DataTable
             data={filteredRoles}
@@ -241,9 +278,11 @@ const Roles = () => {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingRole ? "Edit Role" : "Create New Role"}</DialogTitle>
+              <DialogTitle>
+                {editingRole ? "Edit Role" : "Create New Role"}
+              </DialogTitle>
               <DialogDescription>
-                {editingRole 
+                {editingRole
                   ? "Make changes to the role details below."
                   : "Enter the details for the new role."}
               </DialogDescription>
@@ -284,16 +323,20 @@ const Roles = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setDialogOpen(false)}
                   disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Processing..." : (editingRole ? "Save Changes" : "Create Role")}
+                  {isSubmitting
+                    ? "Processing..."
+                    : editingRole
+                    ? "Save Changes"
+                    : "Create Role"}
                 </Button>
               </DialogFooter>
             </form>

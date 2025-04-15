@@ -138,6 +138,14 @@ const Users = () => {
 
   const columns = [
     {
+      header: "#",
+      accessorKey: "id",
+      cell: (item: User) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
+    },
+    {
       header: "Name",
       accessorKey: "username" as const,
       sortable: true,

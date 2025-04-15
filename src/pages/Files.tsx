@@ -227,6 +227,14 @@ const Files = () => {
 
   const columns = [
     {
+      header: "#",
+      accessorKey: "id",
+      cell: (item: FileItem) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
+    },
+    {
       header: "File Name",
       accessorKey: "name" as const,
       cell: (fileInfo) => {

@@ -187,7 +187,7 @@ export function DataTable<T extends { id: string | number }>({
     } finally {
       setIsLoading(false);
     }
-  }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, safeInitialData]);
+  }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters]);
 
   useEffect(() => {
     if (pagination && apiEndpoint) {
