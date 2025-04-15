@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Globe, Key, MailCheck, Settings, Toggle, Tool } from "lucide-react";
+import { Globe, Key, MailCheck, Settings, ToggleLeft, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -215,7 +215,7 @@ const Configuration = () => {
     },
     {
       header: "Actions",
-      id: "actions",
+      accessorKey: "actions",
       cell: () => (
         <div className="flex space-x-2">
           <Button size="sm" variant="outline">Revoke</Button>
@@ -246,7 +246,7 @@ const Configuration = () => {
                 API Keys
               </TabsTrigger>
               <TabsTrigger value="features">
-                <Toggle className="mr-2 h-4 w-4" />
+                <ToggleLeft className="mr-2 h-4 w-4" />
                 Features
               </TabsTrigger>
               <TabsTrigger value="email">
@@ -254,7 +254,7 @@ const Configuration = () => {
                 Email/SMS
               </TabsTrigger>
               <TabsTrigger value="advanced">
-                <Tool className="mr-2 h-4 w-4" />
+                <Wrench className="mr-2 h-4 w-4" />
                 Advanced
               </TabsTrigger>
             </TabsList>

@@ -21,7 +21,7 @@ import {
   PlusCircle, 
   Settings, 
   Shield, 
-  Toggle 
+  ToggleLeft 
 } from "lucide-react";
 
 interface FeatureFlag {
@@ -172,7 +172,7 @@ const FeatureFlags = () => {
       accessorKey: "category" as const,
       cell: (info: any) => {
         const category = info.getValue();
-        let icon = <Toggle className="mr-2 h-4 w-4" />;
+        let icon = <ToggleLeft className="mr-2 h-4 w-4" />;
         
         if (category === "Analytics") {
           icon = <BarChart3 className="mr-2 h-4 w-4" />;
