@@ -2,13 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ReactNode } from "react";
 
 interface PageHeaderProps {
   title: string;
   description?: string;
   showAddButton?: boolean;
   addButtonText?: string;
-  children?: React.ReactNode;
+  button?: ReactNode;
+  children?: ReactNode;
 }
 
 export function PageHeader({
@@ -16,6 +18,7 @@ export function PageHeader({
   description,
   showAddButton = false,
   addButtonText = "Add New",
+  button,
   children,
 }: PageHeaderProps) {
   const handleAdd = () => {
@@ -32,6 +35,7 @@ export function PageHeader({
       </div>
       <div className="flex items-center gap-4">
         {children}
+        {button}
         {showAddButton && (
           <Button onClick={handleAdd}>
             <PlusCircle className="h-4 w-4 mr-2" />

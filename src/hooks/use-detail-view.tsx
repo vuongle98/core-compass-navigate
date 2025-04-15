@@ -74,10 +74,19 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
     }, 100);
   };
 
+  // Add aliases for backwards compatibility
+  const isOpen = isModalOpen;
+  const openItem = openDetail;
+  const closeItem = closeModal;
+
   return {
     selectedItem,
     isModalOpen,
     openDetail,
     closeModal,
+    // Include aliases for backward compatibility
+    isOpen,
+    openItem,
+    closeItem
   };
 }

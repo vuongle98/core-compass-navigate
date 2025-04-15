@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters } from "@/components/common/DataFilters";
-import { ButtonSkeleton } from "@/components/ui/skeleton";
+import { ButtonSkeleton } from "@/components/ui/button-skeleton";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,21 @@ interface Bot {
   description?: string;
 }
 
+// Define a type for filter options
+interface FilterOption {
+  name: string;
+  label: string;
+  options: Array<{value: string, label: string}>
+}
+
+// Define column type to match DataTable expectations
+interface Column {
+  header: string;
+  accessorKey?: string;
+  id?: string;
+  cell?: ({row}: any) => JSX.Element;
+}
+
 const Bots = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
@@ -38,7 +53,7 @@ const Bots = () => {
   });
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { isOpen: isDetailViewOpen, selectedItem: selectedBot, openItem: openBotDetail, closeItem: closeBotDetail } = useDetailView<Bot>();
+  const { isModalOpen, selectedItem: selectedBot, openDetail, closeModal } = useDetailView<Bot>();
   
   const {
     data: bots,
@@ -104,7 +119,7 @@ const Bots = () => {
       {
         type: "view" as ActionType,
         label: "View Details",
-        onClick: () => openBotDetail(bot),
+        onClick: () => openDetail(bot),
       },
       {
         type: "edit" as ActionType,
@@ -158,32 +173,33 @@ const Bots = () => {
     return actions;
   };
 
-  const columns = [
+  const columns: Column[] = [
     { 
       header: "Name", 
-      accessorKey: "name" as const,
+      accessorKey: "name",
       cell: ({ row }: any) => <div className="font-medium">{row.original.name}</div>
     },
     { 
       header: "Status", 
-      accessorKey: "status" as const,
+      accessorKey: "status",
       cell: ({ row }: any) => getStatusBadge(row.original.status)
     },
     { 
       header: "Created At", 
-      accessorKey: "created_at" as const 
+      accessorKey: "created_at" 
     },
     {
       header: "Actions",
       id: "actions",
+      accessorKey: "id",
       cell: ({ row }: any) => (
         <ActionsMenu actions={getActionItems(row.original)} />
       ),
     },
   ];
 
-  const filterOptions = [
-    { 
+  const filterOptions: Record<string, any> = {
+    status: {
       name: "status",
       label: "Status",
       options: [
@@ -193,7 +209,7 @@ const Bots = () => {
         { value: "error", label: "Error" }
       ]
     }
-  ];
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -240,8 +256,8 @@ const Bots = () => {
         
         {/* Bot Detail Modal */}
         <DetailViewModal
-          isOpen={isDetailViewOpen}
-          onClose={closeBotDetail}
+          isOpen={isModalOpen}
+          onClose={closeModal}
           title={selectedBot?.name || "Bot Details"}
           size="lg"
         >
