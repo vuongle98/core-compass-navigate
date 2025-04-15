@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PlusCircle, Pencil, Trash2, ArrowUp, ArrowDown, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +52,10 @@ interface DataTableProps<T> {
   initialPageSize?: number;
   pageSizeOptions?: number[];
   showAddButton?: boolean;
+  // Selection props
+  selectedItems?: (string | number)[];
+  onSelectItems?: (id: string | number, selected: boolean) => void;
+  onSelectAll?: (selected: boolean) => void;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -65,6 +70,9 @@ export function DataTable<T extends { id: string | number }>({
   initialPageSize = 10,
   pageSizeOptions = [10, 20, 30, 50, 100],
   showAddButton = true,
+  selectedItems = [],
+  onSelectItems,
+  onSelectAll,
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -352,6 +360,21 @@ export function DataTable<T extends { id: string | number }>({
     });
   };
 
+  const handleSelectItem = (item: T, selected: boolean) => {
+    if (onSelectItems) {
+      onSelectItems(item.id, selected);
+    }
+  };
+
+  const handleSelectAllItems = (selected: boolean) => {
+    if (onSelectAll) {
+      onSelectAll(selected);
+    }
+  };
+
+  const isAllSelected = data.length > 0 && selectedItems.length === data.length;
+  const isIndeterminate = selectedItems.length > 0 && selectedItems.length < data.length;
+
   const renderSortIndicator = (columnKey: string) => {
     if (sorting.column !== columnKey) return null;
     
@@ -405,6 +428,16 @@ export function DataTable<T extends { id: string | number }>({
     <Table>
       <TableHeader>
         <TableRow>
+          {onSelectItems && (
+            <TableHead className="w-12">
+              <Checkbox 
+                checked={isAllSelected}
+                onCheckedChange={handleSelectAllItems}
+                aria-label="Select all"
+                className={isIndeterminate ? "opacity-70" : ""}
+              />
+            </TableHead>
+          )}
           {columns.map((column) => (
             <TableHead 
               key={column.header as string}
@@ -428,13 +461,25 @@ export function DataTable<T extends { id: string | number }>({
       <TableBody>
         {isLoading ? (
           <TableRow>
-            <TableCell colSpan={columns.length + 1} className="text-center py-8">
+            <TableCell colSpan={columns.length + (onSelectItems ? 2 : 1)} className="text-center py-8">
               Loading data...
             </TableCell>
           </TableRow>
         ) : data && data.length > 0 ? (
           data.map((item) => (
-            <TableRow key={item.id as React.Key}>
+            <TableRow 
+              key={item.id as React.Key} 
+              className={selectedItems.includes(item.id) ? "bg-muted/30" : ""}
+            >
+              {onSelectItems && (
+                <TableCell className="w-12">
+                  <Checkbox 
+                    checked={selectedItems.includes(item.id)}
+                    onCheckedChange={(checked) => handleSelectItem(item, !!checked)}
+                    aria-label={`Select item ${item.id}`}
+                  />
+                </TableCell>
+              )}
               {columns.map((column) => (
                 <TableCell key={`${item.id}-${String(column.accessorKey)}`}>
                   {column.cell
@@ -454,7 +499,7 @@ export function DataTable<T extends { id: string | number }>({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={columns.length + 1} className="text-center py-8">
+            <TableCell colSpan={columns.length + (onSelectItems ? 2 : 1)} className="text-center py-8">
               No data available
             </TableCell>
           </TableRow>
@@ -471,7 +516,19 @@ export function DataTable<T extends { id: string | number }>({
         </div>
       ) : data && data.length > 0 ? (
         data.map((item) => (
-          <div key={item.id as React.Key} className="border rounded-md p-4 pb-2">
+          <div 
+            key={item.id as React.Key} 
+            className={`border rounded-md p-4 pb-2 ${selectedItems.includes(item.id) ? "bg-muted/30" : ""}`}
+          >
+            {onSelectItems && (
+              <div className="flex justify-end mb-2">
+                <Checkbox 
+                  checked={selectedItems.includes(item.id)}
+                  onCheckedChange={(checked) => handleSelectItem(item, !!checked)}
+                  aria-label={`Select item ${item.id}`}
+                />
+              </div>
+            )}
             {columns.map((column) => (
               <div 
                 key={`${item.id}-${String(column.accessorKey)}`}
