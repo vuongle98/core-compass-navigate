@@ -201,22 +201,22 @@ const Notifications = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+      cell: ({ row }: { row: any }) => <span className="text-muted-foreground">{row.original.id}</span>
     },
     { 
       header: "Title", 
       accessorKey: "title",
-      cell: (info: any) => (
-        <div className="font-medium cursor-pointer" onClick={() => setShowDetails(info.row.original.id)}>
-          {info.getValue()}
+      cell: ({ row }: { row: any }) => (
+        <div className="font-medium cursor-pointer" onClick={() => setShowDetails(row.original.id)}>
+          {row.original.title}
         </div>
       )
     },
     { 
       header: "Channel", 
       accessorKey: "channel",
-      cell: (info: any) => {
-        const channels = info.getValue().split(', ');
+      cell: ({ row }: { row: any }) => {
+        const channels = row.original.channel.split(', ');
         return (
           <div className="flex gap-1">
             {channels.includes('Email') && 
@@ -243,8 +243,8 @@ const Notifications = () => {
     {
       header: "Status",
       accessorKey: "status",
-      cell: (info: any) => {
-        const status = info.getValue();
+      cell: ({ row }: { row: any }) => {
+        const status = row.original.status;
         let bgColor = "bg-blue-100 text-blue-800";
 
         if (status === "Sent") {
@@ -267,8 +267,8 @@ const Notifications = () => {
     {
       header: "Priority",
       accessorKey: "priority",
-      cell: (info: any) => {
-        const priority = info.getValue();
+      cell: ({ row }: { row: any }) => {
+        const priority = row.original.priority;
         let bgColor = "bg-gray-100 text-gray-800";
         let label = "Low";
 
