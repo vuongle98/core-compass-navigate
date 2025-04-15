@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -150,7 +149,7 @@ const Configuration = () => {
     { 
       header: "#", 
       accessorKey: "id",
-      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+      cell: (item: Configuration) => <span className="text-muted-foreground">{item.id}</span>
     },
     { header: "Key", accessorKey: "key" as const },
     { header: "Value", accessorKey: "value" as const },
@@ -158,8 +157,8 @@ const Configuration = () => {
     { 
       header: "Environment", 
       accessorKey: "environment" as const,
-      cell: (info: any) => {
-        const env = info.getValue();
+      cell: (item: Configuration) => {
+        const env = item.environment;
         let bgColor = "bg-blue-100 text-blue-800";
         
         if (env === "Production") {
@@ -179,8 +178,8 @@ const Configuration = () => {
     { 
       header: "Description", 
       accessorKey: "description" as const,
-      cell: (info: any) => (
-        <p className="max-w-xs truncate">{info.getValue()}</p>
+      cell: (item: Configuration) => (
+        <p className="max-w-xs truncate">{item.description}</p>
       )
     },
   ];
@@ -189,7 +188,7 @@ const Configuration = () => {
     { 
       header: "#", 
       accessorKey: "id",
-      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+      cell: (item: ApiKey) => <span className="text-muted-foreground">{item.id}</span>
     },
     { header: "Name", accessorKey: "name" as const },
     { header: "Key", accessorKey: "key" as const },
@@ -198,8 +197,8 @@ const Configuration = () => {
     {
       header: "Status",
       accessorKey: "status",
-      cell: (info: any) => {
-        const status = info.getValue();
+      cell: (item: ApiKey) => {
+        const status = item.status;
         let variant: "default" | "secondary" | "destructive" | "outline" = "default";
         
         if (status === "inactive") {
@@ -216,7 +215,7 @@ const Configuration = () => {
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: () => (
+      cell: (item: ApiKey) => (
         <div className="flex space-x-2">
           <Button size="sm" variant="outline">Revoke</Button>
           <Button size="sm" variant="outline">Regenerate</Button>
