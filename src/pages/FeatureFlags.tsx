@@ -120,29 +120,29 @@ const FeatureFlags = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+      cell: (item: FeatureFlag) => <span className="text-muted-foreground">{item.id}</span>
     },
     { 
       header: "Flag Name", 
       accessorKey: "name" as const,
-      cell: (info: any) => (
-        <div className="font-medium">{info.getValue()}</div>
+      cell: (item: FeatureFlag) => (
+        <div className="font-medium">{item.name}</div>
       )
     },
     { 
       header: "Description", 
       accessorKey: "description" as const,
-      cell: (info: any) => (
-        <div className="max-w-xs truncate">{info.getValue()}</div>
+      cell: (item: FeatureFlag) => (
+        <div className="max-w-xs truncate">{item.description}</div>
       )
     },
     {
       header: "Status",
       accessorKey: "enabled" as const,
-      cell: (flag: any) => (
+      cell: (item: FeatureFlag) => (
         <Switch
-          checked={flag.getValue()}
-          onCheckedChange={() => handleToggle(flag.row.original.id, flag.getValue())}
+          checked={item.enabled}
+          onCheckedChange={() => handleToggle(item.id, item.enabled)}
           className="data-[state=checked]:bg-green-500"
         />
       ),
@@ -150,8 +150,8 @@ const FeatureFlags = () => {
     { 
       header: "Environment", 
       accessorKey: "environment" as const,
-      cell: (info: any) => {
-        const env = info.getValue();
+      cell: (item: FeatureFlag) => {
+        const env = item.environment;
         let bgColor = "bg-blue-100 text-blue-800";
         
         if (env === "Production") {
@@ -170,8 +170,8 @@ const FeatureFlags = () => {
     {
       header: "Category",
       accessorKey: "category" as const,
-      cell: (info: any) => {
-        const category = info.getValue();
+      cell: (item: FeatureFlag) => {
+        const category = item.category;
         let icon = <ToggleLeft className="mr-2 h-4 w-4" />;
         
         if (category === "Analytics") {
