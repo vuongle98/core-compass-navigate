@@ -54,6 +54,8 @@ interface DataTableProps<T> {
   selectedItems?: (string | number)[];
   onSelectItems?: (id: string | number, selected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -71,6 +73,8 @@ export function DataTable<T extends { id: string | number }>({
   selectedItems = [],
   onSelectItems,
   onSelectAll,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -210,6 +214,10 @@ export function DataTable<T extends { id: string | number }>({
       pageIndex: page,
     });
     
+    if (onPageChange) {
+      onPageChange(page);
+    }
+    
     ApiService.logUserAction('table_page_change', {
       page,
       table: title
@@ -222,6 +230,10 @@ export function DataTable<T extends { id: string | number }>({
       pageSize: size,
       pageIndex: 0,
     });
+    
+    if (onPageSizeChange) {
+      onPageSizeChange(size);
+    }
     
     ApiService.logUserAction('table_page_size_change', {
       size,

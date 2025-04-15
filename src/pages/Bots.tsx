@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -46,7 +45,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MouseEventHandler } from "react";
 
 interface Bot {
   id: number;
@@ -79,7 +77,6 @@ interface BulkAction {
   action: (ids: number[]) => void;
 }
 
-// Mock data with different bot types
 const mockBots: Bot[] = [
   {
     id: 1,
@@ -172,7 +169,6 @@ const Bots = () => {
     pageSize: 10
   });
   
-  // In a real implementation, we would pass these parameters to the API
   const {
     data: botsData,
     isLoading,
@@ -207,8 +203,6 @@ const Bots = () => {
         );
       }
       
-      // In a real API, this would be handled on the server side
-      // Here we're just simulating pagination
       const paginatedData = {
         content: filteredBots.slice(
           pagination.pageIndex * pagination.pageSize, 
@@ -229,7 +223,6 @@ const Bots = () => {
       ...prev,
       ...newFilters,
     }));
-    // Reset to first page when filters change
     setPagination(prev => ({
       ...prev,
       pageIndex: 0
@@ -278,7 +271,6 @@ const Bots = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      // In a real implementation, we would call an API endpoint here
       toast.success(`${action} completed for ${selectedBots.length} bots`);
       setSelectedBots([]);
       refetch();
@@ -500,27 +492,27 @@ const Bots = () => {
     {
       label: 'Delete Selected',
       icon: <Trash2 className="h-4 w-4" />,
-      action: () => handleBulkAction('delete')
+      action: (ids) => handleBulkAction('delete')
     },
     {
       label: 'Archive Selected',
       icon: <Archive className="h-4 w-4" />,
-      action: () => handleBulkAction('archive')
+      action: (ids) => handleBulkAction('archive')
     },
     {
       label: 'Start Selected',
       icon: <Play className="h-4 w-4" />,
-      action: () => handleBulkAction('start')
+      action: (ids) => handleBulkAction('start')
     },
     {
       label: 'Stop Selected',
       icon: <Square className="h-4 w-4" />,
-      action: () => handleBulkAction('stop')
+      action: (ids) => handleBulkAction('stop')
     },
     {
       label: 'Export Selected',
       icon: <Download className="h-4 w-4" />,
-      action: () => handleBulkAction('export')
+      action: (ids) => handleBulkAction('export')
     },
   ];
 
@@ -639,16 +631,16 @@ const Bots = () => {
             <DataTable 
               data={botsData?.content || []} 
               columns={columns} 
-              title="Telegram Bots" 
+              title="Telegram Bots"
               pagination={true}
-              initialPageSize={pagination.pageSize}
               selectedItems={selectedBots}
               onSelectItems={handleSelectItem}
               onSelectAll={handleSelectAll}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
+              initialPageSize={pagination.pageSize}
               pageSizeOptions={[5, 10, 25, 50]}
               showAddButton={false}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
             />
           )}
         </div>
