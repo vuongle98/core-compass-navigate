@@ -26,6 +26,14 @@ interface Bot {
   last_polling_time?: string;
 }
 
+interface BotStatus {
+  bot_id: number;
+  is_running: boolean;
+  memory_usage?: string;
+  cpu_usage?: string;
+  uptime?: string;
+}
+
 interface ScheduledMessage {
   id: number;
   bot_id: number;
@@ -69,21 +77,22 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     enabled: bot.scheduled === true
   });
 
-  const { data: botStatus, isLoading: isLoadingStatus, refetch: refetchStatus } = useQuery({
+  const { data: botStatuses, isLoading: isLoadingStatus, refetch: refetchStatus } = useQuery({
     queryKey: ["botStatus", bot.id],
     queryFn: async () => {
       try {
-        const response = await ApiService.get(`/api/bots/status`);
-        // Find the status for this bot
-        const allStatuses = response.data || [];
-        return allStatuses.find((status: any) => status.bot_id === bot.id) || null;
+        const response = await ApiService.get<BotStatus[]>(`/api/bots/status`);
+        return response.data || [];
       } catch (error) {
         console.error("Failed to fetch bot status:", error);
-        return null;
+        return [];
       }
     },
     refetchInterval: 30000 // Refetch every 30 seconds
   });
+  
+  // Find the status for this specific bot from the array of statuses
+  const botStatus = botStatuses ? botStatuses.find((status: BotStatus) => status.bot_id === bot.id) : null;
 
   const refreshData = () => {
     refetchMessages();

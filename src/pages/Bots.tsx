@@ -19,7 +19,10 @@ import {
   Archive,
   Download,
   UploadCloud,
-  MoreHorizontal
+  MoreHorizontal,
+  Play,
+  Square,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionType, ActionsMenu } from "@/components/common/ActionsMenu";
@@ -43,6 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MouseEventHandler } from "react";
 
 interface Bot {
   id: number;
@@ -541,7 +545,7 @@ const Bots = () => {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {bulkActions.map((action, index) => (
-                      <DropdownMenuItem key={index} onClick={action.action}>
+                      <DropdownMenuItem key={index} onClick={() => action.action(selectedBots)}>
                         {action.icon}
                         <span className="ml-2">{action.label}</span>
                       </DropdownMenuItem>
