@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Check, MailOpen, Trash, CheckCheck } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 
 interface Notification {
   id: number;
@@ -19,12 +22,15 @@ interface Notification {
   time: string;
   read: boolean;
   type: "info" | "warning" | "success" | "error";
+  sender?: string;
+  senderAvatar?: string;
 }
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Mock data - in a real app, this would come from an API
@@ -36,6 +42,8 @@ export function NotificationBell() {
         time: "5 minutes ago",
         read: false,
         type: "info",
+        sender: "System",
+        senderAvatar: "/placeholder.svg"
       },
       {
         id: 2,
@@ -44,6 +52,8 @@ export function NotificationBell() {
         time: "1 hour ago",
         read: false,
         type: "info",
+        sender: "Admin",
+        senderAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
       },
       {
         id: 3,
@@ -52,6 +62,8 @@ export function NotificationBell() {
         time: "3 hours ago",
         read: true,
         type: "success",
+        sender: "TaskManager",
+        senderAvatar: "/placeholder.svg"
       },
       {
         id: 4,
@@ -60,6 +72,8 @@ export function NotificationBell() {
         time: "Yesterday",
         read: true,
         type: "warning",
+        sender: "Storage",
+        senderAvatar: "/placeholder.svg"
       },
       {
         id: 5,
@@ -68,6 +82,8 @@ export function NotificationBell() {
         time: "2 days ago",
         read: true,
         type: "error",
+        sender: "ErrorHandler",
+        senderAvatar: "/placeholder.svg"
       }
     ];
 
@@ -90,6 +106,11 @@ export function NotificationBell() {
       !notification.read && notification.id !== id
     ).length;
     setUnreadCount(updatedUnreadCount);
+    
+    toast.success("Notification marked as read", {
+      description: "This notification has been marked as read",
+      duration: 2000
+    });
   };
 
   const markAllAsRead = () => {
@@ -120,6 +141,24 @@ export function NotificationBell() {
     }
   };
 
+  const getNotificationTypeIcon = (type: string) => {
+    switch (type) {
+      case "warning":
+        return <span className="flex h-2 w-2 rounded-full bg-yellow-500 mr-2" />;
+      case "success":
+        return <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2" />;
+      case "error":
+        return <span className="flex h-2 w-2 rounded-full bg-red-500 mr-2" />;
+      default:
+        return <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2" />;
+    }
+  };
+
+  const handleViewAllNotifications = () => {
+    navigate('/notifications');
+    setOpen(false);
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -135,7 +174,7 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[350px] p-0">
+      <PopoverContent align="end" className="w-[380px] p-0">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium">Notifications</h4>
@@ -147,7 +186,8 @@ export function NotificationBell() {
                   className="h-8 text-xs"
                   onClick={markAllAsRead}
                 >
-                  Mark all as read
+                  <CheckCheck className="mr-1 h-3 w-3" />
+                  Mark all read
                 </Button>
               )}
               {notifications.length > 0 && (
@@ -157,11 +197,24 @@ export function NotificationBell() {
                   className="h-8 text-xs"
                   onClick={clearAllNotifications}
                 >
+                  <Trash className="mr-1 h-3 w-3" />
                   Clear all
                 </Button>
               )}
             </div>
           </div>
+          {unreadCount > 0 && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Read progress</span>
+                <span>{Math.round((1 - unreadCount / notifications.length) * 100)}%</span>
+              </div>
+              <Progress 
+                value={Math.round((1 - unreadCount / notifications.length) * 100)}
+                className="h-1"
+              />
+            </div>
+          )}
         </div>
         
         <Tabs defaultValue="all" className="w-full">
@@ -173,25 +226,50 @@ export function NotificationBell() {
           </div>
           
           <TabsContent value="all" className="m-0">
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[350px]">
               {notifications.length > 0 ? (
                 <div className="divide-y">
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? "bg-blue-50" : ""}`}
+                      className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${!notification.read ? "bg-blue-50 dark:bg-blue-950/20" : ""}`}
                       onClick={() => markAsRead(notification.id)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? "bg-blue-500" : "bg-gray-300"}`} />
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage 
+                            src={notification.senderAvatar} 
+                            alt={notification.sender || ''} 
+                          />
+                          <AvatarFallback>
+                            {notification.sender?.slice(0, 2).toUpperCase() || 'SY'}
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <h5 className="text-sm font-medium">{notification.title}</h5>
-                            <span className="text-xs text-muted-foreground">{notification.time}</span>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center">
+                              {!notification.read && (
+                                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"/>
+                              )}
+                              <h5 className="text-sm font-medium">{notification.title}</h5>
+                            </div>
+                            <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">{notification.time}</span>
                           </div>
-                          <p className="text-xs text-muted-foreground">{notification.content}</p>
-                          <div className={`mt-2 text-xs px-2 py-0.5 rounded inline-block border ${getNotificationTypeStyles(notification.type)}`}>
-                            {notification.type}
+                          <p className="text-xs text-muted-foreground mt-1">{notification.content}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className={`text-xs px-2 py-0.5 rounded inline-flex items-center border ${getNotificationTypeStyles(notification.type)}`}>
+                              {getNotificationTypeIcon(notification.type)}
+                              {notification.type}
+                            </div>
+                            {!notification.read && (
+                              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={(e) => {
+                                e.stopPropagation();
+                                markAsRead(notification.id);
+                              }}>
+                                <MailOpen className="mr-1 h-3 w-3" />
+                                Mark read
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -211,7 +289,7 @@ export function NotificationBell() {
           </TabsContent>
           
           <TabsContent value="unread" className="m-0">
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[350px]">
               {notifications.filter(n => !n.read).length > 0 ? (
                 <div className="divide-y">
                   {notifications
@@ -219,19 +297,40 @@ export function NotificationBell() {
                     .map((notification) => (
                       <div
                         key={notification.id}
-                        className="p-4 hover:bg-muted/50 cursor-pointer bg-blue-50"
+                        className="p-4 hover:bg-muted/50 cursor-pointer bg-blue-50 dark:bg-blue-950/20"
                         onClick={() => markAsRead(notification.id)}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-2 h-2 rounded-full mt-2 bg-blue-500" />
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                              src={notification.senderAvatar} 
+                              alt={notification.sender || ''} 
+                            />
+                            <AvatarFallback>
+                              {notification.sender?.slice(0, 2).toUpperCase() || 'SY'}
+                            </AvatarFallback>
+                          </Avatar>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="text-sm font-medium">{notification.title}</h5>
-                              <span className="text-xs text-muted-foreground">{notification.time}</span>
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"/>
+                                <h5 className="text-sm font-medium">{notification.title}</h5>
+                              </div>
+                              <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">{notification.time}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">{notification.content}</p>
-                            <div className={`mt-2 text-xs px-2 py-0.5 rounded inline-block border ${getNotificationTypeStyles(notification.type)}`}>
-                              {notification.type}
+                            <p className="text-xs text-muted-foreground mt-1">{notification.content}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <div className={`text-xs px-2 py-0.5 rounded inline-flex items-center border ${getNotificationTypeStyles(notification.type)}`}>
+                                {getNotificationTypeIcon(notification.type)}
+                                {notification.type}
+                              </div>
+                              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={(e) => {
+                                e.stopPropagation();
+                                markAsRead(notification.id);
+                              }}>
+                                <MailOpen className="mr-1 h-3 w-3" />
+                                Mark read
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -241,7 +340,7 @@ export function NotificationBell() {
               ) : (
                 <div className="flex items-center justify-center h-full text-center p-6">
                   <div>
-                    <Bell className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <Check className="w-10 h-10 text-green-500 mx-auto mb-3" />
                     <h3 className="font-medium mb-1">No unread notifications</h3>
                     <p className="text-sm text-muted-foreground">You've read all your notifications</p>
                   </div>
@@ -250,6 +349,16 @@ export function NotificationBell() {
             </ScrollArea>
           </TabsContent>
         </Tabs>
+        
+        <div className="p-3 border-t">
+          <Button 
+            variant="outline" 
+            className="w-full text-center"
+            onClick={handleViewAllNotifications}
+          >
+            View all notifications
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

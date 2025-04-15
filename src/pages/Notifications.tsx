@@ -11,7 +11,9 @@ import {
   Download, 
   FileUp, 
   Trash2, 
-  Upload
+  Upload,
+  Bell,
+  BellRing
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -22,6 +24,9 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface Notification {
   id: number;
@@ -31,6 +36,8 @@ interface Notification {
   scheduledFor: string;
   status: string;
   selected?: boolean;
+  content?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 const Notifications = () => {
@@ -40,16 +47,20 @@ const Notifications = () => {
       title: "System Maintenance",
       channel: "Email, In-App",
       audience: "All Users",
-      scheduledFor: "2023-04-15",
+      scheduledFor: "2025-04-20",
       status: "Scheduled",
+      content: "The system will undergo maintenance from 2-4 AM EST. Please save your work.",
+      priority: 'medium'
     },
     {
       id: 2,
       title: "New Feature Announcement",
       channel: "In-App",
       audience: "Premium Users",
-      scheduledFor: "2023-04-10",
+      scheduledFor: "2025-04-18",
       status: "Sent",
+      content: "We've added exciting new features to your premium subscription!",
+      priority: 'low'
     },
     {
       id: 3,
@@ -58,28 +69,36 @@ const Notifications = () => {
       audience: "New Users",
       scheduledFor: "Automated",
       status: "Active",
+      content: "Please verify your account to access all features.",
+      priority: 'high'
     },
     {
       id: 4,
       title: "Holiday Notice",
       channel: "Email, SMS",
       audience: "All Users",
-      scheduledFor: "2023-12-20",
+      scheduledFor: "2025-04-30",
       status: "Draft",
+      content: "Our offices will be closed during the upcoming holiday.",
+      priority: 'low'
     },
     {
       id: 5,
       title: "Subscription Renewal",
       channel: "Email",
       audience: "Premium Users",
-      scheduledFor: "2023-05-01",
+      scheduledFor: "2025-05-01",
       status: "Scheduled",
+      content: "Your subscription will renew soon. Please update payment details if needed.",
+      priority: 'medium'
     },
   ]);
 
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showDetails, setShowDetails] = useState<number | null>(null);
 
   const handleSelectItem = (id: number, isSelected: boolean) => {
     if (isSelected) {
@@ -149,16 +168,20 @@ const Notifications = () => {
           title: "Imported Notification 1",
           channel: "Email",
           audience: "All Users",
-          scheduledFor: "2023-06-15",
+          scheduledFor: "2025-06-15",
           status: "Draft",
+          content: "This was imported from a CSV file",
+          priority: 'low'
         },
         {
           id: 7,
           title: "Imported Notification 2",
           channel: "In-App",
           audience: "New Users",
-          scheduledFor: "2023-06-20",
+          scheduledFor: "2025-06-20",
           status: "Draft",
+          content: "Another notification imported from CSV",
+          priority: 'medium'
         }
       ];
       
@@ -175,13 +198,39 @@ const Notifications = () => {
   };
 
   const columns = [
+    {
+      header: "#",
+      accessorKey: "id",
+      cell: (info: any) => <span className="text-muted-foreground">{info.getValue()}</span>
+    },
     { 
       header: "Title", 
-      accessorKey: "title" 
+      accessorKey: "title",
+      cell: (info: any) => (
+        <div className="font-medium cursor-pointer" onClick={() => setShowDetails(info.row.original.id)}>
+          {info.getValue()}
+        </div>
+      )
     },
     { 
       header: "Channel", 
-      accessorKey: "channel" 
+      accessorKey: "channel",
+      cell: (info: any) => {
+        const channels = info.getValue().split(', ');
+        return (
+          <div className="flex gap-1">
+            {channels.includes('Email') && 
+              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Email</span>
+            }
+            {channels.includes('In-App') && 
+              <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">In-App</span>
+            }
+            {channels.includes('SMS') && 
+              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">SMS</span>
+            }
+          </div>
+        );
+      }
     },
     { 
       header: "Audience", 
@@ -194,14 +243,15 @@ const Notifications = () => {
     {
       header: "Status",
       accessorKey: "status",
-      cell: (notification: Notification) => {
+      cell: (info: any) => {
+        const status = info.getValue();
         let bgColor = "bg-blue-100 text-blue-800";
 
-        if (notification.status === "Sent") {
+        if (status === "Sent") {
           bgColor = "bg-green-100 text-green-800";
-        } else if (notification.status === "Scheduled") {
+        } else if (status === "Scheduled") {
           bgColor = "bg-yellow-100 text-yellow-800";
-        } else if (notification.status === "Draft") {
+        } else if (status === "Draft") {
           bgColor = "bg-gray-100 text-gray-800";
         }
 
@@ -209,11 +259,36 @@ const Notifications = () => {
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor}`}
           >
-            {notification.status}
+            {status}
           </span>
         );
       },
     },
+    {
+      header: "Priority",
+      accessorKey: "priority",
+      cell: (info: any) => {
+        const priority = info.getValue();
+        let bgColor = "bg-gray-100 text-gray-800";
+        let label = "Low";
+
+        if (priority === "medium") {
+          bgColor = "bg-yellow-100 text-yellow-800";
+          label = "Medium";
+        } else if (priority === "high") {
+          bgColor = "bg-red-100 text-red-800";
+          label = "High";
+        }
+
+        return priority ? (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor}`}
+          >
+            {label}
+          </span>
+        ) : null;
+      }
+    }
   ];
 
   return (
@@ -272,16 +347,164 @@ const Notifications = () => {
         />
 
         <div className="mt-6">
-          <DataTable
-            data={notifications}
-            columns={columns}
-            title="Notification Management"
-            pagination={true}
-            onSelectItems={handleSelectItem}
-            onSelectAll={handleSelectAll}
-            selectedItems={selectedItems}
-          />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-[400px] grid-cols-2 mb-4">
+              <TabsTrigger value="overview">
+                <Bell className="mr-2 h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <BellRing className="mr-2 h-4 w-4" />
+                Delivery Analytics
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview">
+              <DataTable
+                data={notifications}
+                columns={columns}
+                title="Notification Management"
+                pagination={true}
+                onSelectItems={handleSelectItem}
+                onSelectAll={handleSelectAll}
+                selectedItems={selectedItems}
+              />
+            </TabsContent>
+            
+            <TabsContent value="analytics">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle>Delivery Success Rate</CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">98.2%</div>
+                    <Progress value={98.2} className="mt-2" />
+                    <p className="text-sm text-muted-foreground mt-2">+2.1% from last month</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle>Open Rate</CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">62.5%</div>
+                    <Progress value={62.5} className="mt-2" />
+                    <p className="text-sm text-muted-foreground mt-2">-1.8% from last month</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle>Click Rate</CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">37.8%</div>
+                    <Progress value={37.8} className="mt-2" />
+                    <p className="text-sm text-muted-foreground mt-2">+4.3% from last month</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Channel Performance</CardTitle>
+                  <CardDescription>Delivery success by channel</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">Email</span>
+                        <span className="text-sm">98.7%</span>
+                      </div>
+                      <Progress value={98.7} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">In-App</span>
+                        <span className="text-sm">99.9%</span>
+                      </div>
+                      <Progress value={99.9} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">SMS</span>
+                        <span className="text-sm">95.2%</span>
+                      </div>
+                      <Progress value={95.2} />
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">Push Notification</span>
+                        <span className="text-sm">89.6%</span>
+                      </div>
+                      <Progress value={89.6} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
+
+        {/* Detail Modal */}
+        <Dialog open={showDetails !== null} onOpenChange={() => setShowDetails(null)}>
+          <DialogContent className="sm:max-w-lg">
+            {showDetails !== null && (() => {
+              const notification = notifications.find(n => n.id === showDetails);
+              if (!notification) return null;
+              
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>{notification.title}</DialogTitle>
+                    <DialogDescription>
+                      Scheduled for {notification.scheduledFor} • {notification.audience}
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="grid gap-4 py-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Content</h3>
+                      <p>{notification.content}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
+                        <p>{notification.status}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Channel</h3>
+                        <p>{notification.channel}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowDetails(null)}>Close</Button>
+                    {notification.status !== "Sent" && (
+                      <Button onClick={() => {
+                        setNotifications(prev => 
+                          prev.map(item => item.id === showDetails ? { ...item, status: "Sent" } : item)
+                        );
+                        toast.success("Notification published");
+                        setShowDetails(null);
+                      }}>
+                        Publish Now
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
 
         {/* Import Modal */}
         <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>

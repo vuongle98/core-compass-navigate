@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,15 +8,28 @@ import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import { PlusCircle } from "lucide-react";
+import { 
+  PlusCircle, 
+  Bot, 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionType, ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { BotDetail } from "@/components/bots/BotDetail";
-import ApiService from "@/services/ApiService";
 import { BotForm } from "@/components/bots/BotForm";
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface Bot {
   id: number;
@@ -27,6 +41,9 @@ interface Bot {
   updated_at: string;
   scheduled?: boolean;
   description?: string;
+  users_count?: number;
+  messages_count?: number;
+  platform?: string;
 }
 
 interface Column {
@@ -35,6 +52,80 @@ interface Column {
   id?: string;
   cell?: ({row}: any) => JSX.Element;
 }
+
+// Mock data for bots
+const mockBots: Bot[] = [
+  {
+    id: 1,
+    name: "Support Bot",
+    token: "1234567890:ABCDEF1234567890ABCDEF",
+    webhook_url: "https://example.com/webhook/bot1",
+    status: "active",
+    created_at: "2025-03-15",
+    updated_at: "2025-04-12",
+    scheduled: true,
+    description: "Customer support bot with auto-responses",
+    users_count: 1542,
+    messages_count: 27835,
+    platform: "Telegram"
+  },
+  {
+    id: 2,
+    name: "Marketing Bot",
+    token: "0987654321:FEDCBA0987654321FEDCBA",
+    webhook_url: "https://example.com/webhook/bot2",
+    status: "inactive",
+    created_at: "2025-03-20",
+    updated_at: "2025-04-08",
+    scheduled: false,
+    description: "Automated marketing campaigns and promotions",
+    users_count: 856,
+    messages_count: 12405,
+    platform: "Telegram"
+  },
+  {
+    id: 3,
+    name: "Analytics Bot",
+    token: "5432167890:BDFACE5432167890BDFACE",
+    webhook_url: "https://example.com/webhook/bot3",
+    status: "error",
+    created_at: "2025-04-01",
+    updated_at: "2025-04-15",
+    scheduled: false,
+    description: "Collects and reports analytics data",
+    users_count: 243,
+    messages_count: 4129,
+    platform: "Telegram"
+  },
+  {
+    id: 4,
+    name: "Notifications Bot",
+    token: "6789054321:ACEFBD6789054321ACEFBD",
+    webhook_url: "https://example.com/webhook/bot4",
+    status: "active",
+    created_at: "2025-04-05",
+    updated_at: "2025-04-14",
+    scheduled: true,
+    description: "Sends notifications and alerts to users",
+    users_count: 1021,
+    messages_count: 18762,
+    platform: "Telegram"
+  },
+  {
+    id: 5,
+    name: "Test Bot",
+    token: "1357924680:FDBECA1357924680FDBECA",
+    webhook_url: "https://example.com/webhook/bot5",
+    status: "inactive",
+    created_at: "2025-04-08",
+    updated_at: "2025-04-10",
+    scheduled: false,
+    description: "Development and testing purposes only",
+    users_count: 12,
+    messages_count: 567,
+    platform: "Telegram"
+  }
+];
 
 const Bots = () => {
   const navigate = useNavigate();
@@ -46,6 +137,7 @@ const Bots = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { isModalOpen, selectedItem: selectedBot, openDetail, closeModal } = useDetailView<Bot>();
   
+  // Use mock data instead of API calls
   const {
     data: bots,
     isLoading,
@@ -54,12 +146,25 @@ const Bots = () => {
   } = useQuery({
     queryKey: ["bots", filters],
     queryFn: async () => {
-      const params: Record<string, string> = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.search) params.search = filters.search;
+      // Mock API request delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      const response = await ApiService.get<Bot[]>("/api/bots", params);
-      return response.data || [];
+      // Filter the mock data based on filters
+      let filteredBots = [...mockBots];
+      
+      if (filters.status) {
+        filteredBots = filteredBots.filter(bot => bot.status === filters.status);
+      }
+      
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredBots = filteredBots.filter(bot => 
+          bot.name.toLowerCase().includes(searchLower) || 
+          bot.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return filteredBots;
     }
   });
 
@@ -79,7 +184,9 @@ const Bots = () => {
 
   const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
     try {
-      await ApiService.post("/api/bots", data);
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
       refetch();
@@ -91,7 +198,9 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      await ApiService.post(`/api/bots/${botId}/${action}`, {});
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast.success(`Bot ${action} action completed`);
       refetch();
     } catch (error) {
@@ -161,7 +270,7 @@ const Bots = () => {
       label: "Delete",
       onClick: () => {
         if (confirm("Are you sure you want to delete this bot?")) {
-          console.log("Delete bot:", bot.id);
+          handleBotAction(bot.id, "delete");
         }
       },
     });
@@ -170,6 +279,11 @@ const Bots = () => {
   };
 
   const columns: Column[] = [
+    {
+      header: "#",
+      accessorKey: "id",
+      cell: ({ row }: any) => <span className="text-muted-foreground">{row.original.id}</span>
+    },
     { 
       header: "Name", 
       accessorKey: "name",
@@ -179,6 +293,20 @@ const Bots = () => {
       header: "Status", 
       accessorKey: "status",
       cell: ({ row }: any) => getStatusBadge(row.original.status)
+    },
+    { 
+      header: "Users", 
+      accessorKey: "users_count",
+      cell: ({ row }: any) => (
+        <div className="font-medium">{row.original.users_count?.toLocaleString()}</div>
+      )
+    },
+    { 
+      header: "Messages", 
+      accessorKey: "messages_count",
+      cell: ({ row }: any) => (
+        <div className="font-medium">{row.original.messages_count?.toLocaleString()}</div>
+      )
     },
     { 
       header: "Created At", 
@@ -217,6 +345,10 @@ const Bots = () => {
     return <Skeleton className="h-10 w-24" />;
   };
 
+  const getActiveBotsCount = () => bots?.filter(bot => bot.status === "active").length || 0;
+  const getTotalMessagesCount = () => bots?.reduce((sum, bot) => sum + (bot.messages_count || 0), 0) || 0;
+  const getTotalUsersCount = () => bots?.reduce((sum, bot) => sum + (bot.users_count || 0), 0) || 0;
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -231,6 +363,60 @@ const Bots = () => {
             </Button>
           }
         />
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Bots</CardTitle>
+              <CardDescription>Active and inactive</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Bot className="h-5 w-5 mr-2 text-primary" />
+                <div className="text-2xl font-bold">{bots?.length || 0}</div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Active Bots</CardTitle>
+              <CardDescription>Currently running</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
+                <div className="text-2xl font-bold">{getActiveBotsCount()}</div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <CardDescription>Across all bots</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-blue-500" />
+                <div className="text-2xl font-bold">{getTotalUsersCount().toLocaleString()}</div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
+              <CardDescription>Processed by bots</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Clock className="h-5 w-5 mr-2 text-purple-500" />
+                <div className="text-2xl font-bold">{getTotalMessagesCount().toLocaleString()}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         <div className="mt-6">
           <DataFilters 
@@ -248,6 +434,7 @@ const Bots = () => {
             </div>
           ) : isError ? (
             <div className="text-center p-4 text-destructive">
+              <AlertCircle className="h-6 w-6 mx-auto mb-2" />
               Failed to load bots. Please try again.
             </div>
           ) : (
