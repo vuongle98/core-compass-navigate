@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Play, Stop, X } from "lucide-react";
+import { Play, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
 
@@ -27,7 +27,7 @@ interface BotDetailProps {
 export function BotDetail({ bot, onRefresh }: BotDetailProps) {
   const handleBotAction = async (action: string) => {
     try {
-      await ApiService.post(`/api/bots/${bot.id}/${action}`);
+      await ApiService.post(`/api/bots/${bot.id}/${action}`, {});
       toast.success(`Bot ${action} action completed`);
       onRefresh();
     } catch (error) {
@@ -51,7 +51,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
                 <Badge
                   variant={
                     bot.status === "active"
-                      ? "success"
+                      ? "default"
                       : bot.status === "inactive"
                       ? "secondary"
                       : "destructive"
@@ -107,7 +107,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         
         {bot.status === "active" && (
           <Button onClick={() => handleBotAction("stop")}>
-            <Stop className="mr-2 h-4 w-4" />
+            <Square className="mr-2 h-4 w-4" />
             Stop Bot
           </Button>
         )}

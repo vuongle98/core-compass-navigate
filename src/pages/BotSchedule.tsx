@@ -67,7 +67,7 @@ const BotSchedule = () => {
         <PageHeader 
           title={`Schedule Bot${bot ? `: ${bot.name}` : ""}`}
           description="Schedule automated tasks for your Telegram bot"
-          button={
+          actions={
             <Button variant="outline" onClick={() => navigate("/bots")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Bots

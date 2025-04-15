@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { ButtonSkeleton } from "@/components/ui/button-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ const Bots = () => {
 
   const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
     try {
-      await ApiService.post("/api/bots", data);
+      await ApiService.post("/api/bots", data, {});
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
       refetch();
@@ -93,7 +93,7 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      await ApiService.post(`/api/bots/${botId}/${action}`);
+      await ApiService.post(`/api/bots/${botId}/${action}`, {});
       toast.success(`Bot ${action} action completed`);
       refetch();
     } catch (error) {
@@ -104,7 +104,7 @@ const Bots = () => {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      active: { variant: "success", label: "Active" },
+      active: { variant: "default", label: "Active" },
       inactive: { variant: "secondary", label: "Inactive" },
       error: { variant: "destructive", label: "Error" },
     };
@@ -139,7 +139,7 @@ const Bots = () => {
 
     if (bot.status === "active") {
       actions.push({
-        type: "stop" as ActionType,
+        type: "square" as ActionType,
         label: "Stop Bot",
         onClick: () => handleBotAction(bot.id, "stop"),
       });
@@ -217,6 +217,10 @@ const Bots = () => {
     }
   ];
 
+  const ButtonSkeleton = () => {
+    return <Skeleton className="h-10 w-24" />;
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -224,7 +228,7 @@ const Bots = () => {
         <PageHeader 
           title="Telegram Bots" 
           description="Manage your Telegram bots"
-          button={
+          actions={
             <Button onClick={() => setIsCreateModalOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create New Bot

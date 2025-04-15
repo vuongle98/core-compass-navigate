@@ -81,7 +81,7 @@ const BotEdit = () => {
         <PageHeader 
           title="Edit Bot" 
           description="Update your Telegram bot configuration"
-          button={
+          actions={
             <Button variant="outline" onClick={() => navigate("/bots")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Bots
