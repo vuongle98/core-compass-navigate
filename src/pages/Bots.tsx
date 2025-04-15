@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters } from "@/components/common/DataFilters";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { ButtonSkeleton } from "@/components/ui/button-skeleton";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
@@ -30,17 +30,10 @@ interface Bot {
   description?: string;
 }
 
-// Define a type for filter options
-interface FilterOption {
-  name: string;
-  label: string;
-  options: Array<{value: string, label: string}>
-}
-
 // Define column type to match DataTable expectations
 interface Column {
   header: string;
-  accessorKey?: string;
+  accessorKey: string;
   id?: string;
   cell?: ({row}: any) => JSX.Element;
 }
@@ -48,7 +41,7 @@ interface Column {
 const Bots = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
-    status: "all",
+    status: "",
     search: "",
   });
   
@@ -64,7 +57,7 @@ const Bots = () => {
     queryKey: ["bots", filters],
     queryFn: async () => {
       const params: Record<string, string> = {};
-      if (filters.status !== "all") params.status = filters.status;
+      if (filters.status) params.status = filters.status;
       if (filters.search) params.search = filters.search;
       
       const response = await ApiService.get<Bot[]>("/api/bots", params);
@@ -77,6 +70,13 @@ const Bots = () => {
       ...prev,
       ...newFilters,
     }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      status: "",
+      search: "",
+    });
   };
 
   const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
@@ -198,18 +198,24 @@ const Bots = () => {
     },
   ];
 
-  const filterOptions: Record<string, any> = {
-    status: {
-      name: "status",
+  const filterOptions: FilterOption[] = [
+    {
+      id: "status",
       label: "Status",
+      type: "select",
       options: [
-        { value: "all", label: "All Statuses" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
         { value: "error", label: "Error" }
       ]
+    },
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search bots..."
     }
-  };
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -228,9 +234,10 @@ const Bots = () => {
         
         <div className="mt-6">
           <DataFilters 
-            filters={filterOptions}
-            onFilterChange={handleFilterChange}
-            searchPlaceholder="Search bots..."
+            filters={filters}
+            options={filterOptions}
+            onChange={handleFilterChange}
+            onReset={resetFilters}
           />
           
           {isLoading ? (
