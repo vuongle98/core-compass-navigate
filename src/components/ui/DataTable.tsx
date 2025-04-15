@@ -46,13 +46,11 @@ interface DataTableProps<T> {
   onAdd?: (data: Omit<T, "id">) => void;
   onEdit?: (data: T) => void;
   onDelete?: (id: string | number) => void;
-  // Pagination props
   pagination?: boolean;
   apiEndpoint?: string;
   initialPageSize?: number;
   pageSizeOptions?: number[];
   showAddButton?: boolean;
-  // Selection props
   selectedItems?: (string | number)[];
   onSelectItems?: (id: string | number, selected: boolean) => void;
   onSelectAll?: (selected: boolean) => void;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -50,10 +49,9 @@ interface Column {
   header: string;
   accessorKey: string;
   id?: string;
-  cell?: ({row}: any) => JSX.Element;
+  cell?: (item: Bot) => JSX.Element;
 }
 
-// Mock data for bots
 const mockBots: Bot[] = [
   {
     id: 1,
@@ -137,7 +135,6 @@ const Bots = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { isModalOpen, selectedItem: selectedBot, openDetail, closeModal } = useDetailView<Bot>();
   
-  // Use mock data instead of API calls
   const {
     data: bots,
     isLoading,
@@ -146,10 +143,8 @@ const Bots = () => {
   } = useQuery({
     queryKey: ["bots", filters],
     queryFn: async () => {
-      // Mock API request delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Filter the mock data based on filters
       let filteredBots = [...mockBots];
       
       if (filters.status) {
@@ -184,7 +179,6 @@ const Bots = () => {
 
   const handleCreateBot = async (data: Omit<Bot, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 800));
       
       toast.success("Bot created successfully");
@@ -198,7 +192,6 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       toast.success(`Bot ${action} action completed`);
@@ -282,30 +275,30 @@ const Bots = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: ({ row }: any) => <span className="text-muted-foreground">{row.original.id}</span>
+      cell: (item: Bot) => <span className="text-muted-foreground">{item.id}</span>
     },
     { 
       header: "Name", 
       accessorKey: "name",
-      cell: ({ row }: any) => <div className="font-medium">{row.original.name}</div>
+      cell: (item: Bot) => <div className="font-medium">{item.name}</div>
     },
     { 
       header: "Status", 
       accessorKey: "status",
-      cell: ({ row }: any) => getStatusBadge(row.original.status)
+      cell: (item: Bot) => getStatusBadge(item.status)
     },
     { 
       header: "Users", 
       accessorKey: "users_count",
-      cell: ({ row }: any) => (
-        <div className="font-medium">{row.original.users_count?.toLocaleString()}</div>
+      cell: (item: Bot) => (
+        <div className="font-medium">{item.users_count?.toLocaleString()}</div>
       )
     },
     { 
       header: "Messages", 
       accessorKey: "messages_count",
-      cell: ({ row }: any) => (
-        <div className="font-medium">{row.original.messages_count?.toLocaleString()}</div>
+      cell: (item: Bot) => (
+        <div className="font-medium">{item.messages_count?.toLocaleString()}</div>
       )
     },
     { 
@@ -316,8 +309,8 @@ const Bots = () => {
       header: "Actions",
       id: "actions",
       accessorKey: "id",
-      cell: ({ row }: any) => (
-        <ActionsMenu actions={getActionItems(row.original)} />
+      cell: (item: Bot) => (
+        <ActionsMenu actions={getActionItems(item)} />
       ),
     },
   ];
