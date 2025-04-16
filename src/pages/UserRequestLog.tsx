@@ -303,6 +303,7 @@ const UserRequestLog = () => {
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
               totalItems={totalItems}
+              isLoading={isLoading}
             />
           )}
         </div>
