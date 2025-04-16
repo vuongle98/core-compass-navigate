@@ -29,6 +29,8 @@ import BlogNew from "./pages/BlogNew";
 import BlogEdit from "./pages/BlogEdit";
 import BlogDetail from "./pages/BlogDetail";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import ChatButton from "./components/chat/ChatButton";
+import { useFeatureFlag } from "./hooks/use-feature-flag";
 
 // Create a protected route component using our new useAuth hook
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -43,6 +45,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return <>{children}</>;
+};
+
+// Component to conditionally render the chat button
+const ChatButtonWrapper = () => {
+  const isChatEnabled = useFeatureFlag('chat_system');
+  
+  if (!isChatEnabled) {
+    return null;
+  }
+  
+  return <ChatButton />;
 };
 
 const queryClient = new QueryClient({
@@ -89,6 +102,11 @@ const App = () => (
               <Route path="/blogs/:id" element={<ProtectedRoute><BlogDetail /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            
+            {/* ChatButton is conditionally rendered based on feature flag */}
+            <ProtectedRoute>
+              <ChatButtonWrapper />
+            </ProtectedRoute>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -40,6 +40,15 @@ export function usePermissions(): UserPermissions {
     // Remove duplicates - use type assertion to ensure TypeScript knows this is Permission[]
     const uniquePermissions = [...new Set(allPermissions)] as Permission[];
     
+    // For development: Add all permissions if user is admin
+    const isAdmin = roles.some(role => role.code === 'ADMIN');
+    if (isAdmin) {
+      // Make sure admin has feature flags permission
+      if (!uniquePermissions.includes('feature:flags')) {
+        uniquePermissions.push('feature:flags');
+      }
+    }
+    
     return {
       roles,
       permissions: uniquePermissions,
