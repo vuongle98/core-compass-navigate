@@ -1,5 +1,5 @@
 
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -15,10 +15,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import ApiService from '@/services/ApiService';
 import { NotificationBell } from './NotificationBell';
+import { useState } from 'react';
+import { GlobalSearch } from './GlobalSearch';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { hasPermission } = usePermissions();
 
   const handleLogout = async () => {
     try {
@@ -46,6 +51,16 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => setSearchOpen(true)}
+        className="relative h-8 w-8 rounded-full"
+        aria-label="Search"
+      >
+        <Search className="h-4 w-4" />
+      </Button>
+
       <NotificationBell />
       
       <DropdownMenu>
@@ -77,6 +92,11 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <GlobalSearch 
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+      />
     </div>
   );
 }

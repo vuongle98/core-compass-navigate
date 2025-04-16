@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AuthService from '@/services/AuthService';
 import { toast } from 'sonner';
+import { Role } from '@/types/Auth';
 
 // Define the User interface in one place to avoid conflicts
 export interface User {
@@ -9,6 +10,8 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  roles?: string[] | Role[];
+  permissions?: string[];
   joinDate?: string;
   lastLogin?: string;
 }
@@ -20,6 +23,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUserProfile: (data: Partial<User>) => void;
+  resetPassword: (email: string) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -88,6 +93,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string): Promise<boolean> => {
+    try {
+      await AuthService.resetPassword(email);
+      toast.success("Password reset email sent", {
+        description: "Please check your inbox for instructions"
+      });
+      return true;
+    } catch (error) {
+      console.error('Reset password error:', error);
+      toast.error("Failed to send reset email", {
+        description: "Please try again later"
+      });
+      return false;
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      await AuthService.changePassword(currentPassword, newPassword);
+      toast.success("Password changed successfully");
+      return true;
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast.error("Failed to change password", {
+        description: "Please check your current password and try again"
+      });
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -96,7 +131,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
-        updateUserProfile
+        updateUserProfile,
+        resetPassword,
+        changePassword
       }}
     >
       {children}

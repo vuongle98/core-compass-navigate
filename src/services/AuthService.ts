@@ -1,98 +1,153 @@
 
-import { toast } from "sonner";
-import ApiService from "./ApiService";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  roles: string[];
-  role?: string;
-  joinDate?: string;
-  lastLogin?: string;
-}
+import EnhancedApiService from './EnhancedApiService';
+import jwtDecode from 'jwt-decode';
+import { User } from '@/contexts/AuthContext';
 
 interface AuthTokens {
   token: string;
-  refresh: string;
-  expiresAt?: number; // Timestamp when the access token expires
-  user?: User; // Store user data with tokens
-  type?: string; // Optional token field
+  refreshToken: string;
+}
+
+interface JwtPayload {
+  sub: string;
+  name: string;
+  email: string;
+  role: string;
+  roles?: string[];
+  permissions?: string[];
+  exp: number;
 }
 
 class AuthService {
-  private static instance: AuthService;
-  private readonly TOKEN_KEY = "auth_tokens";
-  private refreshPromise: Promise<string> | null = null;
+  private readonly TOKEN_KEY = 'auth_tokens';
+  private readonly USER_KEY = 'current_user';
 
-  // Singleton pattern
-  public static getInstance(): AuthService {
-    if (!AuthService.instance) {
-      AuthService.instance = new AuthService();
+  /**
+   * Login with email and password
+   */
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      const response = await EnhancedApiService.post<AuthTokens>(
+        '/api/auth/login',
+        { email, password }
+      );
+
+      if (response.success && response.data) {
+        this.setTokens(response.data);
+        
+        // Store user info from token
+        const user = this.extractUserFromToken(response.data.token);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
-    return AuthService.instance;
   }
 
   /**
-   * Login user and store tokens
+   * Logout current user
    */
-  public async login(username: string, password: string): Promise<boolean> {
+  logout(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    
+    // Attempt to call logout API (but don't wait for it)
+    EnhancedApiService.post('/api/auth/logout', {})
+      .catch(err => console.error('Error during logout:', err));
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    const tokens = this.getTokens();
+    if (!tokens) return false;
+    
     try {
-      // For development/testing - use mock data instead of API call
-      if (username === "test" && password === "test") {
-        const mockUser: User = {
-          id: "user-" + Date.now(),
-          email: username,
-          name: username.split("@")[0] || username,
-          roles: ["SUPER_ADMIN"],
-          role: "Administrator", // Added role field
-          joinDate: "January 15, 2023",
-          lastLogin: new Date().toLocaleString()
-        };
+      const decoded = jwtDecode<JwtPayload>(tokens.token);
+      const currentTime = Date.now() / 1000;
+      
+      // Token is valid if expiration time is in the future
+      return decoded.exp > currentTime;
+    } catch (error) {
+      return false;
+    }
+  }
 
-        const mockResponse = {
-          token: "mock-access-token-" + Date.now(),
-          refresh: "mock-refresh-token-" + Date.now(),
-          expiresIn: 3600, // 1 hour
-        };
+  /**
+   * Get current authentication token
+   */
+  getAccessToken(): string | null {
+    const tokens = this.getTokens();
+    return tokens ? tokens.token : null;
+  }
 
-        // Calculate expiration timestamp
-        const expiresAt = Date.now() + mockResponse.expiresIn * 1000;
+  /**
+   * Get current refresh token
+   */
+  getRefreshToken(): string | null {
+    const tokens = this.getTokens();
+    return tokens ? tokens.refreshToken : null;
+  }
 
-        // Store tokens and user data
-        this.setTokens({
-          token: mockResponse.token,
-          refresh: mockResponse.refresh,
-          expiresAt,
-          user: mockUser,
-        });
-
-        toast.success("Login successful");
-        return true;
-      } else {
-        // Fixed: Removed the third argument that was causing the error
-        const { data } = await ApiService.post<AuthTokens>(
-          "/api/auth/token",
-          {
-            username,
-            password,
-          },
-        );
-
-        this.setTokens({
-          token: data.token,
-          refresh: data.refresh,
-          expiresAt: data.expiresAt,
-          user: data.user,
-        });
-        toast.success("Login successful");
+  /**
+   * Refresh token
+   */
+  async refreshToken(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+    
+    try {
+      const response = await EnhancedApiService.post<AuthTokens>(
+        '/api/auth/refresh',
+        { refreshToken }
+      );
+      
+      if (response.success && response.data) {
+        this.setTokens(response.data);
         return true;
       }
+      return false;
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Login failed", {
-        description: "An unexpected error occurred",
-      });
+      console.error('Refresh token failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Reset password request
+   */
+  async resetPassword(email: string): Promise<boolean> {
+    try {
+      const response = await EnhancedApiService.post(
+        '/api/auth/reset-password',
+        { email }
+      );
+      
+      return response.success;
+    } catch (error) {
+      console.error('Reset password failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Change password
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
+    try {
+      const response = await EnhancedApiService.post(
+        '/api/auth/change-password',
+        { currentPassword, newPassword }
+      );
+      
+      return response.success;
+    } catch (error) {
+      console.error('Change password failed:', error);
       return false;
     }
   }
@@ -100,149 +155,60 @@ class AuthService {
   /**
    * Get current user data
    */
-  public getCurrentUser(): User | null {
-    const tokens = this.getTokens();
-    return tokens?.user || null;
-  }
-
-  /**
-   * Update the current user data in storage
-   */
-  public updateCurrentUser(userData: Partial<User>): void {
-    const tokens = this.getTokens();
-    if (tokens && tokens.user) {
-      this.setTokens({
-        ...tokens,
-        user: { ...tokens.user, ...userData }
-      });
+  getCurrentUser(): User | null {
+    const userJson = localStorage.getItem(this.USER_KEY);
+    if (!userJson) return null;
+    
+    try {
+      return JSON.parse(userJson);
+    } catch (error) {
+      return null;
     }
   }
 
   /**
-   * Logout user and clear tokens
+   * Update current user data
    */
-  public logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    // Redirect to login page is now handled by the logout function in AuthContext
+  updateCurrentUser(user: User): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
   /**
-   * Get the stored access token
-   */
-  public getAccessToken(): string | null {
-    const tokens = this.getTokens();
-    return tokens ? tokens.token : null;
-  }
-
-  /**
-   * Check if user is authenticated
-   */
-  public isAuthenticated(): boolean {
-    const tokens = this.getTokens();
-    if (!tokens) return false;
-
-    // If we have an expiration time, check if the token is still valid
-    if (tokens.expiresAt) {
-      return tokens.expiresAt > Date.now();
-    }
-
-    // If no expiration time is stored, just check if we have an access token
-    return !!tokens.token;
-  }
-
-  /**
-   * Refresh the access token using the refresh token
-   */
-  public async refreshToken(): Promise<string> {
-    // If a refresh operation is already in progress, return that promise
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    // Create a new refresh promise
-    this.refreshPromise = new Promise(async (resolve, reject) => {
-      try {
-        const tokens = this.getTokens();
-
-        if (!tokens || !tokens.refresh) {
-          this.logout();
-          reject("No refresh token available");
-          return;
-        }
-
-        // Example API call - replace with your actual refresh endpoint
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || ""}/auth/refresh`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ refresh: tokens.refresh }),
-          }
-        );
-
-        if (!response.ok) {
-          this.logout();
-          reject("Failed to refresh token");
-          return;
-        }
-
-        const data = await response.json();
-
-        // Calculate expiration timestamp if expiresIn is provided
-        let expiresAt: number | undefined;
-        if (data.expiresIn) {
-          expiresAt = Date.now() + data.expiresIn * 1000;
-        }
-
-        // Store new tokens, but keep existing user data
-        this.setTokens({
-          token: data.token,
-          refresh: data.refresh || tokens.refresh, // Use new refresh token or keep existing one
-          expiresAt,
-          user: tokens.user, // Keep existing user data
-        });
-
-        resolve(data.token);
-      } catch (error) {
-        console.error("Token refresh error:", error);
-        this.logout();
-        reject("Failed to refresh authentication");
-      } finally {
-        this.refreshPromise = null;
-      }
-    });
-
-    return this.refreshPromise;
-  }
-
-  /**
-   * Check if token needs refresh based on expiration time
-   */
-  public needsRefresh(): boolean {
-    const tokens = this.getTokens();
-    if (!tokens || !tokens.expiresAt) return false;
-
-    // Refresh if less than 5 minutes remaining
-    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-    return tokens.expiresAt - Date.now() < bufferTime;
-  }
-
-  /**
-   * Store authentication tokens
+   * Set authentication tokens in storage
    */
   private setTokens(tokens: AuthTokens): void {
     localStorage.setItem(this.TOKEN_KEY, JSON.stringify(tokens));
   }
 
   /**
-   * Get stored authentication tokens
+   * Get authentication tokens from storage
    */
   private getTokens(): AuthTokens | null {
-    const tokensStr = localStorage.getItem(this.TOKEN_KEY);
-    return tokensStr ? JSON.parse(tokensStr) : null;
+    const tokensJson = localStorage.getItem(this.TOKEN_KEY);
+    if (!tokensJson) return null;
+    
+    try {
+      return JSON.parse(tokensJson);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Extract user data from JWT token
+   */
+  private extractUserFromToken(token: string): User {
+    const decoded = jwtDecode<JwtPayload>(token);
+    
+    return {
+      id: decoded.sub,
+      name: decoded.name,
+      email: decoded.email,
+      role: decoded.role,
+      roles: decoded.roles || [decoded.role],
+      permissions: decoded.permissions
+    };
   }
 }
 
-export default AuthService.getInstance();
+export default new AuthService();
