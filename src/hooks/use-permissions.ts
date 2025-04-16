@@ -29,10 +29,12 @@ export function usePermissions(): UserPermissions {
     
     // Extract all permissions from all roles
     const allPermissions = roles.reduce((acc: Permission[], role) => {
-      return [...acc, ...role.permissions];
-    }, []);
+      // Ensure we're working with Permission[] by explicitly casting if necessary
+      const rolePermissions = role.permissions as Permission[];
+      return [...acc, ...rolePermissions];
+    }, [] as Permission[]);
     
-    // Remove duplicates and ensure they are Permission type
+    // Remove duplicates
     const uniquePermissions: Permission[] = [...new Set(allPermissions)];
     
     return {
