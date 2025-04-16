@@ -28,14 +28,17 @@ export function usePermissions(): UserPermissions {
     });
     
     // Extract all permissions from all roles
-    const allPermissions = roles.reduce((acc: Permission[], role) => {
-      // Ensure we're working with Permission[] by explicitly casting if necessary
-      const rolePermissions = role.permissions as Permission[];
+    const allPermissions = roles.reduce<Permission[]>((acc, role) => {
+      // Explicitly cast to Permission[] to avoid the unknown[] type error
+      const rolePermissions = Array.isArray(role.permissions) 
+        ? (role.permissions as Permission[])
+        : [];
+      
       return [...acc, ...rolePermissions];
     }, [] as Permission[]);
     
-    // Remove duplicates
-    const uniquePermissions: Permission[] = [...new Set(allPermissions)];
+    // Remove duplicates - use type assertion to ensure TypeScript knows this is Permission[]
+    const uniquePermissions = [...new Set(allPermissions)] as Permission[];
     
     return {
       roles,
