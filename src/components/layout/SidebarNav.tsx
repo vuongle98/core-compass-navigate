@@ -17,7 +17,7 @@ import {
   ChevronRight,
   Folder,
   Bot,
-  FileText2
+  FileText as FileIcon
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -127,7 +127,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
         {
           name: "Blog Posts",
           href: "/blogs",
-          icon: FileText2,
+          icon: FileIcon,
         }
       ]
     },

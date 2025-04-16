@@ -24,7 +24,7 @@ import {
   Bell,
   Settings,
   Flag,
-  FileText2,
+  FileText as FileIcon,
 } from "lucide-react";
 
 const Index = () => {
@@ -42,12 +42,14 @@ const Index = () => {
   } = useQuery({
     queryKey: ['dashboard-metrics', dateRange],
     queryFn: () => DashboardService.getMetrics(),
-    onError: (error) => {
-      toast({
-        title: "Error fetching metrics",
-        description: "Could not load dashboard metrics. Using cached data.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error fetching metrics",
+          description: "Could not load dashboard metrics. Using cached data.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -58,12 +60,14 @@ const Index = () => {
   } = useQuery({
     queryKey: ['dashboard-activity', dateRange],
     queryFn: () => DashboardService.getActivityData(),
-    onError: (error) => {
-      toast({
-        title: "Error fetching activity data",
-        description: "Could not load activity data. Using cached data.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error fetching activity data",
+          description: "Could not load activity data. Using cached data.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -74,12 +78,14 @@ const Index = () => {
   } = useQuery({
     queryKey: ['dashboard-performance', dateRange],
     queryFn: () => DashboardService.getPerformanceData(),
-    onError: (error) => {
-      toast({
-        title: "Error fetching performance data",
-        description: "Could not load performance data. Using cached data.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error fetching performance data",
+          description: "Could not load performance data. Using cached data.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -93,7 +99,7 @@ const Index = () => {
       notifications: Bell,
       configs: Settings,
       flags: Flag,
-      blogs: FileText2,
+      blogs: FileIcon,
     };
     
     return iconMap[metricId] || Settings;

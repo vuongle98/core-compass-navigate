@@ -18,9 +18,9 @@ const BlogNew = () => {
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs
           items={[
-            { label: "Home", href: "/" },
-            { label: "Blogs", href: "/blogs" },
-            { label: "New Post", href: "/blogs/new" },
+            { label: "Home", path: "/" },
+            { label: "Blogs", path: "/blogs" },
+            { label: "New Post", path: "/blogs/new" },
           ]}
           className="mb-6"
         />

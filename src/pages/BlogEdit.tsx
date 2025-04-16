@@ -50,9 +50,9 @@ const BlogEdit = () => {
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs
           items={[
-            { label: "Home", href: "/" },
-            { label: "Blogs", href: "/blogs" },
-            { label: "Edit Post", href: `/blogs/${id}/edit` },
+            { label: "Home", path: "/" },
+            { label: "Blogs", path: "/blogs" },
+            { label: "Edit Post", path: `/blogs/${id}/edit` },
           ]}
           className="mb-6"
         />
