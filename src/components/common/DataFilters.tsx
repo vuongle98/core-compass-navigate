@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
+import { ApiQueryFilters } from "@/hooks/use-api-query";
 
 export interface FilterOption {
   id: string;
@@ -20,9 +21,9 @@ export interface FilterOption {
 }
 
 interface DataFiltersProps {
-  filters: Record<string, string>;
+  filters: ApiQueryFilters;
   options: FilterOption[];
-  onChange: (filters: Record<string, string>) => void;
+  onChange: (filters: ApiQueryFilters) => void;
   onReset: () => void;
   className?: string;
 }
@@ -52,7 +53,7 @@ export function DataFilters({
             <div className="relative" key={option.id}>
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                value={filters[option.id] || ""}
+                value={filters[option.id]?.toString() || ""}
                 onChange={(e) => updateFilter(option.id, e.target.value)}
                 placeholder={option.placeholder || "Search..."}
                 className="pl-8 w-[150px] md:w-[200px]"
@@ -75,7 +76,7 @@ export function DataFilters({
           return (
             <Select
               key={option.id}
-              value={filters[option.id] || "all"}
+              value={filters[option.id]?.toString() || "all"}
               onValueChange={(value) => updateFilter(option.id, value)}
             >
               <SelectTrigger className="w-[130px]">

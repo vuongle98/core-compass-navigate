@@ -139,18 +139,9 @@ export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
   } = useQuery({
     queryKey,
     queryFn: fetchData,
-    onError: (err) => {
-      LoggingService.error(
-        "api_query", 
-        "fetch_error", 
-        `Error fetching ${options.endpoint}`,
-        { error: err }
-      );
-      
-      if (options.onError) {
-        options.onError(err);
-      }
-    },
+    meta: options.onError ? {
+      onError: options.onError
+    } : undefined,
   });
 
   // Update URL params if persistFilters is enabled

@@ -19,7 +19,7 @@ export interface PaginationState {
   pageIndex: number;
   pageSize: number;
   pageCount: number;
-  totalItems: number;
+  totalItems?: number;
 }
 
 interface DataTablePaginationProps {
@@ -38,13 +38,13 @@ export function DataTablePagination({
   const { pageIndex, pageSize, pageCount, totalItems } = pagination;
 
   // Calculate the range of items being displayed
-  const start = pageIndex * pageSize + 1;
-  const end = Math.min((pageIndex + 1) * pageSize, totalItems);
+  const start = totalItems ? pageIndex * pageSize + 1 : 0;
+  const end = totalItems ? Math.min((pageIndex + 1) * pageSize, totalItems) : 0;
 
   return (
     <div className="flex items-center justify-between px-2 py-4">
       <div className="flex-1 text-sm text-muted-foreground">
-        {totalItems > 0 ? (
+        {totalItems && totalItems > 0 ? (
           <p>Showing {start} to {end} of {totalItems} items</p>
         ) : (
           <p>No results</p>

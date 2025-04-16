@@ -1,4 +1,3 @@
-
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
@@ -7,6 +6,13 @@ import AuthService from "./AuthService";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 const API_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
+
+// Add custom metadata property to AxiosRequestConfig
+declare module 'axios' {
+  export interface InternalAxiosRequestConfig {
+    metadata?: Record<string, any>;
+  }
+}
 
 // Type definitions for API responses
 export interface ApiResponse<T> {
@@ -97,7 +103,7 @@ class EnhancedApiService {
     this.apiClient.interceptors.response.use(
       (response) => {
         const { config } = response;
-        const startTime = (config.metadata as any)?.startTime || Date.now();
+        const startTime = config?.metadata?.startTime || Date.now();
         
         // Log successful response
         LoggingService.logApiResponse(
@@ -114,8 +120,8 @@ class EnhancedApiService {
         const { config, response } = error;
         if (!config) return Promise.reject(error);
         
-        const startTime = (config.metadata as any)?.startTime || Date.now();
-        const retryCount = (config.metadata as any)?.retryCount || 0;
+        const startTime = config?.metadata?.startTime || Date.now();
+        const retryCount = config?.metadata?.retryCount || 0;
         
         // Log the error
         LoggingService.logApiError(
@@ -170,10 +176,10 @@ class EnhancedApiService {
             setTimeout(() => {
               // Update retry count
               const newConfig = { ...config };
-              newConfig.metadata = { 
-                ...(config.metadata as object), 
-                retryCount: retryCount + 1 
-              };
+              if (!newConfig.metadata) {
+                newConfig.metadata = {};
+              }
+              newConfig.metadata.retryCount = retryCount + 1;
               resolve(this.apiClient(newConfig));
             }, delay);
           });

@@ -15,6 +15,7 @@ import {
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { useApiQuery } from "@/hooks/use-api-query";
 import LoggingService from "@/services/LoggingService";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AuditLogItem {
   id: number;
@@ -260,19 +261,26 @@ const AuditLog = () => {
         </PageHeader>
 
         <div className="mt-6">
-          <DataTable
-            data={logs}
-            columns={columns}
-            title="Audit Events"
-            pagination={true}
-            showAddButton={false}
-            isLoading={isLoading}
-            pageCount={totalItems}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : (
+            <DataTable
+              data={logs}
+              columns={columns}
+              title="Audit Events"
+              pagination={true}
+              showAddButton={false}
+              pageCount={totalItems}
+              pageIndex={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          )}
         </div>
 
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
