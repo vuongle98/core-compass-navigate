@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -11,6 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { useApiQuery } from "@/hooks/use-api-query";
+import LoggingService from "@/services/LoggingService";
 
 interface AuditLogItem {
   id: number;
@@ -21,41 +25,124 @@ interface AuditLogItem {
   ip: string;
 }
 
-const AuditLog = () => {
-  // Mock data for audit logs
-  const [logs, setLogs] = useState<AuditLogItem[]>([
-    {
-      id: 1,
-      action: "User Created",
-      user: "Admin",
-      timestamp: "2023-04-10 14:32:45",
-      details: "New user 'john@example.com' was created",
-      ip: "192.168.1.100",
-    },
-    {
-      id: 2,
-      action: "Permission Modified",
-      user: "Admin",
-      timestamp: "2023-04-10 15:21:33",
-      details: "Permission 'manage_users' was added to role 'Manager'",
-      ip: "192.168.1.100",
-    },
-    {
-      id: 3,
-      action: "Config Changed",
-      user: "System",
-      timestamp: "2023-04-09 09:15:22",
-      details: "System configuration 'backup_schedule' was updated",
-      ip: "192.168.1.1",
-    },
-  ]);
+// Mock data for audit logs
+const mockLogs: AuditLogItem[] = [
+  {
+    id: 1,
+    action: "User Created",
+    user: "Admin",
+    timestamp: "2023-04-10 14:32:45",
+    details: "New user 'john@example.com' was created",
+    ip: "192.168.1.100",
+  },
+  {
+    id: 2,
+    action: "Permission Modified",
+    user: "Admin",
+    timestamp: "2023-04-10 15:21:33",
+    details: "Permission 'manage_users' was added to role 'Manager'",
+    ip: "192.168.1.100",
+  },
+  {
+    id: 3,
+    action: "Config Changed",
+    user: "System",
+    timestamp: "2023-04-09 09:15:22",
+    details: "System configuration 'backup_schedule' was updated",
+    ip: "192.168.1.1",
+  },
+  {
+    id: 4,
+    action: "Login Failed",
+    user: "Unknown",
+    timestamp: "2023-04-09 10:45:18",
+    details: "Failed login attempt for 'unknown@example.com'",
+    ip: "203.0.113.42",
+  },
+  {
+    id: 5,
+    action: "Data Exported",
+    user: "Manager",
+    timestamp: "2023-04-08 16:12:05",
+    details: "User data was exported to CSV",
+    ip: "192.168.1.105",
+  },
+];
 
+const AuditLog = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+
+  // Filter options for the data filters component
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search actions, users..."
+    },
+    {
+      id: "action",
+      label: "Action",
+      type: "select",
+      options: [
+        { value: "User Created", label: "User Created" },
+        { value: "Permission Modified", label: "Permission Modified" },
+        { value: "Config Changed", label: "Config Changed" },
+        { value: "Login Failed", label: "Login Failed" },
+        { value: "Data Exported", label: "Data Exported" },
+      ]
+    },
+    {
+      id: "user",
+      label: "User",
+      type: "select",
+      options: [
+        { value: "Admin", label: "Admin" },
+        { value: "System", label: "System" },
+        { value: "Manager", label: "Manager" },
+        { value: "Unknown", label: "Unknown" },
+      ]
+    }
+  ];
+
+  // Use our custom API query hook
+  const {
+    data: logs,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalItems
+  } = useApiQuery<AuditLogItem>({
+    endpoint: "/api/audit-logs",
+    queryKey: "audit-logs",
+    initialPageSize: 10,
+    persistFilters: true,
+    mockData: {
+      content: mockLogs,
+      totalElements: mockLogs.length,
+      totalPages: 1,
+      number: 0,
+      size: 10
+    }
+  });
 
   const viewDetails = (log: AuditLogItem) => {
     setSelectedLog(log);
     setDetailsOpen(true);
+    
+    // Log user action
+    LoggingService.logUserAction(
+      "audit_log", 
+      "view_details", 
+      `Viewed details for audit log ID ${log.id}`,
+      { logId: log.id }
+    );
   };
 
   const exportLog = (log: AuditLogItem) => {
@@ -73,6 +160,14 @@ const AuditLog = () => {
     URL.revokeObjectURL(url);
 
     toast.success("Log entry exported");
+    
+    // Log user action
+    LoggingService.logUserAction(
+      "audit_log", 
+      "export_log", 
+      `Exported log for audit log ID ${log.id}`,
+      { logId: log.id }
+    );
   };
 
   const columns: Column<AuditLogItem>[] = [
@@ -84,7 +179,20 @@ const AuditLog = () => {
       ),
       sortable: true,
     },
-    { header: "Action", accessorKey: "action" },
+    { 
+      header: "Action", 
+      accessorKey: "action",
+      cell: (item: AuditLogItem) => (
+        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+          item.action.includes('Created') ? 'bg-green-100 text-green-800' :
+          item.action.includes('Modified') ? 'bg-yellow-100 text-yellow-800' :
+          item.action.includes('Failed') ? 'bg-red-100 text-red-800' :
+          'bg-blue-100 text-blue-800'
+        }`}>
+          {item.action}
+        </span>
+      ),
+    },
     { header: "User", accessorKey: "user" },
     { header: "Timestamp", accessorKey: "timestamp" },
     {
@@ -117,6 +225,14 @@ const AuditLog = () => {
               onClick: () => {
                 navigator.clipboard.writeText(item.id.toString());
                 toast.success("Log ID copied to clipboard");
+                
+                // Log user action
+                LoggingService.logUserAction(
+                  "audit_log", 
+                  "copy_id", 
+                  `Copied ID ${item.id} to clipboard`,
+                  { logId: item.id }
+                );
               },
             },
           ]}
@@ -133,7 +249,15 @@ const AuditLog = () => {
           title="Audit Log"
           description="Track system-wide changes and security events"
           showAddButton={false}
-        />
+        >
+          <DataFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={setFilters}
+            onReset={resetFilters}
+            className="mt-4"
+          />
+        </PageHeader>
 
         <div className="mt-6">
           <DataTable
@@ -142,6 +266,12 @@ const AuditLog = () => {
             title="Audit Events"
             pagination={true}
             showAddButton={false}
+            isLoading={isLoading}
+            pageCount={totalItems}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
         </div>
 
@@ -174,6 +304,18 @@ const AuditLog = () => {
                   <div className="font-semibold col-span-2">Details:</div>
                   <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900">
                     {selectedLog.details}
+                  </div>
+                  
+                  <div className="font-semibold col-span-2">Associated Data:</div>
+                  <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
+                    {JSON.stringify({
+                      module: "users",
+                      objectId: 123,
+                      changes: {
+                        before: { name: "Old Name", role: "User" },
+                        after: { name: "New Name", role: "Admin" }
+                      }
+                    }, null, 2)}
                   </div>
                 </div>
               </div>
