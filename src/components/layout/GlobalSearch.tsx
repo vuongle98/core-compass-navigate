@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useDebounce } from '@/hooks/use-debounce';
+import useDebounce from '@/hooks/use-debounce';
 import { 
   Search, File, Users, Settings, Bell, Bot, Flag, 
   FileText, Calendar, Layers, Shield, Key, Database
@@ -62,7 +61,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       // Reset results to navigation items
       setResults(filteredNavigationItems);
     }
-  }, [open]);
+  }, [open, filteredNavigationItems]);
 
   useEffect(() => {
     const search = async () => {
@@ -111,14 +110,14 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       } catch (error) {
         console.error('Search error:', error);
         // Fall back to navigation items
-        setResults(filteredNavItems);
+        setResults(filteredNavigationItems);
       } finally {
         setIsLoading(false);
       }
     };
 
     search();
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, filteredNavigationItems, hasPermission]);
 
   const handleSelect = (result: SearchResult) => {
     onOpenChange(false);

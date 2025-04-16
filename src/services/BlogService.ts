@@ -1,333 +1,347 @@
-import EnhancedApiService, { ApiResponse, PaginatedData, PaginationOptions } from './EnhancedApiService';
-import LoggingService from './LoggingService';
+import EnhancedApiService from './EnhancedApiService';
 import { BlogPost, BlogComment, BlogCategory, BlogTag } from '@/types/Blog';
 
-const mockBlogPosts: BlogPost[] = [
+// Mock data for fallback when API fails
+const MOCK_BLOG_POSTS: BlogPost[] = [
   {
-    id: "mock-1",
+    id: "1",
     title: "Getting Started with React",
-    content: "React is a powerful JavaScript library for building user interfaces...",
-    excerpt: "An introduction to React fundamentals and best practices",
-    author: "Jane Doe",
-    authorId: "auth-1",
-    authorName: "Jane Doe",
-    publishDate: new Date().toISOString(),
+    slug: "getting-started-with-react",
+    content: "React is a popular JavaScript library for building user interfaces...",
+    excerpt: "Learn the basics of React and how to create your first component.",
+    authorId: "1",
+    authorName: "Jane Smith",
+    publishedAt: "2023-04-15T10:30:00",
     status: "published",
-    categoryId: "cat-1",
-    categoryName: "Development",
+    featured: true,
+    coverImage: "https://via.placeholder.com/800x450",
+    categoryId: "1",
+    categoryName: "Tutorials",
     tags: ["react", "javascript", "frontend"],
-    commentCount: 5,
-    featuredImage: "https://placehold.co/600x400?text=React"
+    readTime: 5
   },
   {
-    id: "mock-2",
-    title: "Modern TypeScript Patterns",
-    content: "TypeScript enhances JavaScript by adding static type definitions...",
-    excerpt: "Learn advanced TypeScript patterns for better code quality",
-    author: "John Smith",
-    authorId: "auth-2",
-    authorName: "John Smith",
-    publishDate: new Date().toISOString(),
+    id: "2",
+    title: "Advanced TypeScript Patterns",
+    slug: "advanced-typescript-patterns",
+    content: "TypeScript offers many advanced features that can improve your code...",
+    excerpt: "Discover advanced TypeScript patterns to write better code.",
+    authorId: "2",
+    authorName: "John Doe",
+    publishedAt: "2023-04-10T14:15:00",
     status: "published",
-    categoryId: "cat-2",
+    featured: false,
+    coverImage: "https://via.placeholder.com/800x450",
+    categoryId: "2",
     categoryName: "Programming",
-    tags: ["typescript", "javascript", "development"],
-    commentCount: 3,
-    featuredImage: "https://placehold.co/600x400?text=TypeScript"
-  }
+    tags: ["typescript", "javascript", "patterns"],
+    readTime: 8
+  },
+  // ... Additional mock posts would go here
 ];
 
 class BlogService {
-  /**
-   * Get all blog posts with pagination and filters
-   */
-  async getPosts(options: PaginationOptions = {}): Promise<ApiResponse<PaginatedData<BlogPost>>> {
+  async getPosts(limit = 10, offset = 0): Promise<{ success: boolean; data: BlogPost[] }> {
     try {
-      return await EnhancedApiService.getPaginated<BlogPost>(
-        '/api/blog/posts',
-        options
+      const response = await EnhancedApiService.get<{ posts: BlogPost[] }>(
+        `/api/blog/posts?limit=${limit}&offset=${offset}`
       );
+      
+      if (response.success && response.data) {
+        return { success: true, data: response.data.posts };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: MOCK_BLOG_POSTS };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "fetch_posts_failed", 
-        "Failed to fetch blog posts, using mock data", 
-        { error, options }
-      );
-      
-      const page = options.page || 0;
-      const size = options.pageSize || 10;
-      const start = page * size;
-      const end = start + size;
-      const paginatedPosts = mockBlogPosts.slice(start, end);
-      
-      return {
-        data: {
-          content: paginatedPosts,
-          totalElements: mockBlogPosts.length,
-          totalPages: Math.ceil(mockBlogPosts.length / size),
-          number: page,
-          size: size
-        },
-        success: true,
-        message: "Using mock data due to API failure"
-      };
+      console.error('Error fetching blog posts:', error);
+      return { success: false, data: MOCK_BLOG_POSTS };
     }
   }
 
-  /**
-   * Get a single blog post by ID
-   */
-  async getPost(id: string): Promise<ApiResponse<BlogPost>> {
+  async getPostBySlug(slug: string): Promise<{ success: boolean; data: BlogPost | null }> {
     try {
-      return await EnhancedApiService.get<BlogPost>(
-        `/api/blog/posts/${id}`
-      );
+      const response = await EnhancedApiService.get<{ post: BlogPost }>(`/api/blog/posts/${slug}`);
+      
+      if (response.success && response.data && response.data.post) {
+        return { success: true, data: response.data.post };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "fetch_post_failed", 
-        `Failed to fetch blog post with ID: ${id}, using mock data`, 
-        { error }
+      console.error('Error fetching blog post by slug:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async createPost(postData: BlogPost): Promise<{ success: boolean; data: BlogPost | null }> {
+    try {
+      const response = await EnhancedApiService.post<{ post: BlogPost }>('/api/blog/posts', postData);
+      
+      if (response.success && response.data && response.data.post) {
+        return { success: true, data: response.data.post };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async updatePost(slug: string, postData: BlogPost): Promise<{ success: boolean; data: BlogPost | null }> {
+    try {
+      const response = await EnhancedApiService.put<{ post: BlogPost }>(`/api/blog/posts/${slug}`, postData);
+      
+      if (response.success && response.data && response.data.post) {
+        return { success: true, data: response.data.post };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error updating blog post:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async deletePost(slug: string): Promise<{ success: boolean }> {
+    try {
+      const response = await EnhancedApiService.delete(`/api/blog/posts/${slug}`);
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting blog post:', error);
+      return false;
+    }
+  }
+
+  async getComments(postId: string, limit = 10, offset = 0): Promise<{ success: boolean; data: BlogComment[] }> {
+    try {
+      const response = await EnhancedApiService.get<{ comments: BlogComment[] }>(
+        `/api/blog/posts/${postId}/comments?limit=${limit}&offset=${offset}`
       );
       
-      const mockPost = mockBlogPosts.find(post => post.id === id) || mockBlogPosts[0];
-      
-      return {
-        data: mockPost,
-        success: true,
-        message: "Using mock data due to API failure"
-      };
-    }
-  }
-
-  /**
-   * Create a new blog post
-   */
-  async createPost(postData: Partial<BlogPost>): Promise<ApiResponse<BlogPost>> {
-    try {
-      return await EnhancedApiService.post<BlogPost>(
-        '/api/blog/posts',
-        postData
-      );
+      if (response.success && response.data) {
+        return { success: true, data: response.data.comments };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: this.fallbackComments };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "create_post_failed", 
-        "Failed to create blog post", 
-        { error, postData }
-      );
-      throw error;
+      console.error('Error fetching blog comments:', error);
+      return { success: false, data: this.fallbackComments };
     }
   }
 
-  /**
-   * Update an existing blog post
-   */
-  async updatePost(id: string, postData: Partial<BlogPost>): Promise<ApiResponse<BlogPost>> {
+  async createComment(postId: string, commentData: BlogComment): Promise<{ success: boolean; data: BlogComment | null }> {
     try {
-      return await EnhancedApiService.put<BlogPost>(
-        `/api/blog/posts/${id}`,
-        postData
-      );
-    } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "update_post_failed", 
-        `Failed to update blog post with ID: ${id}`, 
-        { error, postData }
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a blog post
-   */
-  async deletePost(id: string): Promise<ApiResponse<void>> {
-    try {
-      return await EnhancedApiService.delete<void>(
-        `/api/blog/posts/${id}`
-      );
-    } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "delete_post_failed", 
-        `Failed to delete blog post with ID: ${id}`, 
-        { error }
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Upload cover image for blog post
-   */
-  async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      return await EnhancedApiService.request<{ url: string }>(
-        '/api/blog/uploads',
-        {
-          method: 'POST',
-          data: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-    } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "upload_image_failed", 
-        "Failed to upload blog image", 
-        { error, fileName: file.name }
-      );
-      
-      return {
-        data: { url: `https://placehold.co/800x400?text=${encodeURIComponent(file.name)}` },
-        success: true,
-        message: "Using mock image URL due to API failure"
-      };
-    }
-  }
-
-  /**
-   * Get comments for a blog post
-   */
-  async getComments(postId: string, options: PaginationOptions = {}): Promise<ApiResponse<PaginatedData<BlogComment>>> {
-    try {
-      return await EnhancedApiService.getPaginated<BlogComment>(
+      const response = await EnhancedApiService.post<{ comment: BlogComment }>(
         `/api/blog/posts/${postId}/comments`,
-        options
+        commentData
       );
+      
+      if (response.success && response.data && response.data.comment) {
+        return { success: true, data: response.data.comment };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "fetch_comments_failed", 
-        `Failed to fetch comments for post ID: ${postId}, using mock data`, 
-        { error, options }
-      );
-      
-      const mockComments: BlogComment[] = [
-        {
-          id: "comment-1",
-          postId: postId,
-          authorId: "user-1",
-          authorName: "Reader One",
-          content: "Great article! Very informative.",
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          status: "approved"
-        },
-        {
-          id: "comment-2",
-          postId: postId,
-          authorId: "user-2",
-          authorName: "Reader Two",
-          content: "I have a question about the third point you made...",
-          createdAt: new Date(Date.now() - 43200000).toISOString(),
-          status: "approved"
-        }
-      ];
-      
-      return {
-        data: {
-          content: mockComments,
-          totalElements: mockComments.length,
-          totalPages: 1,
-          number: 0,
-          size: mockComments.length
-        },
-        success: true,
-        message: "Using mock comments due to API failure"
-      };
+      console.error('Error creating blog comment:', error);
+      return { success: false, data: null };
     }
   }
 
-  /**
-   * Add a comment to a blog post
-   */
-  async addComment(postId: string, comment: Partial<BlogComment>): Promise<ApiResponse<BlogComment>> {
+  async updateComment(commentId: string, commentData: BlogComment): Promise<{ success: boolean; data: BlogComment | null }> {
     try {
-      return await EnhancedApiService.post<BlogComment>(
-        `/api/blog/posts/${postId}/comments`,
-        comment
+      const response = await EnhancedApiService.put<{ comment: BlogComment }>(
+        `/api/blog/comments/${commentId}`,
+        commentData
       );
+      
+      if (response.success && response.data && response.data.comment) {
+        return { success: true, data: response.data.comment };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "add_comment_failed", 
-        `Failed to add comment to post ID: ${postId}`, 
-        { error, comment }
-      );
-      throw error;
+      console.error('Error updating blog comment:', error);
+      return { success: false, data: null };
     }
   }
 
-  /**
-   * Get blog categories
-   */
-  async getCategories(): Promise<ApiResponse<BlogCategory[]>> {
+  async deleteComment(commentId: string): Promise<{ success: boolean }> {
     try {
-      return await EnhancedApiService.get<BlogCategory[]>(
-        '/api/blog/categories'
-      );
+      const response = await EnhancedApiService.delete(`/api/blog/comments/${commentId}`);
+      return response.success;
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "fetch_categories_failed", 
-        "Failed to fetch blog categories, using mock data", 
-        { error }
-      );
-      
-      const mockCategories: BlogCategory[] = [
-        { id: "cat-1", name: "Development", slug: "development" },
-        { id: "cat-2", name: "Programming", slug: "programming" },
-        { id: "cat-3", name: "Design", slug: "design" },
-        { id: "cat-4", name: "Business", slug: "business" }
-      ];
-      
-      return {
-        data: mockCategories,
-        success: true,
-        message: "Using mock categories due to API failure"
-      };
+      console.error('Error deleting blog comment:', error);
+      return false;
     }
   }
 
-  /**
-   * Get blog tags
-   */
-  async getTags(): Promise<ApiResponse<BlogTag[]>> {
+  async getCategories(): Promise<{ success: boolean; data: BlogCategory[] }> {
     try {
-      return await EnhancedApiService.get<BlogTag[]>(
-        '/api/blog/tags'
-      );
+      const response = await EnhancedApiService.get<{ categories: BlogCategory[] }>('/api/blog/categories');
+      
+      if (response.success && response.data) {
+        return { success: true, data: response.data.categories };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: this.fallbackCategories };
+      }
     } catch (error) {
-      LoggingService.error(
-        "blog", 
-        "fetch_tags_failed", 
-        "Failed to fetch blog tags, using mock data", 
-        { error }
-      );
-      
-      const mockTags: BlogTag[] = [
-        { id: "tag-1", name: "React", slug: "react" },
-        { id: "tag-2", name: "JavaScript", slug: "javascript" },
-        { id: "tag-3", name: "TypeScript", slug: "typescript" },
-        { id: "tag-4", name: "Frontend", slug: "frontend" },
-        { id: "tag-5", name: "Development", slug: "development" }
-      ];
-      
-      return {
-        data: mockTags,
-        success: true,
-        message: "Using mock tags due to API failure"
-      };
+      console.error('Error fetching blog categories:', error);
+      return { success: false, data: this.fallbackCategories };
     }
   }
+
+  async createCategory(categoryData: BlogCategory): Promise<{ success: boolean; data: BlogCategory | null }> {
+    try {
+      const response = await EnhancedApiService.post<{ category: BlogCategory }>('/api/blog/categories', categoryData);
+      
+      if (response.success && response.data && response.data.category) {
+        return { success: true, data: response.data.category };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error creating blog category:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async updateCategory(categoryId: string, categoryData: BlogCategory): Promise<{ success: boolean; data: BlogCategory | null }> {
+    try {
+      const response = await EnhancedApiService.put<{ category: BlogCategory }>(
+        `/api/blog/categories/${categoryId}`,
+        categoryData
+      );
+      
+      if (response.success && response.data && response.data.category) {
+        return { success: true, data: response.data.category };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error updating blog category:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async deleteCategory(categoryId: string): Promise<{ success: boolean }> {
+    try {
+      const response = await EnhancedApiService.delete(`/api/blog/categories/${categoryId}`);
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting blog category:', error);
+      return false;
+    }
+  }
+
+  async getTags(): Promise<{ success: boolean; data: BlogTag[] }> {
+    try {
+      const response = await EnhancedApiService.get<{ tags: BlogTag[] }>('/api/blog/tags');
+      
+      if (response.success && response.data) {
+        return { success: true, data: response.data.tags };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: this.fallbackTags };
+      }
+    } catch (error) {
+      console.error('Error fetching blog tags:', error);
+      return { success: false, data: this.fallbackTags };
+    }
+  }
+
+  async createTag(tagData: BlogTag): Promise<{ success: boolean; data: BlogTag | null }> {
+    try {
+      const response = await EnhancedApiService.post<{ tag: BlogTag }>('/api/blog/tags', tagData);
+      
+      if (response.success && response.data && response.data.tag) {
+        return { success: true, data: response.data.tag };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error creating blog tag:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async updateTag(tagId: string, tagData: BlogTag): Promise<{ success: boolean; data: BlogTag | null }> {
+    try {
+      const response = await EnhancedApiService.put<{ tag: BlogTag }>(`/api/blog/tags/${tagId}`, tagData);
+      
+      if (response.success && response.data && response.data.tag) {
+        return { success: true, data: response.data.tag };
+      } else {
+        console.warn('API request successful but no data:', response);
+        return { success: false, data: null };
+      }
+    } catch (error) {
+      console.error('Error updating blog tag:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async deleteTag(tagId: string): Promise<{ success: boolean }> {
+    try {
+      const response = await EnhancedApiService.delete(`/api/blog/tags/${tagId}`);
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting blog tag:', error);
+      return false;
+    }
+  }
+
+  // Fix the mock comments
+  private fallbackComments: BlogComment[] = [
+    {
+      id: "c1",
+      postId: "1",
+      authorId: "3",
+      authorName: "Alice Johnson",
+      authorEmail: "alice@example.com",
+      content: "Great article! This really helped me understand React better.",
+      createdAt: "2023-04-16T08:30:00",
+      status: "approved"
+    },
+    {
+      id: "c2",
+      postId: "1",
+      authorId: "4",
+      authorName: "Bob Wilson",
+      authorEmail: "bob@example.com",
+      content: "I have a question about the useState hook. Can you elaborate?",
+      createdAt: "2023-04-16T09:45:00",
+      status: "approved"
+    }
+  ];
+  
+  // Fix the mock categories
+  private fallbackCategories: BlogCategory[] = [
+    { id: "1", name: "Tutorials", slug: "tutorials", postCount: 5 },
+    { id: "2", name: "Programming", slug: "programming", postCount: 8 },
+    { id: "3", name: "Design", slug: "design", postCount: 3 },
+    { id: "4", name: "Career", slug: "career", postCount: 2 }
+  ];
+  
+  // Fix the mock tags
+  private fallbackTags: BlogTag[] = [
+    { id: "1", name: "React", slug: "react", postCount: 7 },
+    { id: "2", name: "TypeScript", slug: "typescript", postCount: 5 },
+    { id: "3", name: "JavaScript", slug: "javascript", postCount: 12 },
+    { id: "4", name: "CSS", slug: "css", postCount: 4 },
+    { id: "5", name: "Frontend", slug: "frontend", postCount: 9 }
+  ];
 }
 
 export default new BlogService();

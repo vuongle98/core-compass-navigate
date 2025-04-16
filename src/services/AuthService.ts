@@ -1,6 +1,6 @@
 
+import { jwtDecode } from 'jwt-decode';
 import EnhancedApiService from './EnhancedApiService';
-import jwtDecode from 'jwt-decode';
 import { User } from '@/contexts/AuthContext';
 
 interface AuthTokens {
