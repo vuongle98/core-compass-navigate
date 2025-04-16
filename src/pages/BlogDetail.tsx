@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -59,7 +60,7 @@ const BlogDetail = () => {
 
       try {
         const response = await BlogService.getPost(id);
-        setPost(response.data);
+        setPost(response.data as BlogPost);
       } catch (error) {
         toast({
           title: "Error",

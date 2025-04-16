@@ -1,5 +1,6 @@
 
 import EnhancedApiService from "./EnhancedApiService";
+import { BlogComment } from "@/types/Blog";
 
 class BlogService {
   // Add the uploadImage method to the BlogService class
@@ -15,7 +16,7 @@ class BlogService {
           headers: { 
             'Content-Type': 'multipart/form-data' 
           },
-          transformRequest: formData => formData // Ensure axios uses the FormData as-is
+          transformRequest: (formData): FormData => formData as FormData // Ensure axios uses the FormData as-is
         }
       );
       
@@ -42,6 +43,18 @@ class BlogService {
         data: { url: fakeUrl } 
       };
     }
+  }
+
+  // Add method to get comments for a blog post
+  async getComments(postId: string) {
+    return EnhancedApiService.get<{ content: BlogComment[] }>(`/api/blog/posts/${postId}/comments`, {}, {
+      content: []
+    });
+  }
+
+  // Add method to add a comment to a blog post
+  async addComment(postId: string, commentData: Partial<BlogComment>) {
+    return EnhancedApiService.post(`/api/blog/posts/${postId}/comments`, commentData);
   }
 
   // Add other methods that were likely in the original file

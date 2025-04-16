@@ -24,7 +24,7 @@ const BlogEdit = () => {
 
       try {
         const response = await BlogService.getPost(id);
-        setPost(response.data);
+        setPost(response.data as BlogPost);
       } catch (error) {
         toast({
           title: "Error",
