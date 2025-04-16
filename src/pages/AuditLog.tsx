@@ -274,11 +274,11 @@ const AuditLog = () => {
               title="Audit Events"
               pagination={true}
               showAddButton={false}
-              pageCount={totalItems}
               pageIndex={page}
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
+              totalItems={totalItems}
             />
           )}
         </div>

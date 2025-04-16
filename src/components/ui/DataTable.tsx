@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { DataTablePagination, PaginationState } from "./DataTablePagination";
+import { DataTablePagination } from "./DataTablePagination";
 import ApiService from "@/services/ApiService";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -56,6 +57,10 @@ interface DataTableProps<T> {
   onSelectAll?: (selected: boolean) => void;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  pageIndex?: number;
+  pageSize?: number;
+  totalItems?: number;
+  isLoading?: boolean;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -75,6 +80,10 @@ export function DataTable<T extends { id: string | number }>({
   onSelectAll,
   onPageChange,
   onPageSizeChange,
+  pageIndex = 0,
+  pageSize = 10,
+  totalItems = 0,
+  isLoading = false,
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -91,15 +100,34 @@ export function DataTable<T extends { id: string | number }>({
   
   const safeInitialData = Array.isArray(initialData) ? initialData : [];
   
-  const [paginationState, setPaginationState] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: initialPageSize,
-    pageCount: 1,
-    totalItems: safeInitialData.length,
+  const [paginationState, setPaginationState] = useState({
+    pageIndex,
+    pageSize,
+    pageCount: Math.ceil(totalItems / pageSize) || 1,
+    totalItems,
   });
+  
   const [data, setData] = useState<T[]>(safeInitialData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(isLoading);
   const [hasActions, setHasActions] = useState(false);
+
+  // Update paginationState when external props change
+  useEffect(() => {
+    setPaginationState({
+      pageIndex,
+      pageSize,
+      pageCount: Math.ceil(totalItems / pageSize) || 1,
+      totalItems,
+    });
+  }, [pageIndex, pageSize, totalItems]);
+
+  useEffect(() => {
+    setData(safeInitialData);
+  }, [safeInitialData]);
+
+  useEffect(() => {
+    setLoading(isLoading);
+  }, [isLoading]);
 
   const createFormSchema = () => {
     const schemaObject: Record<string, any> = {};
@@ -149,7 +177,7 @@ export function DataTable<T extends { id: string | number }>({
   const fetchPaginatedData = useCallback(async () => {
     if (!apiEndpoint) return;
     
-    setIsLoading(true);
+    setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 300));
 
@@ -185,9 +213,9 @@ export function DataTable<T extends { id: string | number }>({
         description: "Could not retrieve the requested data. Please try again.",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters]);
+  }, [apiEndpoint, paginationState.pageIndex, paginationState.pageSize, sorting, filters, safeInitialData]);
 
   useEffect(() => {
     if (pagination && apiEndpoint) {
@@ -469,7 +497,7 @@ export function DataTable<T extends { id: string | number }>({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {isLoading ? (
+        {loading ? (
           <TableRow>
             <TableCell colSpan={columns.length + (onSelectItems ? 2 : 1)} className="text-center py-8">
               Loading data...
@@ -520,7 +548,7 @@ export function DataTable<T extends { id: string | number }>({
 
   const renderMobileTable = () => (
     <div className="space-y-4">
-      {isLoading ? (
+      {loading ? (
         <div className="text-center py-8 border rounded-md">
           Loading data...
         </div>
