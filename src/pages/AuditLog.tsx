@@ -16,6 +16,7 @@ import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { useApiQuery } from "@/hooks/use-api-query";
 import LoggingService from "@/services/LoggingService";
 import { Skeleton } from "@/components/ui/skeleton";
+import useDebounce from "@/hooks/use-debounce";
 
 interface AuditLogItem {
   id: number;
@@ -73,6 +74,10 @@ const mockLogs: AuditLogItem[] = [
 const AuditLog = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Filter options for the data filters component
   const filterOptions: FilterOption[] = [
@@ -118,10 +123,11 @@ const AuditLog = () => {
     setPage,
     pageSize,
     setPageSize,
-    totalItems
+    totalItems,
+    error
   } = useApiQuery<AuditLogItem>({
     endpoint: "/api/audit-logs",
-    queryKey: "audit-logs",
+    queryKey: ["audit-logs", debouncedSearchTerm],
     initialPageSize: 10,
     persistFilters: true,
     mockData: {
@@ -130,8 +136,20 @@ const AuditLog = () => {
       totalPages: 1,
       number: 0,
       size: 10
+    },
+    onError: (err) => {
+      console.error("Failed to fetch audit logs:", err);
+      toast.error("Failed to load audit logs, using cached data", {
+        description: "Could not connect to the server. Please try again later."
+      });
     }
   });
+  
+  // Handle search input
+  const handleSearchInput = (value: string) => {
+    setSearchTerm(value);
+    setFilters({ ...filters, search: value });
+  };
 
   const viewDetails = (log: AuditLogItem) => {
     setSelectedLog(log);
@@ -254,8 +272,17 @@ const AuditLog = () => {
           <DataFilters
             filters={filters}
             options={filterOptions}
-            onChange={setFilters}
-            onReset={resetFilters}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
             className="mt-4"
           />
         </PageHeader>

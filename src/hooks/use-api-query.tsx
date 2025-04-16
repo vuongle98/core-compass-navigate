@@ -120,13 +120,46 @@ export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
       { paginationOptions }
     );
 
-    const response = await EnhancedApiService.getPaginated<T>(
-      options.endpoint, 
-      paginationOptions,
-      options.mockData
-    );
-    
-    return response.data;
+    try {
+      const response = await EnhancedApiService.getPaginated<T>(
+        options.endpoint, 
+        paginationOptions
+      );
+      return response.data;
+    } catch (error) {
+      // Log the error
+      LoggingService.error(
+        "api_query",
+        "fetch_failed",
+        `Failed to fetch data from ${options.endpoint}`,
+        { error, paginationOptions }
+      );
+      
+      // If mock data is provided, use it as fallback
+      if (options.mockData) {
+        LoggingService.info(
+          "api_query",
+          "using_mock_data",
+          `Falling back to mock data for ${options.endpoint}`
+        );
+        // Return the mock data with the appropriate pagination
+        const mockItems = options.mockData.content || [];
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedItems = mockItems.slice(startIndex, endIndex);
+        
+        return {
+          content: paginatedItems,
+          totalElements: mockItems.length,
+          totalPages: Math.ceil(mockItems.length / pageSize),
+          number: page,
+          size: pageSize
+        };
+      }
+      
+      // If no mock data, re-throw the error
+      throw error;
+    }
   }, [options.endpoint, options.mockData, page, pageSize, sort, filters]);
 
   // Setup the query
@@ -139,9 +172,9 @@ export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
   } = useQuery({
     queryKey,
     queryFn: fetchData,
-    meta: options.onError ? {
+    meta: {
       onError: options.onError
-    } : undefined,
+    },
   });
 
   // Update URL params if persistFilters is enabled
