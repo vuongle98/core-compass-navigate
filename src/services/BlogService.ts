@@ -1,4 +1,3 @@
-
 import EnhancedApiService from "./EnhancedApiService";
 import { BlogComment } from "@/types/Blog";
 
@@ -9,14 +8,17 @@ class BlogService {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await EnhancedApiService.post<{ url: string }>(
-        '/api/blog/upload', 
-        formData,
+      // Use the request method directly to pass headers in options
+      const response = await EnhancedApiService.request<{ url: string }>(
+        '/api/blog/upload',
         { 
+          method: "POST", 
+          data: formData,
           headers: { 
             'Content-Type': 'multipart/form-data' 
           },
-          transformRequest: (formData): FormData => formData as FormData // Ensure axios uses the FormData as-is
+          // If axios is being used internally, this ensures FormData is sent as-is
+          transformRequest: [(data) => data]
         }
       );
       
