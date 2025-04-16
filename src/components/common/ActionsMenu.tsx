@@ -10,19 +10,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 
+export type ActionType = "view" | "edit" | "delete" | "download" | "copy" | "play" | "square" | "calendar-clock" | "x" | "trash";
+
 export interface Action {
   label: string;
   icon?: LucideIcon;
   onClick: () => void;
   destructive?: boolean;
+  type?: ActionType;
 }
 
 interface ActionsMenuProps {
   actions: Action[];
-  size?: "sm" | "md";
+  size?: "sm" | "default" | "lg" | "icon";
 }
 
-export const ActionsMenu = ({ actions, size = "md" }: ActionsMenuProps) => {
+export const ActionsMenu = ({ actions, size = "sm" }: ActionsMenuProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,13 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
+import { ReactNode } from "react";
 
 export interface Column<T> {
   header: string;
   accessorKey?: string;
   id?: string;
-  cell?: (item: T) => React.ReactNode;
+  cell?: (item: T) => ReactNode;
   sortable?: boolean;
 }
 
@@ -55,12 +57,12 @@ export function DataTable<T>({
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    onPageChange?.(newPage);
+    if (onPageChange) onPageChange(newPage);
   };
 
   const handlePageSizeChange = (newSize: number) => {
     setSize(newSize);
-    onPageSizeChange?.(newSize);
+    if (onPageSizeChange) onPageSizeChange(newSize);
   };
 
   return (
@@ -109,8 +111,8 @@ export function DataTable<T>({
               data.map((item, index) => (
                 <TableRow key={index}>
                   {columns.map((column) => (
-                    <TableCell key={column.header}>
-                      {column.cell ? column.cell(item) : item[column.accessorKey as keyof T]}
+                    <TableCell key={column.header || column.id}>
+                      {column.cell ? column.cell(item) : column.accessorKey ? item[column.accessorKey as keyof T] as ReactNode : null}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -121,9 +123,10 @@ export function DataTable<T>({
       </CardContent>
       {pagination && (
         <DataTablePagination
-          pageIndex={pageIndex}
-          pageSize={pageSize}
+          pageIndex={page}
+          pageSize={size}
           totalItems={totalItems}
+          pageCount={Math.ceil(totalItems / size)}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
         />

@@ -23,20 +23,24 @@ export interface PaginationState {
 }
 
 interface DataTablePaginationProps {
-  pagination: PaginationState;
+  pageIndex: number;
+  pageSize: number;
+  totalItems?: number;
+  pageCount?: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
 }
 
 export function DataTablePagination({
-  pagination,
+  pageIndex = 0,
+  pageSize = 10,
+  totalItems = 0,
+  pageCount = 1,
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 20, 30, 50, 100],
 }: DataTablePaginationProps) {
-  const { pageIndex, pageSize, pageCount = 1, totalItems } = pagination;
-
   // Calculate the range of items being displayed
   const start = totalItems ? pageIndex * pageSize + 1 : 0;
   const end = totalItems ? Math.min((pageIndex + 1) * pageSize, totalItems) : 0;
