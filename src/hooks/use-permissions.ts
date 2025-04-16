@@ -32,8 +32,8 @@ export function usePermissions(): UserPermissions {
       return [...acc, ...role.permissions];
     }, []);
     
-    // Remove duplicates
-    const uniquePermissions = [...new Set(allPermissions)];
+    // Remove duplicates and ensure they are Permission type
+    const uniquePermissions: Permission[] = [...new Set(allPermissions)];
     
     return {
       roles,

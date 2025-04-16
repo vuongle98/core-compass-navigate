@@ -1,3 +1,4 @@
+
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { BlogPost, BlogCategory, BlogTag } from "@/types/Blog";
 import BlogService from "@/services/BlogService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const postSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -65,10 +67,12 @@ interface BlogPostFormProps {
 export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPostFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [tags, setTags] = useState<BlogTag[]>([]);
   const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>(post?.coverImage);
   const [tagInput, setTagInput] = useState("");
+  const [submitting, setSubmitting] = useState(isSubmitting);
   
   const isEditMode = !!post;
 
@@ -132,14 +136,18 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
   }, [form]);
 
   const handleSubmit = async (values: FormValues) => {
+    setSubmitting(true);
     try {
       const postData = {
         ...values,
         publishDate: values.publishDate.toISOString(),
         coverImage: coverImageUrl,
+        // Add required fields for API
+        authorId: user?.id || 'anonymous',
+        authorName: user?.name || user?.email || 'Anonymous User',
       };
 
-      if (isEditMode) {
+      if (isEditMode && post) {
         await BlogService.updatePost(post.id, postData);
         toast({
           title: "Post updated",
@@ -166,6 +174,8 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
           : "Failed to create the blog post. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 

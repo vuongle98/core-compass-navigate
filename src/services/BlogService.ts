@@ -11,14 +11,16 @@ const MOCK_BLOG_POSTS: BlogPost[] = [
     excerpt: "Learn the basics of React and how to create your first component.",
     authorId: "1",
     authorName: "Jane Smith",
-    publishedAt: "2023-04-15T10:30:00",
+    publishDate: "2023-04-15T10:30:00",
     status: "published",
-    featured: true,
     coverImage: "https://via.placeholder.com/800x450",
     categoryId: "1",
     categoryName: "Tutorials",
     tags: ["react", "javascript", "frontend"],
-    readTime: 5
+    createdAt: "2023-04-10T14:15:00",
+    updatedAt: "2023-04-15T10:30:00",
+    commentCount: 5,
+    viewCount: 123
   },
   {
     id: "2",
@@ -28,14 +30,16 @@ const MOCK_BLOG_POSTS: BlogPost[] = [
     excerpt: "Discover advanced TypeScript patterns to write better code.",
     authorId: "2",
     authorName: "John Doe",
-    publishedAt: "2023-04-10T14:15:00",
+    publishDate: "2023-04-10T14:15:00",
     status: "published",
-    featured: false,
     coverImage: "https://via.placeholder.com/800x450",
     categoryId: "2",
     categoryName: "Programming",
     tags: ["typescript", "javascript", "patterns"],
-    readTime: 8
+    createdAt: "2023-03-10T14:15:00",
+    updatedAt: "2023-04-10T14:15:00",
+    commentCount: 3,
+    viewCount: 87
   },
   // ... Additional mock posts would go here
 ];
@@ -75,7 +79,25 @@ class BlogService {
     }
   }
 
-  async createPost(postData: BlogPost): Promise<{ success: boolean; data: BlogPost | null }> {
+  async getPost(id: string): Promise<{ success: boolean; data: BlogPost }> {
+    try {
+      const response = await EnhancedApiService.get<{ post: BlogPost }>(`/api/blog/posts/id/${id}`);
+      
+      if (response.success && response.data && response.data.post) {
+        return { success: true, data: response.data.post };
+      } else {
+        console.warn('API request successful but no data:', response);
+        const mockPost = MOCK_BLOG_POSTS.find(post => post.id === id) || MOCK_BLOG_POSTS[0];
+        return { success: false, data: mockPost };
+      }
+    } catch (error) {
+      console.error('Error fetching blog post by id:', error);
+      const mockPost = MOCK_BLOG_POSTS.find(post => post.id === id) || MOCK_BLOG_POSTS[0];
+      return { success: false, data: mockPost };
+    }
+  }
+
+  async createPost(postData: Partial<BlogPost>): Promise<{ success: boolean; data: BlogPost | null }> {
     try {
       const response = await EnhancedApiService.post<{ post: BlogPost }>('/api/blog/posts', postData);
       
@@ -91,9 +113,9 @@ class BlogService {
     }
   }
 
-  async updatePost(slug: string, postData: BlogPost): Promise<{ success: boolean; data: BlogPost | null }> {
+  async updatePost(id: string, postData: Partial<BlogPost>): Promise<{ success: boolean; data: BlogPost | null }> {
     try {
-      const response = await EnhancedApiService.put<{ post: BlogPost }>(`/api/blog/posts/${slug}`, postData);
+      const response = await EnhancedApiService.put<{ post: BlogPost }>(`/api/blog/posts/${id}`, postData);
       
       if (response.success && response.data && response.data.post) {
         return { success: true, data: response.data.post };
@@ -107,35 +129,35 @@ class BlogService {
     }
   }
 
-  async deletePost(slug: string): Promise<{ success: boolean }> {
+  async deletePost(id: string): Promise<{ success: boolean }> {
     try {
-      const response = await EnhancedApiService.delete(`/api/blog/posts/${slug}`);
-      return response.success;
+      const response = await EnhancedApiService.delete(`/api/blog/posts/${id}`);
+      return { success: response.success };
     } catch (error) {
       console.error('Error deleting blog post:', error);
-      return false;
+      return { success: false };
     }
   }
 
-  async getComments(postId: string, limit = 10, offset = 0): Promise<{ success: boolean; data: BlogComment[] }> {
+  async getComments(postId: string, limit = 10, offset = 0): Promise<{ success: boolean; data: { content: BlogComment[] } }> {
     try {
       const response = await EnhancedApiService.get<{ comments: BlogComment[] }>(
         `/api/blog/posts/${postId}/comments?limit=${limit}&offset=${offset}`
       );
       
       if (response.success && response.data) {
-        return { success: true, data: response.data.comments };
+        return { success: true, data: { content: response.data.comments } };
       } else {
         console.warn('API request successful but no data:', response);
-        return { success: false, data: this.fallbackComments };
+        return { success: false, data: { content: this.fallbackComments } };
       }
     } catch (error) {
       console.error('Error fetching blog comments:', error);
-      return { success: false, data: this.fallbackComments };
+      return { success: false, data: { content: this.fallbackComments } };
     }
   }
 
-  async createComment(postId: string, commentData: BlogComment): Promise<{ success: boolean; data: BlogComment | null }> {
+  async addComment(postId: string, commentData: Partial<BlogComment>): Promise<{ success: boolean; data: BlogComment | null }> {
     try {
       const response = await EnhancedApiService.post<{ comment: BlogComment }>(
         `/api/blog/posts/${postId}/comments`,
@@ -154,7 +176,7 @@ class BlogService {
     }
   }
 
-  async updateComment(commentId: string, commentData: BlogComment): Promise<{ success: boolean; data: BlogComment | null }> {
+  async updateComment(commentId: string, commentData: Partial<BlogComment>): Promise<{ success: boolean; data: BlogComment | null }> {
     try {
       const response = await EnhancedApiService.put<{ comment: BlogComment }>(
         `/api/blog/comments/${commentId}`,
@@ -176,10 +198,10 @@ class BlogService {
   async deleteComment(commentId: string): Promise<{ success: boolean }> {
     try {
       const response = await EnhancedApiService.delete(`/api/blog/comments/${commentId}`);
-      return response.success;
+      return { success: response.success };
     } catch (error) {
       console.error('Error deleting blog comment:', error);
-      return false;
+      return { success: false };
     }
   }
 
@@ -237,10 +259,10 @@ class BlogService {
   async deleteCategory(categoryId: string): Promise<{ success: boolean }> {
     try {
       const response = await EnhancedApiService.delete(`/api/blog/categories/${categoryId}`);
-      return response.success;
+      return { success: response.success };
     } catch (error) {
       console.error('Error deleting blog category:', error);
-      return false;
+      return { success: false };
     }
   }
 
@@ -295,10 +317,37 @@ class BlogService {
   async deleteTag(tagId: string): Promise<{ success: boolean }> {
     try {
       const response = await EnhancedApiService.delete(`/api/blog/tags/${tagId}`);
-      return response.success;
+      return { success: response.success };
     } catch (error) {
       console.error('Error deleting blog tag:', error);
-      return false;
+      return { success: false };
+    }
+  }
+
+  async uploadImage(file: File): Promise<{ success: boolean; data: { url: string } }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await EnhancedApiService.post<{ url: string }>(
+        '/api/blog/upload', 
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      
+      if (response.success && response.data && response.data.url) {
+        return { success: true, data: { url: response.data.url } };
+      } else {
+        console.warn('Upload API request successful but no data:', response);
+        
+        const fakeUrl = URL.createObjectURL(file);
+        return { success: false, data: { url: fakeUrl } };
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      
+      const fakeUrl = URL.createObjectURL(file);
+      return { success: false, data: { url: fakeUrl } };
     }
   }
 
