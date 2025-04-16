@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ export interface Column<T> {
   id?: string;
   cell?: (item: T) => ReactNode;
   sortable?: boolean;
+  filterable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -36,6 +36,15 @@ interface DataTableProps<T> {
   pageSize?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  apiEndpoint?: string;
+  initialPageSize?: number;
+  pageSizeOptions?: number[];
+  selectedItems?: (number | string)[];
+  onSelectItems?: (id: number | string, selected: boolean) => void;
+  onSelectAll?: (selected: boolean) => void;
+  onAdd?: (item: any) => void;
+  onEdit?: (item: any) => void;
+  onDelete?: (id: number | string) => void;
 }
 
 export function DataTable<T>({
@@ -51,9 +60,18 @@ export function DataTable<T>({
   pageSize = 10,
   onPageChange,
   onPageSizeChange,
+  initialPageSize,
+  pageSizeOptions,
+  selectedItems,
+  onSelectItems,
+  onSelectAll,
+  apiEndpoint,
+  onAdd,
+  onEdit,
+  onDelete,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
-  const [size, setSize] = useState(pageSize);
+  const [size, setSize] = useState(initialPageSize || pageSize);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -129,6 +147,7 @@ export function DataTable<T>({
           pageCount={Math.ceil(totalItems / size)}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={pageSizeOptions}
         />
       )}
     </Card>
