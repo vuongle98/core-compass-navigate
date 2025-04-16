@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DateRange } from "react-day-picker";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -12,6 +12,10 @@ import { PerformanceGraph } from "@/components/dashboard/PerformanceGraph";
 import { UpcomingEventsWidget } from "@/components/dashboard/UpcomingEventsWidget";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
+import DashboardService, { DashboardMetric } from "@/services/DashboardService";
 import {
   Users,
   Shield,
@@ -20,103 +24,102 @@ import {
   Bell,
   Settings,
   Flag,
+  FileText2,
 } from "lucide-react";
 
 const Index = () => {
+  const { toast } = useToast();
   // Date range state for filtering dashboard data
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date(),
   });
 
-  // Mock data for dashboard metrics
-  const stats = [
-    {
-      title: "Total Users",
-      value: 2458,
-      icon: Users,
-      change: 12.5,
-      link: "/users",
-    },
-    { title: "Roles", value: 14, icon: Shield, change: 0, link: "/roles" },
-    {
-      title: "Permissions",
-      value: 42,
-      icon: Key,
-      change: 4.2,
-      link: "/permissions",
-    },
-    {
-      title: "Files",
-      value: 321,
-      icon: FileText,
-      change: -2.3,
-      link: "/files",
-    },
-    {
-      title: "Notifications",
-      value: 68,
-      icon: Bell,
-      change: 8.1,
-      link: "/notifications",
-    },
-    {
-      title: "Config Params",
-      value: 35,
-      icon: Settings,
-      change: 1.5,
-      link: "/configuration",
-    },
-    {
-      title: "Feature Flags",
-      value: 24,
-      icon: Flag,
-      change: 5.2,
-      link: "/feature-flags",
-    },
-  ];
+  // Fetch metrics data
+  const { 
+    data: metricsData, 
+    isLoading: isLoadingMetrics 
+  } = useQuery({
+    queryKey: ['dashboard-metrics', dateRange],
+    queryFn: () => DashboardService.getMetrics(),
+    onError: (error) => {
+      toast({
+        title: "Error fetching metrics",
+        description: "Could not load dashboard metrics. Using cached data.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  // Mock activity data for the charts
-  const userActivityData = [
-    { name: "Mon", value: 124 },
-    { name: "Tue", value: 158 },
-    { name: "Wed", value: 187 },
-    { name: "Thu", value: 145 },
-    { name: "Fri", value: 260 },
-    { name: "Sat", value: 112 },
-    { name: "Sun", value: 97 },
-  ];
+  // Fetch activity data
+  const { 
+    data: activityData, 
+    isLoading: isLoadingActivity 
+  } = useQuery({
+    queryKey: ['dashboard-activity', dateRange],
+    queryFn: () => DashboardService.getActivityData(),
+    onError: (error) => {
+      toast({
+        title: "Error fetching activity data",
+        description: "Could not load activity data. Using cached data.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  const fileUploadsData = [
-    { name: "Mon", value: 12 },
-    { name: "Tue", value: 15 },
-    { name: "Wed", value: 8 },
-    { name: "Thu", value: 22 },
-    { name: "Fri", value: 16 },
-    { name: "Sat", value: 5 },
-    { name: "Sun", value: 3 },
-  ];
+  // Fetch performance data
+  const { 
+    data: performanceData, 
+    isLoading: isLoadingPerformance 
+  } = useQuery({
+    queryKey: ['dashboard-performance', dateRange],
+    queryFn: () => DashboardService.getPerformanceData(),
+    onError: (error) => {
+      toast({
+        title: "Error fetching performance data",
+        description: "Could not load performance data. Using cached data.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  const notificationsData = [
-    { name: "Mon", value: 100 },
-    { name: "Tue", value: 221 },
-    { name: "Wed", value: 124 },
-    { name: "Thu", value: 993 },
-    { name: "Fri", value: 102 },
-    { name: "Sat", value: 912 },
-    { name: "Sun", value: 783 },
-  ];
+  // Map metric IDs to their appropriate icons
+  const getIconForMetric = (metricId: string) => {
+    const iconMap: Record<string, React.ElementType> = {
+      users: Users,
+      roles: Shield,
+      permissions: Key,
+      files: FileText,
+      notifications: Bell,
+      configs: Settings,
+      flags: Flag,
+      blogs: FileText2,
+    };
+    
+    return iconMap[metricId] || Settings;
+  };
 
-  // Performance metrics data
-  const performanceData = [
-    { name: "00:00", cpu: 42, memory: 65, responseTime: 120 },
-    { name: "04:00", cpu: 28, memory: 59, responseTime: 100 },
-    { name: "08:00", cpu: 55, memory: 70, responseTime: 150 },
-    { name: "12:00", cpu: 90, memory: 85, responseTime: 200 },
-    { name: "16:00", cpu: 85, memory: 82, responseTime: 180 },
-    { name: "20:00", cpu: 70, memory: 75, responseTime: 160 },
-    { name: "24:00", cpu: 45, memory: 68, responseTime: 130 },
-  ];
+  // Map metrics to their appropriate links
+  const getLinkForMetric = (metricId: string) => {
+    const linkMap: Record<string, string> = {
+      users: '/users',
+      roles: '/roles',
+      permissions: '/permissions',
+      files: '/files',
+      notifications: '/notifications',
+      configs: '/configuration',
+      flags: '/feature-flags',
+      blogs: '/blogs',
+    };
+    
+    return linkMap[metricId] || '/';
+  };
+
+  const metrics = metricsData?.data || [];
+  const userActivity = activityData?.data?.userActivity || [];
+  const fileUploads = activityData?.data?.fileUploads || [];
+  const notifications = activityData?.data?.notifications || [];
+  const systemPerformance = performanceData?.data || [];
 
   // Mock active users data
   const activeUsers = [
@@ -172,17 +175,23 @@ const Index = () => {
         </PageHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          {stats.map((stat) => (
-            <Link key={stat.title} to={stat.link} className="block">
-              <StatCard
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                change={stat.change}
-                className="transition-transform hover:scale-105 cursor-pointer"
-              />
-            </Link>
-          ))}
+          {isLoadingMetrics ? (
+            Array(7).fill(0).map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))
+          ) : (
+            metrics.map((metric) => (
+              <Link key={metric.id} to={getLinkForMetric(metric.id)} className="block">
+                <StatCard
+                  title={metric.name}
+                  value={metric.value}
+                  icon={getIconForMetric(metric.id)}
+                  change={metric.change}
+                  className="transition-transform hover:scale-105 cursor-pointer"
+                />
+              </Link>
+            ))
+          )}
         </div>
 
         {/* First row of widgets */}
@@ -194,43 +203,55 @@ const Index = () => {
 
         {/* Performance graphs row */}
         <div className="mt-6">
-          <PerformanceGraph
-            title="System Performance"
-            data={performanceData}
-            metrics={[
-              { key: "cpu", label: "CPU Usage (%)", color: "#8B5CF6" },
-              { key: "memory", label: "Memory Usage (%)", color: "#0EA5E9" },
-              { key: "responseTime", label: "Response Time (ms)", color: "#F97316" },
-            ]}
-          />
+          {isLoadingPerformance ? (
+            <Skeleton className="h-[350px]" />
+          ) : (
+            <PerformanceGraph
+              title="System Performance"
+              data={systemPerformance}
+              metrics={[
+                { key: "cpu", label: "CPU Usage (%)", color: "#8B5CF6" },
+                { key: "memory", label: "Memory Usage (%)", color: "#0EA5E9" },
+                { key: "responseTime", label: "Response Time (ms)", color: "#F97316" },
+              ]}
+            />
+          )}
         </div>
 
         {/* Activity charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <Link to="/users" className="block">
-            <ActivityChart
-              title="User Activity (Last 7 Days)"
-              data={userActivityData}
-              color="#8B5CF6"
-              className="transition-transform hover:scale-105 cursor-pointer"
-            />
-          </Link>
-          <Link to="/files" className="block">
-            <ActivityChart
-              title="File Uploads (Last 7 Days)"
-              data={fileUploadsData}
-              color="#0EA5E9"
-              className="transition-transform hover:scale-105 cursor-pointer"
-            />
-          </Link>
-          <Link to="/notifications" className="block">
-            <ActivityChart
-              title="Notifications (Last 7 Days)"
-              data={notificationsData}
-              color="#F97316"
-              className="transition-transform hover:scale-105 cursor-pointer"
-            />
-          </Link>
+          {isLoadingActivity ? (
+            Array(3).fill(0).map((_, i) => (
+              <Skeleton key={i} className="h-[250px]" />
+            ))
+          ) : (
+            <>
+              <Link to="/users" className="block">
+                <ActivityChart
+                  title="User Activity (Last 7 Days)"
+                  data={userActivity}
+                  color="#8B5CF6"
+                  className="transition-transform hover:scale-105 cursor-pointer"
+                />
+              </Link>
+              <Link to="/files" className="block">
+                <ActivityChart
+                  title="File Uploads (Last 7 Days)"
+                  data={fileUploads}
+                  color="#0EA5E9"
+                  className="transition-transform hover:scale-105 cursor-pointer"
+                />
+              </Link>
+              <Link to="/notifications" className="block">
+                <ActivityChart
+                  title="Notifications (Last 7 Days)"
+                  data={notifications}
+                  color="#F97316"
+                  className="transition-transform hover:scale-105 cursor-pointer"
+                />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Active users */}
@@ -257,6 +278,7 @@ const Index = () => {
               <li>Configure notifications</li>
               <li>Set application parameters</li>
               <li>Toggle feature flags</li>
+              <li>Manage blog posts</li>
             </ul>
           </div>
         </div>

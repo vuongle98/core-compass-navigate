@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   Folder,
-  Bot
+  Bot,
+  FileText2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -41,7 +42,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     overview: true,
     management: true,
-    content: false,
+    content: true,
     logging: false,
     system: false
   });
@@ -116,6 +117,17 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
           name: "Bots",
           href: "/bots",
           icon: Bot,
+        }
+      ]
+    },
+    {
+      name: "Content",
+      icon: Folder,
+      items: [
+        {
+          name: "Blog Posts",
+          href: "/blogs",
+          icon: FileText2,
         }
       ]
     },
