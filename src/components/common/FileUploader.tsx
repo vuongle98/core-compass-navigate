@@ -11,6 +11,8 @@ interface FileUploaderProps {
   maxSizeMB?: number;
   label?: string;
   className?: string;
+  previewUrl?: string;
+  accept?: string;
 }
 
 export function FileUploader({
@@ -19,6 +21,7 @@ export function FileUploader({
   maxSizeMB = 5,
   label = "Upload File",
   className = "",
+  previewUrl,
 }: FileUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);

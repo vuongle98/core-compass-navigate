@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
 import BlogService from "@/services/BlogService";
-import { DataTable } from "@/components/ui/DataTable";
+import { DataTable, Column } from "@/components/ui/DataTable";
 
 const Blogs = () => {
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ const Blogs = () => {
   };
 
   // Define columns for the DataTable
-  const columns = useMemo(
+  const columns = useMemo<Column<BlogPost>[]>(
     () => [
       {
         header: "Title",

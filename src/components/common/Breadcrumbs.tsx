@@ -18,9 +18,10 @@ interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items?: BreadcrumbItem[];
+  className?: string;
 }
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   const location = useLocation();
   
   // Generate breadcrumbs based on current path if not provided
@@ -54,7 +55,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="mb-4">
+      <BreadcrumbList className={className}>
         {breadcrumbItems.map((item, index) => (
           <React.Fragment key={item.label + index}>
             <BreadcrumbItem>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DateRange } from "react-day-picker";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -16,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardService, { DashboardMetric } from "@/services/DashboardService";
+import { LucideIcon } from "lucide-react";
 import {
   Users,
   Shield,
@@ -90,8 +90,8 @@ const Index = () => {
   });
 
   // Map metric IDs to their appropriate icons
-  const getIconForMetric = (metricId: string) => {
-    const iconMap: Record<string, React.ElementType> = {
+  const getIconForMetric = (metricId: string): LucideIcon => {
+    const iconMap: Record<string, LucideIcon> = {
       users: Users,
       roles: Shield,
       permissions: Key,
@@ -171,7 +171,6 @@ const Index = () => {
           description="Welcome to the Core Application Dashboard"
           showAddButton={false}
         >
-          {/* Date range picker for filtering dashboard data */}
           <div className="w-[300px]">
             <DateRangePicker
               dateRange={dateRange}
@@ -200,14 +199,12 @@ const Index = () => {
           )}
         </div>
 
-        {/* First row of widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <SystemAlertsWidget />
           <RecentLoginsWidget />
           <UpcomingEventsWidget />
         </div>
 
-        {/* Performance graphs row */}
         <div className="mt-6">
           {isLoadingPerformance ? (
             <Skeleton className="h-[350px]" />
@@ -224,7 +221,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Activity charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {isLoadingActivity ? (
             Array(3).fill(0).map((_, i) => (
@@ -260,7 +256,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Active users */}
         <div className="mt-6">
           <Link to="/users" className="block">
             <ActiveUsers

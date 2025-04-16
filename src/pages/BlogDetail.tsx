@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -103,15 +102,14 @@ const BlogDetail = () => {
       const newComment = {
         postId: id,
         authorId: user.id,
-        authorName: user.displayName || user.email,
+        authorName: user.name || user.email,
         authorEmail: user.email,
         content: values.content,
-        status: 'pending',
+        status: 'pending' as 'pending' | 'approved' | 'rejected',
       };
 
       await BlogService.addComment(id, newComment);
       
-      // Refresh comments
       const response = await BlogService.getComments(id);
       setComments(response.data.content);
       
@@ -190,9 +188,9 @@ const BlogDetail = () => {
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs
           items={[
-            { label: "Home", href: "/" },
-            { label: "Blogs", href: "/blogs" },
-            { label: post.title, href: `/blogs/${id}` },
+            { label: "Home", path: "/" },
+            { label: "Blogs", path: "/blogs" },
+            { label: post?.title || "Blog Post", path: `/blogs/${id}` },
           ]}
           className="mb-6"
         />
@@ -259,11 +257,11 @@ const BlogDetail = () => {
               </div>
             </div>
             <Badge variant={
-              post.status === "published" ? "default" : 
-              post.status === "draft" ? "secondary" : 
-              "warning"
+              post?.status === "published" ? "default" : 
+              post?.status === "draft" ? "secondary" : 
+              "outline"
             } className="capitalize">
-              {post.status}
+              {post?.status}
             </Badge>
           </CardHeader>
           
@@ -309,7 +307,6 @@ const BlogDetail = () => {
           </CardFooter>
         </Card>
         
-        {/* Comments Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Comments</h2>
           <Separator className="mb-6" />
@@ -350,7 +347,6 @@ const BlogDetail = () => {
             </p>
           )}
           
-          {/* Add comment form */}
           <Card className="mt-8">
             <CardHeader>
               <h3 className="text-lg font-medium">Add a Comment</h3>

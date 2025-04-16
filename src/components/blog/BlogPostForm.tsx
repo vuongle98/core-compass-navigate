@@ -1,4 +1,3 @@
-
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -72,7 +72,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
   
   const isEditMode = !!post;
 
-  // Fetch categories and tags when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -115,7 +114,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
         },
   });
 
-  // Auto-generate slug from title
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'title') {
@@ -213,7 +211,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Title */}
               <FormField
                 control={form.control}
                 name="title"
@@ -228,7 +225,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
                 )}
               />
 
-              {/* Slug */}
               <FormField
                 control={form.control}
                 name="slug"
@@ -247,7 +243,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
               />
             </div>
 
-            {/* Content */}
             <FormField
               control={form.control}
               name="content"
@@ -266,7 +261,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
               )}
             />
 
-            {/* Excerpt */}
             <FormField
               control={form.control}
               name="excerpt"
@@ -288,7 +282,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
               )}
             />
 
-            {/* Cover Image */}
             <FormItem>
               <FormLabel>Cover Image</FormLabel>
               <FileUploader
@@ -300,7 +293,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
             </FormItem>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Category */}
               <FormField
                 control={form.control}
                 name="categoryId"
@@ -329,7 +321,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
                 )}
               />
 
-              {/* Status */}
               <FormField
                 control={form.control}
                 name="status"
@@ -354,7 +345,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
                 )}
               />
 
-              {/* Publish Date */}
               <FormField
                 control={form.control}
                 name="publishDate"
@@ -396,12 +386,10 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
               />
             </div>
 
-            {/* SEO Section */}
             <div className="pt-4 border-t">
               <h3 className="text-lg font-medium mb-4">SEO Settings</h3>
               
               <div className="space-y-6">
-                {/* Meta Title */}
                 <FormField
                   control={form.control}
                   name="metaTitle"
@@ -419,7 +407,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
                   )}
                 />
 
-                {/* Meta Description */}
                 <FormField
                   control={form.control}
                   name="metaDescription"
@@ -438,7 +425,6 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
                   )}
                 />
 
-                {/* Meta Keywords */}
                 <FormItem>
                   <FormLabel>Meta Keywords</FormLabel>
                   <div className="flex items-center space-x-2">

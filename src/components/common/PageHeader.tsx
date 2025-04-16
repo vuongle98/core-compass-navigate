@@ -9,6 +9,8 @@ interface PageHeaderProps {
   description?: string;
   showAddButton?: boolean;
   addButtonText?: string;
+  onAddButtonClick?: () => void;
+  addButtonLabel?: string;
   actions?: ReactNode;
   button?: ReactNode;
   children?: ReactNode;
@@ -19,12 +21,18 @@ export function PageHeader({
   description,
   showAddButton = false,
   addButtonText = "Add New",
+  onAddButtonClick,
+  addButtonLabel,
   actions,
   button,
   children,
 }: PageHeaderProps) {
   const handleAdd = () => {
-    toast.success(`Add new ${title.toLowerCase()} action triggered`);
+    if (onAddButtonClick) {
+      onAddButtonClick();
+    } else {
+      toast.success(`Add new ${title.toLowerCase()} action triggered`);
+    }
   };
 
   return (
@@ -42,7 +50,7 @@ export function PageHeader({
         {showAddButton && (
           <Button onClick={handleAdd}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            {addButtonText}
+            {addButtonLabel || addButtonText}
           </Button>
         )}
       </div>
