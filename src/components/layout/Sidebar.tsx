@@ -13,42 +13,24 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  // Handle mouse enter - expand after small delay
-  const handleMouseEnter = () => {
-    if (collapsed) {
-      // Clear any existing timeout
-      if (hoverTimeout) clearTimeout(hoverTimeout);
-      
-      // Set a small delay before expanding
-      const timeout = setTimeout(() => {
-        setCollapsed(false);
-      }, 300);
-      
-      setHoverTimeout(timeout);
-    }
-  };
-
-  // Handle mouse leave - collapse after delay
-  const handleMouseLeave = () => {
-    // Clear any existing timeout
-    if (hoverTimeout) clearTimeout(hoverTimeout);
-    
-    // Set a delay before collapsing to prevent flicker
-    const timeout = setTimeout(() => {
-      setCollapsed(true);
-    }, 500);
-    
-    setHoverTimeout(timeout);
-  };
-
-  // Clean up timeout on unmount
+  
+  // Use localStorage to persist sidebar state between page loads
   useEffect(() => {
-    return () => {
-      if (hoverTimeout) clearTimeout(hoverTimeout);
-    };
-  }, [hoverTimeout]);
+    const storedState = localStorage.getItem('sidebar-collapsed');
+    if (storedState !== null) {
+      setCollapsed(JSON.parse(storedState));
+    }
+  }, []);
+  
+  // Save sidebar state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
+  }, [collapsed]);
+
+  // Toggle sidebar function - no more hover effects
+  const toggleSidebar = () => {
+    setCollapsed(!collapsed);
+  };
 
   return (
     <div
@@ -57,8 +39,6 @@ export function Sidebar({ className }: SidebarProps) {
         collapsed ? 'w-16' : 'w-64',
         className
       )}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
         {!collapsed && (
@@ -69,7 +49,7 @@ export function Sidebar({ className }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleSidebar}
             className={collapsed ? "mx-auto" : ""}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

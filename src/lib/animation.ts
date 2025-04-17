@@ -11,7 +11,9 @@ type AnimationType =
   | 'slide-out-left'
   | 'scale-in'
   | 'scale-out'
-  | 'bounce';
+  | 'bounce'
+  | 'pulse'
+  | 'pop';
 
 interface AnimationProps {
   type: AnimationType;
@@ -35,7 +37,9 @@ export const getAnimationClass = ({
     'slide-out-left': 'animate-slide-out-left',
     'scale-in': 'animate-scale-in',
     'scale-out': 'animate-scale-out',
-    'bounce': 'animate-bounce'
+    'bounce': 'animate-bounce',
+    'pulse': 'animate-pulse',
+    'pop': 'animate-pop'
   };
 
   const styleAttr = `--animation-duration: ${duration}ms; --animation-delay: ${delay}ms;`;
@@ -64,4 +68,15 @@ export const withAnimation = (Component: React.ComponentType<any>, animationProp
       React.createElement(Component, props)
     );
   };
+};
+
+// Animation hook for components
+export const useAnimation = (animationProps: AnimationProps) => {
+  const animationClass = getAnimationClass(animationProps);
+  const style = { 
+    '--animation-duration': `${animationProps.duration || 300}ms`,
+    '--animation-delay': `${animationProps.delay || 0}ms`
+  } as React.CSSProperties;
+  
+  return { animationClass, style };
 };

@@ -40,6 +40,10 @@ export interface BlogCategory {
   slug: string;
   description?: string;
   postCount: number;
+  color?: string;
+  icon?: string;
+  parentId?: string;
+  isActive: boolean;
 }
 
 export interface BlogTag {
@@ -47,4 +51,30 @@ export interface BlogTag {
   name: string;
   slug: string;
   postCount: number;
+  color?: string;
+}
+
+export interface BlogMedia {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  url: string;
+  thumbnailUrl?: string;
+  uploadDate: string;
+  width?: number;
+  height?: number;
+  altText?: string;
+  caption?: string;
+}
+
+export interface RichTextEditorProps {
+  initialValue?: string;
+  onChange: (content: string) => void;
+  placeholder?: string;
+  readOnly?: boolean;
+  minHeight?: string;
+  className?: string;
+  allowImageUpload?: boolean;
+  onImageUpload?: (file: File) => Promise<{ url: string }>;
 }

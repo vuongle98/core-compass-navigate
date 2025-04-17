@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChat } from '@/hooks/use-chat';
-import { Send, Users, User, Globe } from 'lucide-react';
+import { Send, Users, User, Globe, Plus, Search, Smile } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
@@ -78,32 +78,32 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
         <div 
           key={chat.id}
           onClick={() => handleChatSelect(chat.id)}
-          className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${
-            isActive ? 'bg-accent' : 'hover:bg-accent/50'
+          className={`flex items-center gap-3 p-3 rounded-md cursor-pointer mb-1 transition-all duration-200 ${
+            isActive ? 'bg-accent shadow-sm' : 'hover:bg-accent/50'
           }`}
         >
           {chat.type === 'private' && (
-            <Avatar>
+            <Avatar className="border border-primary/10">
               <AvatarImage src={chat.participants[0]?.avatar} />
-              <AvatarFallback>{chatName.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary">{chatName.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           )}
           
           {chat.type === 'group' && (
-            <Avatar>
-              <AvatarFallback><Users size={16} /></AvatarFallback>
+            <Avatar className="border border-accent/20">
+              <AvatarFallback className="bg-accent/10"><Users size={16} /></AvatarFallback>
             </Avatar>
           )}
           
           {chat.type === 'public' && (
-            <Avatar>
-              <AvatarFallback><Globe size={16} /></AvatarFallback>
+            <Avatar className="border border-accent/20">
+              <AvatarFallback className="bg-accent/10"><Globe size={16} /></AvatarFallback>
             </Avatar>
           )}
           
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="font-medium truncate">{chatName}</span>
+              <span className={`font-medium truncate ${isActive ? 'text-primary' : ''}`}>{chatName}</span>
               {unreadIndicator}
             </div>
             {chat.lastMessage && (
@@ -123,27 +123,44 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
   });
 
   return (
-    <Card className="shadow-lg border-2 h-full flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex justify-between items-center">
-          <span>Chat</span>
-        </CardTitle>
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Card className="shadow-lg border-2 h-full flex flex-col rounded-xl overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex justify-between items-center">
+            <span>Chat</span>
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-full">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardTitle>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="public">Public</TabsTrigger>
             {isPrivateMessagingEnabled && <TabsTrigger value="private">Private</TabsTrigger>}
             {isGroupChatEnabled && <TabsTrigger value="group">Groups</TabsTrigger>}
           </TabsList>
+        </CardHeader>
 
-          <div className="p-0 flex-1 flex flex-col overflow-hidden">
-            <div className="flex h-full">
+        <div className="flex-1 flex overflow-hidden">
+          <CardContent className="p-0 flex-1 flex">
+            <div className="flex h-full w-full">
               {/* Chat List */}
-              <div className="w-1/3 border-r p-2 overflow-y-auto">
-                <TabsContent value="public" className="m-0">
+              <div className="w-1/3 border-r p-3 overflow-y-auto">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-medium text-sm">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Chats</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Plus size={16} />
+                  </Button>
+                </div>
+                
+                <div className="relative mb-3">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input className="pl-8 h-9" placeholder="Search..." />
+                </div>
+                
+                <TabsContent value="public" className="mt-0 space-y-1">
                   {renderChatList(publicChats)}
                 </TabsContent>
                 
-                <TabsContent value="private" className="m-0">
+                <TabsContent value="private" className="mt-0 space-y-1">
                   {isPrivateMessagingEnabled ? (
                     renderChatList(privateChats)
                   ) : (
@@ -153,7 +170,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                   )}
                 </TabsContent>
                 
-                <TabsContent value="group" className="m-0">
+                <TabsContent value="group" className="mt-0 space-y-1">
                   {isGroupChatEnabled ? (
                     renderChatList(groupChats)
                   ) : (
@@ -168,7 +185,28 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
               <div className="w-2/3 flex flex-col h-full overflow-hidden">
                 {activeChat ? (
                   <>
-                    <div className="p-2 border-b">
+                    <div className="p-3 border-b flex items-center gap-2">
+                      {activeChat.type === 'private' && (
+                        <Avatar className="h-8 w-8 border border-primary/10">
+                          <AvatarImage src={activeChat.participants[0]?.avatar} />
+                          <AvatarFallback className="bg-primary/10 text-xs">
+                            {activeChat.participants[0]?.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      {activeChat.type === 'group' && (
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback><Users size={14} /></AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      {activeChat.type === 'public' && (
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback><Globe size={14} /></AvatarFallback>
+                        </Avatar>
+                      )}
+                      
                       <span className="font-medium">
                         {activeChat.type === 'private' 
                           ? activeChat.participants[0]?.name 
@@ -176,7 +214,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                       </span>
                     </div>
                     <ScrollArea className="flex-1 p-3">
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {messages.map((message) => (
                           <div key={message.id} className={messageAnimation}>
                             <ChatMessage 
@@ -190,35 +228,48 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                     </ScrollArea>
                   </>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                    Select a chat to start messaging
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col p-4">
+                    <Globe className="h-12 w-12 text-muted-foreground/50 mb-2" />
+                    <p className="text-center">Select a chat to start messaging</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      <Plus className="mr-2 h-4 w-4" /> New Conversation
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        </Tabs>
-      </CardHeader>
+          </CardContent>
+        </div>
 
-      <CardFooter className="p-3">
         {activeChat && (
-          <form onSubmit={handleSend} className="flex w-full gap-2">
-            <Input 
-              value={inputValue} 
-              onChange={(e) => setInputValue(e.target.value)} 
-              placeholder="Type a message..." 
-              className="flex-1"
-            />
-            <Button 
-              type="submit" 
-              size="sm" 
-              disabled={!inputValue.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+          <CardFooter className="p-3 pt-2">
+            <form onSubmit={handleSend} className="flex w-full gap-2 items-center">
+              <Button 
+                type="button" 
+                size="icon" 
+                variant="ghost" 
+                className="h-9 w-9 rounded-full flex-shrink-0"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+              <Input 
+                value={inputValue} 
+                onChange={(e) => setInputValue(e.target.value)} 
+                placeholder="Type a message..." 
+                className="flex-1"
+              />
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={!inputValue.trim()}
+                className="h-9 px-3 rounded-full flex-shrink-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </CardFooter>
         )}
-      </CardFooter>
+      </Tabs>
     </Card>
   );
 };
