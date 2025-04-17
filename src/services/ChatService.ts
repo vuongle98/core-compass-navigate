@@ -1,5 +1,4 @@
-
-import { EventEmitter } from 'events';
+import { EventEmitter } from '@/lib/EventEmitter';
 import { User } from '@/contexts/AuthContext';
 
 export interface Message {
@@ -42,7 +41,6 @@ class ChatService extends EventEmitter {
   private chats: Chat[] = [];
   private currentUser: User | null = null;
   
-  // For demo/mock purposes
   private mockMessages: Message[] = [];
   private mockChats: Chat[] = [];
   
@@ -51,7 +49,6 @@ class ChatService extends EventEmitter {
     this.initializeMockData();
   }
   
-  // Initialize mock data for demo purposes
   private initializeMockData() {
     this.mockChats = [
       {
@@ -122,7 +119,6 @@ class ChatService extends EventEmitter {
       }
     ];
     
-    // Assign last messages to chats
     this.mockChats = this.mockChats.map(chat => {
       const lastMessage = this.mockMessages
         .filter(msg => msg.chatId === chat.id)
@@ -134,11 +130,9 @@ class ChatService extends EventEmitter {
       };
     });
     
-    // Set initial chats
     this.chats = [...this.mockChats];
   }
 
-  // Connect to WebSocket server
   public connect(user: User, server = 'wss://api.example.com/chat'): void {
     this.currentUser = user;
     
@@ -159,7 +153,6 @@ class ChatService extends EventEmitter {
     }
   }
 
-  // Disconnect from WebSocket server
   public disconnect(): void {
     if (this.socket) {
       this.socket.close();
@@ -175,7 +168,6 @@ class ChatService extends EventEmitter {
     this.emit('disconnected');
   }
 
-  // Send a message
   public sendMessage(chatId: string, text: string, type: 'text' | 'image' | 'file' = 'text', metadata?: Record<string, any>): void {
     if (!this.currentUser) {
       this.emit('error', 'User not authenticated');
@@ -196,39 +188,31 @@ class ChatService extends EventEmitter {
       metadata
     };
     
-    // In real implementation, send through WebSocket
     if (this.isConnected && this.socket) {
       this.socket.send(JSON.stringify({
         type: 'message',
         data: message
       }));
     } else {
-      // Queue message for when connection is restored
       this.messageQueue.push(message);
     }
     
-    // For mock implementation, add to messages and emit event
     this.mockMessages.push(message);
     this.emit('message', message);
     
-    // Update chat's last message
     this.updateChatWithMessage(chatId, message);
   }
 
-  // Get all chats for current user
   public getChats(): Chat[] {
     return this.chats;
   }
 
-  // Get messages for a specific chat
   public getMessages(chatId: string): Message[] {
-    // In real implementation, fetch from API
     return this.mockMessages
       .filter(message => message.chatId === chatId)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
-  // Create a new private chat with a user
   public createPrivateChat(userId: string, userName: string, userAvatar?: string): Chat {
     const existingChat = this.chats.find(chat => 
       chat.type === 'private' && 
@@ -256,19 +240,17 @@ class ChatService extends EventEmitter {
     return newChat;
   }
 
-  // Create a new group chat
   public createGroupChat(name: string, participantIds: string[]): Chat {
     const newChat: Chat = {
       id: `group-${Date.now()}`,
       name,
       type: 'group',
-      participants: [], // In real implementation, fetch user details
+      participants: [],
       unreadCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     
-    // For mock implementation, add some mock participants
     newChat.participants = [
       { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
       { id: 'user3', name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/150?img=3' }
@@ -280,14 +262,11 @@ class ChatService extends EventEmitter {
     return newChat;
   }
 
-  // Mark messages as read
   public markAsRead(chatId: string): void {
-    // In real implementation, send request to server
     this.mockMessages = this.mockMessages.map(message => 
       message.chatId === chatId ? { ...message, read: true } : message
     );
     
-    // Update chat's unread count
     this.chats = this.chats.map(chat => 
       chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
     );
@@ -295,23 +274,20 @@ class ChatService extends EventEmitter {
     this.emit('messages-read', chatId);
   }
 
-  // WebSocket event handlers
   private handleSocketOpen(): void {
     this.isConnected = true;
     this.reconnectAttempts = 0;
     
-    // Authenticate user
     if (this.socket && this.currentUser) {
       this.socket.send(JSON.stringify({
         type: 'auth',
         data: {
           userId: this.currentUser.id,
-          token: 'jwt-token-here' // In real implementation, use actual JWT
+          token: 'jwt-token-here'
         }
       }));
     }
     
-    // Send queued messages
     while (this.messageQueue.length > 0 && this.socket) {
       const message = this.messageQueue.shift();
       if (message) {
@@ -354,9 +330,8 @@ class ChatService extends EventEmitter {
     this.isConnected = false;
     this.socket = null;
     
-    // Attempt to reconnect
     if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentUser) {
-      const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
+      const delay = Math.pow(2, this.reconnectAttempts) * 1000;
       console.log(`Attempting to reconnect in ${delay}ms...`);
       
       this.reconnectTimeout = setTimeout(() => {
@@ -373,28 +348,22 @@ class ChatService extends EventEmitter {
     this.emit('error', 'Connection error');
   }
 
-  // Handle incoming messages
   private handleIncomingMessage(message: Message): void {
-    // Add message to list
     this.mockMessages.push(message);
     
-    // Update chat's last message and unread count
     this.updateChatWithMessage(message.chatId, message);
     
     this.emit('message', message);
   }
 
-  // Handle new chat creation
   private handleChatCreated(chat: Chat): void {
     this.chats.push(chat);
     this.emit('chat-created', chat);
   }
 
-  // Update chat with new message
   private updateChatWithMessage(chatId: string, message: Message): void {
     this.chats = this.chats.map(chat => {
       if (chat.id === chatId) {
-        // Increment unread count if message is from someone else
         const isFromCurrentUser = this.currentUser && message.sender.id === this.currentUser.id;
         const unreadCount = isFromCurrentUser ? chat.unreadCount : chat.unreadCount + 1;
         
@@ -412,6 +381,5 @@ class ChatService extends EventEmitter {
   }
 }
 
-// Create singleton instance
 const chatService = new ChatService();
 export default chatService;
