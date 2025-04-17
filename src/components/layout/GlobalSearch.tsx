@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -54,6 +55,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     return !item.permission || hasPermission(item.permission);
   });
 
+  // Effect to handle dialog open state and focus input
   useEffect(() => {
     if (open) {
       // Focus the input when the dialog opens
@@ -63,6 +65,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     }
   }, [open, filteredNavigationItems]);
 
+  // Effect to handle search query changes
   useEffect(() => {
     const search = async () => {
       if (!debouncedSearchQuery.trim()) {
