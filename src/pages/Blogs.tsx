@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -75,8 +74,7 @@ const Blogs = () => {
     initialPageSize: 10,
     persistFilters: true,
     onError: () => setShowError(true),
-    // Add fallback data to ensure we always have something to display
-    fallbackData: {
+    mockData: {
       content: [
         {
           id: "post-1",
@@ -91,7 +89,9 @@ const Blogs = () => {
           categoryId: "cat-1",
           categoryName: "Development",
           commentCount: 8,
-          viewCount: 1250
+          viewCount: 1250,
+          createdAt: "2023-05-10T08:15:00Z",
+          updatedAt: "2023-05-15T10:30:00Z"
         },
         {
           id: "post-2",
@@ -106,7 +106,9 @@ const Blogs = () => {
           categoryId: "cat-2",
           categoryName: "Design",
           commentCount: 5,
-          viewCount: 980
+          viewCount: 980,
+          createdAt: "2023-06-01T09:20:00Z",
+          updatedAt: "2023-06-05T14:45:00Z"
         },
         {
           id: "post-3",
@@ -121,10 +123,12 @@ const Blogs = () => {
           categoryId: "cat-3",
           categoryName: "Marketing",
           commentCount: 12,
-          viewCount: 1520
+          viewCount: 1520,
+          createdAt: "2023-07-05T13:40:00Z",
+          updatedAt: "2023-07-10T11:15:00Z"
         }
       ],
-      totalItems: 3,
+      totalElements: 3,
       totalPages: 1
     }
   });

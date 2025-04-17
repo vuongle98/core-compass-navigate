@@ -1,3 +1,4 @@
+
 import EnhancedApiService from './EnhancedApiService';
 
 export interface FeatureFlag {
@@ -252,28 +253,4 @@ class FeatureFlagService {
 const featureFlagService = new FeatureFlagService();
 export default featureFlagService;
 
-// React hook to use feature flags
-export function useFeatureFlag(featureName: string) {
-  const { user } = useAuth();
-  const [isEnabled, setIsEnabled] = useState(false);
-  const userRoles = user?.roles || [];
-  
-  useEffect(() => {
-    // Mock environment - in a real app, this would come from configuration
-    const environment = process.env.NODE_ENV === 'development' 
-      ? 'Development' 
-      : 'Production';
-    
-    const enabled = featureFlagService.isFeatureEnabled(
-      featureName,
-      environment,
-      Array.isArray(userRoles) 
-        ? userRoles.map(r => typeof r === 'string' ? r : r.code)
-        : [userRoles as string]
-    );
-    
-    setIsEnabled(enabled);
-  }, [featureName, userRoles]);
-
-  return isEnabled;
-}
+// Remove the duplicate useFeatureFlag hook from here since it's already defined in src/hooks/use-feature-flag.ts
