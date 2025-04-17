@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -83,7 +84,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const pre = range.commonAncestorContainer;
-      if (pre.nodeName === "PRE") {
+      // Fix: Check if the node is an Element before accessing classList
+      if (pre instanceof Element && pre.nodeName === "PRE") {
         pre.classList.add('language-javascript', 'p-4', 'bg-muted', 'rounded-md');
       }
     }
@@ -261,7 +263,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           readOnly ? "cursor-default" : ""
         )}
         style={{ minHeight }}
-        placeholder={placeholder}
+        data-placeholder={placeholder}
         suppressContentEditableWarning={true}
       />
       
