@@ -1,5 +1,6 @@
 
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 type AnimationType = 
   | 'fade-in'
@@ -52,10 +53,13 @@ export const withAnimation = (Component: React.ComponentType<any>, animationProp
     const animationClass = getAnimationClass(animationProps);
     
     return (
-      <div className={animationClass} style={{ 
-        '--animation-duration': `${animationProps.duration || 300}ms`,
-        '--animation-delay': `${animationProps.delay || 0}ms`
-      } as React.CSSProperties}>
+      <div 
+        className={animationClass} 
+        style={{ 
+          '--animation-duration': `${animationProps.duration || 300}ms`,
+          '--animation-delay': `${animationProps.delay || 0}ms`
+        } as React.CSSProperties}
+      >
         <Component {...props} />
       </div>
     );
