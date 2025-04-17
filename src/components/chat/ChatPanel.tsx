@@ -134,71 +134,71 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
             {isPrivateMessagingEnabled && <TabsTrigger value="private">Private</TabsTrigger>}
             {isGroupChatEnabled && <TabsTrigger value="group">Groups</TabsTrigger>}
           </TabsList>
+
+          <div className="p-0 flex-1 flex flex-col overflow-hidden">
+            <div className="flex h-full">
+              {/* Chat List */}
+              <div className="w-1/3 border-r p-2 overflow-y-auto">
+                <TabsContent value="public" className="m-0">
+                  {renderChatList(publicChats)}
+                </TabsContent>
+                
+                <TabsContent value="private" className="m-0">
+                  {isPrivateMessagingEnabled ? (
+                    renderChatList(privateChats)
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      Private messaging is disabled
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="group" className="m-0">
+                  {isGroupChatEnabled ? (
+                    renderChatList(groupChats)
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      Group chat is disabled
+                    </div>
+                  )}
+                </TabsContent>
+              </div>
+              
+              {/* Chat Messages */}
+              <div className="w-2/3 flex flex-col h-full overflow-hidden">
+                {activeChat ? (
+                  <>
+                    <div className="p-2 border-b">
+                      <span className="font-medium">
+                        {activeChat.type === 'private' 
+                          ? activeChat.participants[0]?.name 
+                          : activeChat.name || 'Chat'}
+                      </span>
+                    </div>
+                    <ScrollArea className="flex-1 p-3">
+                      <div className="space-y-3">
+                        {messages.map((message) => (
+                          <div key={message.id} className={messageAnimation}>
+                            <ChatMessage 
+                              message={message} 
+                              isCurrentUser={message.sender.id === user?.id} 
+                            />
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </ScrollArea>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                    Select a chat to start messaging
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </Tabs>
       </CardHeader>
-
-      <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-        <div className="flex h-full">
-          {/* Chat List */}
-          <div className="w-1/3 border-r p-2 overflow-y-auto">
-            <TabsContent value="public" className="m-0">
-              {renderChatList(publicChats)}
-            </TabsContent>
-            
-            <TabsContent value="private" className="m-0">
-              {isPrivateMessagingEnabled ? (
-                renderChatList(privateChats)
-              ) : (
-                <div className="p-2 text-sm text-muted-foreground">
-                  Private messaging is disabled
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="group" className="m-0">
-              {isGroupChatEnabled ? (
-                renderChatList(groupChats)
-              ) : (
-                <div className="p-2 text-sm text-muted-foreground">
-                  Group chat is disabled
-                </div>
-              )}
-            </TabsContent>
-          </div>
-          
-          {/* Chat Messages */}
-          <div className="w-2/3 flex flex-col h-full overflow-hidden">
-            {activeChat ? (
-              <>
-                <div className="p-2 border-b">
-                  <span className="font-medium">
-                    {activeChat.type === 'private' 
-                      ? activeChat.participants[0]?.name 
-                      : activeChat.name || 'Chat'}
-                  </span>
-                </div>
-                <ScrollArea className="flex-1 p-3">
-                  <div className="space-y-3">
-                    {messages.map((message) => (
-                      <div key={message.id} className={messageAnimation}>
-                        <ChatMessage 
-                          message={message} 
-                          isCurrentUser={message.sender.id === user?.id} 
-                        />
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                Select a chat to start messaging
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
 
       <CardFooter className="p-3">
         {activeChat && (
