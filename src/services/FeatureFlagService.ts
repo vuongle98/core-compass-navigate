@@ -1,7 +1,4 @@
-
-import { useState, useEffect } from 'react';
 import EnhancedApiService from './EnhancedApiService';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface FeatureFlag {
   id: number;
@@ -21,24 +18,39 @@ class FeatureFlagService {
   private isLoaded = false;
 
   constructor() {
-    this.loadFeatureFlags();
+    // We'll load feature flags only when needed
+    this.featureFlags = this.getMockFeatureFlags();
+    this.isLoaded = true;
   }
 
   // Load feature flags from API or localStorage
-  private async loadFeatureFlags(): Promise<void> {
+  private async loadFeatureFlags(forceRefresh = false): Promise<void> {
+    // Don't fetch from API if we already have flags and aren't forcing a refresh
+    if (this.isLoaded && !forceRefresh) {
+      return;
+    }
+    
     try {
-      const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
-      
-      if (response.success && response.data) {
-        this.featureFlags = response.data;
+      // Only call the API if we have a token (user is logged in)
+      if (localStorage.getItem('auth_token')) {
+        const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
+        
+        if (response.success && response.data) {
+          this.featureFlags = response.data;
+        } else {
+          // Use local mock data if API failed or returned empty
+          this.featureFlags = this.getMockFeatureFlags();
+        }
       } else {
-        // Use local mock data if API fails
+        // Use mock data when not authenticated
         this.featureFlags = this.getMockFeatureFlags();
       }
       
       this.isLoaded = true;
     } catch (error) {
-      console.error('Failed to load feature flags:', error);
+      console.info('Falling back to mock feature flags:', error);
+      
+      // Return mock data when API fails
       this.featureFlags = this.getMockFeatureFlags();
       this.isLoaded = true;
     }
@@ -160,8 +172,10 @@ class FeatureFlagService {
 
   // Check if a feature is enabled based on name, environment, and user roles
   public isFeatureEnabled(featureName: string, environment = 'All', userRoles: string[] = []): boolean {
+    // Ensure feature flags are loaded
     if (!this.isLoaded) {
-      return false;
+      this.featureFlags = this.getMockFeatureFlags();
+      this.isLoaded = true;
     }
 
     const feature = this.featureFlags.find(f => f.name === featureName);
@@ -220,7 +234,17 @@ class FeatureFlagService {
 
   // Get all feature flags
   public getFeatureFlags(): FeatureFlag[] {
+    // Ensure flags are loaded
+    if (!this.isLoaded) {
+      this.featureFlags = this.getMockFeatureFlags();
+      this.isLoaded = true;
+    }
     return [...this.featureFlags];
+  }
+  
+  // Force refresh feature flags (used after login)
+  public async refreshFlags(): Promise<void> {
+    return this.loadFeatureFlags(true);
   }
 }
 

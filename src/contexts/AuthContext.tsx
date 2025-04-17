@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AuthService from '@/services/AuthService';
 import { toast } from 'sonner';
 import { Role } from '@/types/Auth';
+import featureFlagService from '@/services/FeatureFlagService';
 
 // Define the User interface in one place to avoid conflicts
 export interface User {
@@ -43,6 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const currentUser = AuthService.getCurrentUser();
           // Make sure we're setting the state with the correct User type
           setUser(currentUser as User);
+          
+          // Refresh feature flags after login
+          await featureFlagService.refreshFlags();
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -64,6 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const currentUser = AuthService.getCurrentUser();
         // Make sure we're setting the state with the correct User type
         setUser(currentUser as User);
+        
+        // Refresh feature flags after login
+        await featureFlagService.refreshFlags();
+        
         return true;
       }
       return false;
@@ -144,7 +151,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    console.log(AuthContext);
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

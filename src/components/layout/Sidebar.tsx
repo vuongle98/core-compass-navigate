@@ -12,28 +12,24 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
-  
-  // Use localStorage to persist sidebar state between page loads
-  useEffect(() => {
+  const [collapsed, setCollapsed] = useState(() => {
+    // Initialize from localStorage
     const storedState = localStorage.getItem('sidebar-collapsed');
-    if (storedState !== null) {
-      setCollapsed(JSON.parse(storedState));
-    }
-  }, []);
+    return storedState !== null ? JSON.parse(storedState) : false;
+  });
   
   // Save sidebar state to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
   }, [collapsed]);
 
-  // Toggle sidebar function - no more hover effects
+  // Toggle sidebar function
   const toggleSidebar = () => {
-    setCollapsed(!collapsed);
+    setCollapsed(prev => !prev);
   };
 
   return (
-    <div
+    <aside
       className={cn(
         'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen sticky top-0',
         collapsed ? 'w-16' : 'w-64',
@@ -51,6 +47,7 @@ export function Sidebar({ className }: SidebarProps) {
             size="icon"
             onClick={toggleSidebar}
             className={collapsed ? "mx-auto" : ""}
+            type="button"
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </Button>
@@ -67,6 +64,6 @@ export function Sidebar({ className }: SidebarProps) {
           <UserMenu />
         )}
       </div>
-    </div>
+    </aside>
   );
 }

@@ -1,254 +1,174 @@
 
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import {
-  Users,
-  Shield,
-  Key,
-  FileText,
-  Bell,
-  Settings,
-  Flag,
-  LayoutDashboard,
-  ClipboardList,
-  Activity,
-  LogIn,
-  ChevronDown,
-  ChevronRight,
-  Folder,
-  Bot,
-  FileText as FileIcon
+import { NavLink } from 'react-router-dom';
+import { 
+  BarChart, 
+  Settings, 
+  Users, 
+  Shield, 
+  Key, 
+  FileText, 
+  Bell, 
+  Blocks, 
+  Flag, 
+  ScrollText, 
+  ClipboardList, 
+  Wrench, 
+  Bot, 
+  FileBox,
+  BookOpen
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { useFeatureFlag } from '@/hooks/use-feature-flag';
+import { useLocation } from 'react-router-dom';
+
+interface NavItemProps {
+  href: string;
+  icon: React.ElementType;
+  title: string;
+  badge?: string;
+  collapsed: boolean;
+}
+
+const NavItem = ({ href, icon: Icon, title, badge, collapsed }: NavItemProps) => {
+  const location = useLocation();
+  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
+  
+  return (
+    <NavLink
+      to={href}
+      className={({ isActive: routeActive }) => cn(
+        'flex items-center py-2 px-3 my-1 rounded-md transition-colors',
+        'hover:bg-sidebar-hover',
+        routeActive ? 'bg-sidebar-active text-sidebar-active-foreground' : 'text-sidebar-foreground'
+      )}
+    >
+      <Icon className="h-4 w-4 mr-3" />
+      {!collapsed && (
+        <span className="flex-1 text-sm">{title}</span>
+      )}
+      {!collapsed && badge && (
+        <Badge variant="outline" className="ml-auto py-1 px-1.5 text-xs">
+          {badge}
+        </Badge>
+      )}
+    </NavLink>
+  );
+};
 
 interface SidebarNavProps {
   collapsed: boolean;
 }
 
-type NavGroup = {
-  name: string;
-  icon: React.ElementType;
-  items: NavItem[];
-};
-
-type NavItem = {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-};
-
 export function SidebarNav({ collapsed }: SidebarNavProps) {
-  const location = useLocation();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    overview: true,
-    management: true,
-    content: true,
-    logging: false,
-    system: false
-  });
-
-  // Auto-open group that contains the active route
-  useEffect(() => {
-    const currentPath = location.pathname;
-    
-    // Find which group contains the current path and open it
-    navGroups.forEach(group => {
-      const groupContainsCurrentPath = group.items.some(item => item.href === currentPath);
-      if (groupContainsCurrentPath) {
-        setOpenGroups(prev => ({
-          ...prev,
-          [group.name.toLowerCase()]: true
-        }));
-      }
-    });
-  }, [location.pathname]);
-
-  const toggleGroup = (groupName: string) => {
-    if (collapsed) return;
-    
-    setOpenGroups(prev => ({
-      ...prev,
-      [groupName]: !prev[groupName]
-    }));
-  };
-
-  const navGroups: NavGroup[] = [
-    {
-      name: "Overview",
-      icon: Folder,
-      items: [
-        {
-          name: "Dashboard",
-          href: "/",
-          icon: LayoutDashboard,
-        }
-      ]
-    },
-    {
-      name: "Management",
-      icon: Folder,
-      items: [
-        {
-          name: "Users",
-          href: "/users",
-          icon: Users,
-        },
-        {
-          name: "Roles",
-          href: "/roles",
-          icon: Shield,
-        },
-        {
-          name: "Permissions",
-          href: "/permissions",
-          icon: Key,
-        },
-        {
-          name: "Tokens",
-          href: "/tokens",
-          icon: Key,
-        },
-        {
-          name: "Files",
-          href: "/files",
-          icon: FileText,
-        },
-        {
-          name: "Bots",
-          href: "/bots",
-          icon: Bot,
-        }
-      ]
-    },
-    {
-      name: "Content",
-      icon: Folder,
-      items: [
-        {
-          name: "Blog Posts",
-          href: "/blogs",
-          icon: FileIcon,
-        }
-      ]
-    },
-    {
-      name: "Logging",
-      icon: Folder,
-      items: [
-        {
-          name: "Audit Log",
-          href: "/audit-log",
-          icon: ClipboardList,
-        },
-        {
-          name: "User Request Log",
-          href: "/user-request-log",
-          icon: LogIn,
-        },
-        {
-          name: "Event Log",
-          href: "/event-log",
-          icon: Activity,
-        }
-      ]
-    },
-    {
-      name: "System",
-      icon: Folder,
-      items: [
-        {
-          name: "Notifications",
-          href: "/notifications",
-          icon: Bell,
-        },
-        {
-          name: "Configuration",
-          href: "/configuration",
-          icon: Settings,
-        },
-        {
-          name: "Feature Flags",
-          href: "/feature-flags",
-          icon: Flag,
-        }
-      ]
-    }
-  ];
-
+  const chatSystemEnabled = useFeatureFlag('chat_system');
+  
   return (
-    <div className="flex flex-col flex-1">
-      <nav className="flex-1 overflow-y-auto py-4">
-        <ul className="space-y-1 px-2">
-          {navGroups.map((group) => (
-            <li key={group.name} className="mb-2">
-              {/* Group header */}
-              <button
-                onClick={() => toggleGroup(group.name.toLowerCase())}
-                className={cn(
-                  "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  "text-sidebar-foreground hover:bg-sidebar-accent/30",
-                  collapsed ? "justify-center" : "",
-                  "group transition-all duration-200"
-                )}
-              >
-                <group.icon className={cn(
-                  'h-5 w-5 transition-transform duration-200',
-                  collapsed ? '' : 'mr-3',
-                  openGroups[group.name.toLowerCase()] ? "text-primary" : "text-sidebar-foreground"
-                )} />
-                {!collapsed && (
-                  <>
-                    <span className={cn(
-                      "flex-1 transition-colors duration-200",
-                      openGroups[group.name.toLowerCase()] ? "text-primary font-medium" : ""
-                    )}>{group.name}</span>
-                    <div className="transition-transform duration-200">
-                      {openGroups[group.name.toLowerCase()] ? 
-                        <ChevronDown className="h-4 w-4" /> : 
-                        <ChevronRight className="h-4 w-4" />
-                      }
-                    </div>
-                  </>
-                )}
-              </button>
-              
-              {/* Group items */}
-              <div className={cn(
-                "transition-all duration-200 ease-in-out overflow-hidden",
-                openGroups[group.name.toLowerCase()] || collapsed ? "max-h-96" : "max-h-0",
-              )}>
-                <ul className={cn(
-                  "mt-1 space-y-1",
-                  collapsed ? "px-0" : "pl-7 pr-2"
-                )}>
-                  {group.items.map((item) => (
-                    <li key={item.name} className="animate-fade-in">
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
-                          location.pathname === item.href
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm'
-                            : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                          collapsed ? 'justify-center' : '',
-                          "hover:translate-x-1"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          'h-5 w-5 transition-colors duration-200',
-                          collapsed ? '' : 'mr-3',
-                          location.pathname === item.href ? 'text-primary' : ''
-                        )} />
-                        {!collapsed && <span>{item.name}</span>}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <div className="flex flex-col flex-1 overflow-y-auto py-2 px-3">
+      <NavItem
+        href="/"
+        icon={BarChart}
+        title="Dashboard"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/users"
+        icon={Users}
+        title="Users"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/roles"
+        icon={Shield}
+        title="Roles"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/permissions"
+        icon={Key}
+        title="Permissions"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/tokens"
+        icon={Key}
+        title="API Tokens"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/files"
+        icon={FileBox}
+        title="Files"
+        badge="New"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/notifications"
+        icon={Bell}
+        title="Notifications"
+        badge="5"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/blogs"
+        icon={BookOpen}
+        title="Blogs"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/bots"
+        icon={Bot}
+        title="Bot Management"
+        collapsed={collapsed}
+      />
+      
+      {!collapsed && (
+        <div className="mt-6">
+          <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">
+            System
+          </h3>
+        </div>
+      )}
+      
+      <NavItem
+        href="/configuration"
+        icon={Wrench}
+        title="Configuration"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/feature-flags"
+        icon={Flag}
+        title="Feature Flags"
+        collapsed={collapsed}
+      />
+      
+      {!collapsed && (
+        <div className="mt-6">
+          <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">
+            Logs
+          </h3>
+        </div>
+      )}
+      
+      <NavItem
+        href="/audit-log"
+        icon={ScrollText}
+        title="Audit Log"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/user-request-log"
+        icon={ClipboardList}
+        title="User Request Log"
+        collapsed={collapsed}
+      />
+      <NavItem
+        href="/event-log"
+        icon={FileText}
+        title="Event Log"
+        collapsed={collapsed}
+      />
     </div>
   );
 }

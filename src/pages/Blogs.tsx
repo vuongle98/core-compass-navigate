@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -7,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { BlogPost } from "@/types/Blog";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Eye, Clock, MessageCircle, Tag, Bookmark, AlertCircle, Plus } from "lucide-react";
+import { Pencil, Trash2, Eye, Clock, MessageCircle, Bookmark, AlertCircle, Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
@@ -73,7 +74,59 @@ const Blogs = () => {
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
-    onError: () => setShowError(true)
+    onError: () => setShowError(true),
+    // Add fallback data to ensure we always have something to display
+    fallbackData: {
+      content: [
+        {
+          id: "post-1",
+          title: "Getting Started with React Hooks",
+          slug: "getting-started-with-react-hooks",
+          content: "Introduction to React Hooks...",
+          excerpt: "Learn how to use React Hooks to simplify your components and share stateful logic.",
+          publishDate: "2023-05-15T10:30:00Z",
+          status: "published",
+          authorId: "author-1",
+          authorName: "Jane Smith",
+          categoryId: "cat-1",
+          categoryName: "Development",
+          commentCount: 8,
+          viewCount: 1250
+        },
+        {
+          id: "post-2",
+          title: "Mastering CSS Grid Layout",
+          slug: "mastering-css-grid-layout",
+          content: "Understanding CSS Grid...",
+          excerpt: "Learn how to create complex layouts with CSS Grid Layout.",
+          publishDate: "2023-06-05T14:45:00Z",
+          status: "published",
+          authorId: "author-2",
+          authorName: "John Doe",
+          categoryId: "cat-2",
+          categoryName: "Design",
+          commentCount: 5,
+          viewCount: 980
+        },
+        {
+          id: "post-3",
+          title: "SEO Strategies for 2023",
+          slug: "seo-strategies-for-2023",
+          content: "Latest SEO Trends...",
+          excerpt: "Stay ahead of the competition with these effective SEO strategies for 2023.",
+          publishDate: "2023-07-10T11:15:00Z",
+          status: "draft",
+          authorId: "author-3",
+          authorName: "Sarah Williams",
+          categoryId: "cat-3",
+          categoryName: "Marketing",
+          commentCount: 12,
+          viewCount: 1520
+        }
+      ],
+      totalItems: 3,
+      totalPages: 1
+    }
   });
 
   const handleDelete = async (id: string) => {
@@ -233,7 +286,7 @@ const Blogs = () => {
           </Alert>
         )}
         
-        <div className="flex justify-between mb-4">
+        <div className="flex flex-col lg:flex-row justify-between mb-4 gap-4">
           <Card className="w-full p-4">
             <DataFilters
               filters={filters}
@@ -244,7 +297,7 @@ const Blogs = () => {
           </Card>
           
           {hasCreatePermission && (
-            <Button onClick={handleCreateBlog} className="ml-4 whitespace-nowrap">
+            <Button onClick={handleCreateBlog} className="lg:ml-4 whitespace-nowrap h-fit">
               <Plus className="h-4 w-4 mr-2" />
               Create Blog
             </Button>

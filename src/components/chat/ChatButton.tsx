@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -16,19 +16,40 @@ const ChatButton = ({ className }: ChatButtonProps) => {
   const isChatEnabled = useFeatureFlag('chat_system');
   const [unreadCount, setUnreadCount] = useState(3);
   const [hasNewMessage, setHasNewMessage] = useState(false);
+  const pingInterval = useRef<NodeJS.Timeout | null>(null);
   
   // Simulate receiving new messages with a ping pong effect
   useEffect(() => {
+    // Clean up previous interval if exists
+    if (pingInterval.current) {
+      clearInterval(pingInterval.current);
+      pingInterval.current = null;
+    }
+    
     if (!isOpen && unreadCount > 0) {
-      const interval = setInterval(() => {
+      // Create new interval for ping-pong effect
+      pingInterval.current = setInterval(() => {
         setHasNewMessage(prev => !prev);
       }, 2000);
       
-      return () => clearInterval(interval);
+      return () => {
+        if (pingInterval.current) {
+          clearInterval(pingInterval.current);
+        }
+      };
     } else {
       setHasNewMessage(false);
     }
   }, [isOpen, unreadCount]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pingInterval.current) {
+        clearInterval(pingInterval.current);
+      }
+    };
+  }, []);
   
   if (!isChatEnabled) {
     return null;
@@ -59,6 +80,7 @@ const ChatButton = ({ className }: ChatButtonProps) => {
         onClick={toggleChat}
         className={`${buttonAnimation} fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg flex items-center justify-center bg-primary hover:bg-primary/90 ${className}`}
         aria-label={isOpen ? "Close chat" : "Open chat"}
+        type="button"
       >
         {isOpen ? (
           <X className="h-6 w-6" />
