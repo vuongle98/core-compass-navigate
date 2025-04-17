@@ -129,7 +129,9 @@ const Blogs = () => {
         }
       ],
       totalElements: 3,
-      totalPages: 1
+      totalPages: 1,
+      number: 0,
+      size: 10
     }
   });
 
