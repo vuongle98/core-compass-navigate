@@ -47,21 +47,21 @@ export const getAnimationClass = ({
   );
 };
 
-// Animated component wrapper
+// Animated component wrapper - using function approach instead of JSX
 export const withAnimation = (Component: React.ComponentType<any>, animationProps: AnimationProps) => {
-  return (props: any) => {
+  return function WithAnimationWrapper(props: any) {
     const animationClass = getAnimationClass(animationProps);
     
-    return (
-      <div 
-        className={animationClass} 
-        style={{ 
+    return React.createElement(
+      'div',
+      { 
+        className: animationClass, 
+        style: { 
           '--animation-duration': `${animationProps.duration || 300}ms`,
           '--animation-delay': `${animationProps.delay || 0}ms`
-        } as React.CSSProperties}
-      >
-        <Component {...props} />
-      </div>
+        } as React.CSSProperties
+      },
+      React.createElement(Component, props)
     );
   };
 };
