@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
+import useApiQuery from "@/hooks/use-api-query";
+import useDebounce from "@/hooks/use-debounce";
 
 interface Role {
   id: number;
@@ -60,11 +62,10 @@ const Roles = () => {
     name: "",
     description: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [filter, setFilter] = useState({
-    userCount: "",
-    search: "",
-  });
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const filterOptions: FilterOption[] = [
     {
@@ -84,6 +85,39 @@ const Roles = () => {
       ],
     },
   ];
+
+  const {
+    data: roleData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    error,
+  } = useApiQuery<Role>({
+    endpoint: "/api/role",
+    queryKey: ["roles", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch roles:", err);
+      toast.error("Failed to load roles, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
+      });
+    },
+    mockData: {
+      content: roles,
+      totalElements: roles.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -170,39 +204,6 @@ const Roles = () => {
     }
   };
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilter({
-      userCount: newFilters.userCount || "",
-      search: newFilters.search || "",
-    });
-  };
-
-  const resetFilters = () => {
-    setFilter({ userCount: "", search: "" });
-  };
-
-  const filteredRoles = roles.filter((role) => {
-    const userCountFilter = filter.userCount
-      ? (() => {
-          if (filter.userCount === "low")
-            return role.userCount >= 0 && role.userCount <= 10;
-          if (filter.userCount === "medium")
-            return role.userCount > 10 && role.userCount <= 30;
-          if (filter.userCount === "high") return role.userCount > 30;
-          return true;
-        })()
-      : true;
-
-    const searchFilter = filter.search
-      ? role.name.toLowerCase().includes(filter.search.toLowerCase()) ||
-        (role.code &&
-          role.code.toLowerCase().includes(filter.search.toLowerCase())) ||
-        role.description.toLowerCase().includes(filter.search.toLowerCase())
-      : true;
-
-    return userCountFilter && searchFilter;
-  });
-
   const columns: Column<Role>[] = [
     {
       header: "#",
@@ -257,21 +258,35 @@ const Roles = () => {
           description="Define user roles in your application"
         >
           <DataFilters
-            filters={filter}
+            filters={filters}
             options={filterOptions}
-            onChange={handleFilterChange}
-            onReset={resetFilters}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
             className="mt-2"
           />
         </PageHeader>
 
         <div className="mt-4">
           <DataTable
-            data={filteredRoles}
+            data={roleData}
             columns={columns}
             title="Role Management"
             pagination={true}
-            apiEndpoint="/api/role"
+            isLoading={isLoading}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
           />
         </div>
 

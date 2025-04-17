@@ -36,15 +36,8 @@ interface DataTableProps<T> {
   pageSize?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
-  apiEndpoint?: string;
   initialPageSize?: number;
   pageSizeOptions?: number[];
-  selectedItems?: (number | string)[];
-  onSelectItems?: (id: number | string, selected: boolean) => void;
-  onSelectAll?: (selected: boolean) => void;
-  onAdd?: (item: any) => void;
-  onEdit?: (item: any) => void;
-  onDelete?: (id: number | string) => void;
 }
 
 export function DataTable<T>({
@@ -61,14 +54,7 @@ export function DataTable<T>({
   onPageChange,
   onPageSizeChange,
   initialPageSize,
-  pageSizeOptions,
-  selectedItems,
-  onSelectItems,
-  onSelectAll,
-  apiEndpoint,
-  onAdd,
-  onEdit,
-  onDelete,
+  pageSizeOptions
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
@@ -99,11 +85,16 @@ export function DataTable<T>({
       <CardContent className="p-0 overflow-x-auto">
         <Table>
           <TableHeader>
-            {columns.map((column) => (
-              <TableHead key={column.header} className={column.sortable ? "cursor-pointer" : ""}>
-                {column.header}
-              </TableHead>
-            ))}
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead
+                  key={column.header}
+                  className={column.sortable ? "cursor-pointer" : ""}
+                >
+                  {column.header}
+                </TableHead>
+              ))}
+            </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
@@ -120,7 +111,10 @@ export function DataTable<T>({
             ) : data.length === 0 ? (
               // Empty state
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-4">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center py-4"
+                >
                   No data available.
                 </TableCell>
               </TableRow>
@@ -130,7 +124,11 @@ export function DataTable<T>({
                 <TableRow key={index}>
                   {columns.map((column) => (
                     <TableCell key={column.header || column.id}>
-                      {column.cell ? column.cell(item) : column.accessorKey ? item[column.accessorKey as keyof T] as ReactNode : null}
+                      {column.cell
+                        ? column.cell(item)
+                        : column.accessorKey
+                        ? (item[column.accessorKey as keyof T] as ReactNode)
+                        : null}
                     </TableCell>
                   ))}
                 </TableRow>

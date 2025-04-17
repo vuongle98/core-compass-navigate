@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
+import useApiQuery from "@/hooks/use-api-query";
+import useDebounce from "@/hooks/use-debounce";
 
 interface Permission {
   id: number;
@@ -85,11 +87,10 @@ const Permissions = () => {
     description: "",
     module: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [filter, setFilter] = useState({
-    module: "",
-    search: "",
-  });
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const filterOptions: FilterOption[] = [
     {
@@ -138,6 +139,39 @@ const Permissions = () => {
     "Configuration",
     "System",
   ];
+
+  const {
+    data: permissionsData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    error,
+  } = useApiQuery<Permission>({
+    endpoint: "/api/permission",
+    queryKey: ["permissions", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch roles:", err);
+      toast.error("Failed to load roles, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
+      });
+    },
+    mockData: {
+      content: permissions,
+      totalElements: permissions.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
 
   const openCreateDialog = () => {
     setEditingPermission(null);
@@ -222,29 +256,6 @@ const Permissions = () => {
     }
   };
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilter({
-      module: newFilters.module || "",
-      search: newFilters.search || "",
-    });
-  };
-
-  const resetFilters = () => {
-    setFilter({ module: "", search: "" });
-  };
-
-  const filteredPermissions = permissions.filter((permission) => {
-    return (
-      (filter.module === "" || permission.module === filter.module) &&
-      (filter.search === "" ||
-        permission.name.toLowerCase().includes(filter.search.toLowerCase()) ||
-        permission.code.toLowerCase().includes(filter.search.toLowerCase()) ||
-        permission.description
-          .toLowerCase()
-          .includes(filter.search.toLowerCase()))
-    );
-  });
-
   const columns: Column<Permission>[] = [
     {
       header: "#",
@@ -301,21 +312,35 @@ const Permissions = () => {
       <main className="flex-1 overflow-y-auto p-8">
         <PageHeader title="Permissions" description="Manage system permissions">
           <DataFilters
-            filters={filter}
+            filters={filters}
             options={filterOptions}
-            onChange={handleFilterChange}
-            onReset={resetFilters}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
             className="mt-2"
           />
         </PageHeader>
 
         <div className="mt-4">
           <DataTable
-            data={filteredPermissions}
+            data={permissionsData}
             columns={columns}
             title="Permission Management"
             pagination={true}
-            apiEndpoint="/api/permission"
+            isLoading={isLoading}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
           />
         </div>
 

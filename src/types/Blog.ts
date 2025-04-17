@@ -7,7 +7,7 @@ export interface BlogPost {
   excerpt: string;
   coverImage?: string;
   publishDate: string;
-  status: 'draft' | 'published' | 'scheduled';
+  status: string; // 'draft' | 'published' | 'scheduled';
   authorId: string;
   authorName: string;
   categoryId?: string;

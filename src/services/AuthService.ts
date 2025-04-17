@@ -6,12 +6,13 @@ import { DEFAULT_ROLES } from '@/types/Auth';
 interface AuthTokens {
   token: string;
   refreshToken: string;
+  user: User;
 }
 
 interface JwtPayload {
   sub: string;
   name: string;
-  email: string;
+  username: string;
   role: string;
   roles?: string[];
   permissions?: string[];
@@ -23,20 +24,20 @@ class AuthService {
   private readonly USER_KEY = 'current_user';
 
   /**
-   * Login with email and password
+   * Login with username and password
    */
-  async login(email: string, password: string): Promise<boolean> {
+  async login(username: string, password: string): Promise<boolean> {
     try {
       const response = await EnhancedApiService.post<AuthTokens>(
-        '/api/auth/login',
-        { email, password }
+        '/api/auth/token',
+        { username, password }
       );
 
       if (response.success && response.data) {
         this.setTokens(response.data);
         
         // Store user info from token
-        const user = this.extractUserFromToken(response.data.token);
+        const user = response.data.user;
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         
         return true;
@@ -58,10 +59,11 @@ class AuthService {
    * Create a mock admin user for development
    */
   private createMockAdminUser(): void {
+    console.log("Creating mock admin user for development...");
     const mockUser: User = {
       id: 'mock-user-id',
       name: 'Admin User',
-      email: 'admin@example.com',
+      username: 'admin',
       role: 'ADMIN',
       roles: ['ADMIN'],
       permissions: DEFAULT_ROLES.ADMIN.permissions,
@@ -74,7 +76,8 @@ class AuthService {
     // Create fake tokens
     const mockTokens: AuthTokens = {
       token: 'mock-token',
-      refreshToken: 'mock-refresh-token'
+      refreshToken: 'mock-refresh-token',
+      user: mockUser
     };
     
     localStorage.setItem(this.TOKEN_KEY, JSON.stringify(mockTokens));
@@ -153,11 +156,11 @@ class AuthService {
   /**
    * Reset password request
    */
-  async resetPassword(email: string): Promise<boolean> {
+  async resetPassword(username: string): Promise<boolean> {
     try {
       const response = await EnhancedApiService.post(
         '/api/auth/reset-password',
-        { email }
+        { username }
       );
       
       return response.success;
@@ -224,22 +227,6 @@ class AuthService {
     } catch (error) {
       return null;
     }
-  }
-
-  /**
-   * Extract user data from JWT token
-   */
-  private extractUserFromToken(token: string): User {
-    const decoded = jwtDecode<JwtPayload>(token);
-    
-    return {
-      id: decoded.sub,
-      name: decoded.name,
-      email: decoded.email,
-      role: decoded.role,
-      roles: decoded.roles || [decoded.role],
-      permissions: decoded.permissions || DEFAULT_ROLES.ADMIN.permissions
-    };
   }
 }
 

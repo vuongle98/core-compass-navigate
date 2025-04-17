@@ -120,7 +120,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     };
 
     search();
-  }, [debouncedSearchQuery, filteredNavigationItems, hasPermission]);
+  }, [debouncedSearchQuery, hasPermission]);
 
   const handleSelect = (result: SearchResult) => {
     onOpenChange(false);

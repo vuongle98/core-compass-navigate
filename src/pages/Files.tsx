@@ -38,6 +38,9 @@ import {
 } from "@/components/ui/hover-card";
 import ApiService from "@/services/ApiService";
 import { toast } from "sonner";
+import useApiQuery from "@/hooks/use-api-query";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import useDebounce from "@/hooks/use-debounce";
 
 interface FileItem {
   id: number;
@@ -67,73 +70,115 @@ const FileTypeIcon = ({ type }: { type: string }) => {
 
 const Files = () => {
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [draggedFile, setDraggedFile] = useState<number | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Simulating data fetch with a delay for skeleton loading demo
-  useEffect(() => {
-    const fetchFiles = async () => {
-      // Log API request
-      ApiService.logUserAction("file_page_loaded", {
-        timestamp: new Date().toISOString(),
+  const mockFiles: FileItem[] = [
+    {
+      id: 1,
+      name: "annual-report.pdf",
+      type: "PDF",
+      size: "2.4 MB",
+      uploadedBy: "Alice Smith",
+      uploadedAt: "2023-04-10",
+      url: null,
+    },
+    {
+      id: 2,
+      name: "user-avatar.png",
+      type: "Image",
+      size: "156 KB",
+      uploadedBy: "Bob Johnson",
+      uploadedAt: "2023-04-09",
+      url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
+    },
+    {
+      id: 3,
+      name: "data-export.csv",
+      type: "CSV",
+      size: "1.2 MB",
+      uploadedBy: "Carol Davis",
+      uploadedAt: "2023-04-08",
+      url: null,
+    },
+    {
+      id: 4,
+      name: "product-photo.jpg",
+      type: "Image",
+      size: "1.8 MB",
+      uploadedBy: "Dave Wilson",
+      uploadedAt: "2023-04-07",
+      url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
+    },
+    {
+      id: 5,
+      name: "marketing-banner.png",
+      type: "Image",
+      size: "2.1 MB",
+      uploadedBy: "Eve Brown",
+      uploadedAt: "2023-04-06",
+      url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
+    },
+  ];
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const {
+    data: fileData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    error,
+  } = useApiQuery<FileItem>({
+    endpoint: "/api/file",
+    queryKey: ["files", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch files:", err);
+      toast.error("Failed to load files, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
       });
+    },
+    mockData: {
+      content: mockFiles,
+      totalElements: mockFiles.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
 
-      const mockFiles: FileItem[] = [
-        {
-          id: 1,
-          name: "annual-report.pdf",
-          type: "PDF",
-          size: "2.4 MB",
-          uploadedBy: "Alice Smith",
-          uploadedAt: "2023-04-10",
-          url: null,
-        },
-        {
-          id: 2,
-          name: "user-avatar.png",
-          type: "Image",
-          size: "156 KB",
-          uploadedBy: "Bob Johnson",
-          uploadedAt: "2023-04-09",
-          url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
-        },
-        {
-          id: 3,
-          name: "data-export.csv",
-          type: "CSV",
-          size: "1.2 MB",
-          uploadedBy: "Carol Davis",
-          uploadedAt: "2023-04-08",
-          url: null,
-        },
-        {
-          id: 4,
-          name: "product-photo.jpg",
-          type: "Image",
-          size: "1.8 MB",
-          uploadedBy: "Dave Wilson",
-          uploadedAt: "2023-04-07",
-          url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
-        },
-        {
-          id: 5,
-          name: "marketing-banner.png",
-          type: "Image",
-          size: "2.1 MB",
-          uploadedBy: "Eve Brown",
-          uploadedAt: "2023-04-06",
-          url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
-        },
-      ];
-
-      setFiles(mockFiles);
-    };
-
-    fetchFiles();
-  }, []);
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search roles...",
+    },
+    {
+      id: "userCount",
+      label: "User Count",
+      type: "select",
+      options: [
+        { value: "low", label: "Low (0-10)" },
+        { value: "medium", label: "Medium (11-30)" },
+        { value: "high", label: "High (31+)" },
+      ],
+    },
+  ];
 
   const handleDragStart = (fileId: number) => {
     setDraggedFile(fileId);
@@ -201,9 +246,6 @@ const Files = () => {
           newFiles.push(newFile);
         }
 
-        // Update files with new uploads
-        setFiles((prevFiles) => [...newFiles, ...prevFiles]);
-
         toast.success(`${fileList.length} file(s) uploaded successfully`);
         ApiService.logUserAction("files_uploaded", { count: fileList.length });
       }
@@ -218,9 +260,6 @@ const Files = () => {
   };
 
   const handleDeleteFile = (id: number) => {
-    // Optimistic UI update - remove immediately
-    setFiles((prevFiles) => prevFiles.filter((f) => f.id !== id));
-
     toast.success("File deleted successfully");
     ApiService.logUserAction("file_deleted", { fileId: id });
   };
@@ -379,7 +418,24 @@ const Files = () => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <PageHeader title="Files" description="Manage uploaded files" />
+        <PageHeader title="Files" description="Manage uploaded files">
+          <DataFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
+            className="mt-2"
+          />
+        </PageHeader>
 
         {isDraggingOver && (
           <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
@@ -418,12 +474,17 @@ const Files = () => {
 
         <div className="mt-6">
           <DataTable
-            data={files}
+            data={fileData}
             columns={columns}
             title="File Management"
             pagination={true}
-            apiEndpoint="/api/file"
             showAddButton={false}
+            isLoading={isLoading}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
           />
         </div>
 

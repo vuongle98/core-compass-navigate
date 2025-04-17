@@ -17,6 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter, X, Eye, Search } from "lucide-react";
+import useApiQuery from "@/hooks/use-api-query";
+import useDebounce from "@/hooks/use-debounce";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 
 interface User {
   id: number;
@@ -28,7 +31,7 @@ interface User {
 
 const Users = () => {
   // Mock data with state management
-  const [users, setUsers] = useState([
+  const mockUsers = [
     {
       id: 1,
       username: "Alice Smith",
@@ -57,13 +60,11 @@ const Users = () => {
       roles: ["User"],
       locked: false,
     },
-  ]);
+  ];
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [filter, setFilter] = useState({
-    locked: "",
-    role: "",
-    search: "",
-  });
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Detail view hook for user profile
   const {
@@ -76,38 +77,73 @@ const Users = () => {
     detailRoute: "/users",
   });
 
-  const handleAddUser = (newUser: Omit<(typeof users)[0], "id">) => {
-    const id = Math.max(0, ...users.map((user) => Number(user.id))) + 1;
-    setUsers([...users, { ...newUser, id }]);
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search roles...",
+    },
+    {
+      id: "userCount",
+      label: "User Count",
+      type: "select",
+      options: [
+        { value: "low", label: "Low (0-10)" },
+        { value: "medium", label: "Medium (11-30)" },
+        { value: "high", label: "High (31+)" },
+      ],
+    },
+  ];
+
+  const {
+    data: userData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    error,
+  } = useApiQuery<User>({
+    endpoint: "/api/user",
+    queryKey: ["users", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch users:", err);
+      toast.error("Failed to load users, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
+      });
+    },
+    mockData: {
+      content: mockUsers,
+      totalElements: mockUsers.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
+
+  const handleAddUser = (newUser: Omit<(typeof mockUsers)[0], "id">) => {
     toast.success("User added successfully");
   };
 
-  const handleEditUser = (updatedUser: (typeof users)[0]) => {
-    setUsers(
-      users.map((user) => (user.id === updatedUser.id ? updatedUser : user))
-    );
+  const handleEditUser = (updatedUser: (typeof mockUsers)[0]) => {
     toast.success("User updated successfully");
   };
 
   const handleDeleteUser = (id: number | string) => {
-    setUsers(users.filter((user) => user.id !== id));
     toast.success("User deleted successfully");
   };
 
   const handleViewUser = (user: User) => {
     openUserProfile(user);
   };
-
-  const filteredUsers = users.filter((user) => {
-    return (
-      (filter.locked === "" ||
-        user.locked === (filter.locked as unknown as boolean)) &&
-      (filter.role === "" || user.roles.includes(filter.role)) &&
-      (filter.search === "" ||
-        user.username.toLowerCase().includes(filter.search.toLowerCase()) ||
-        user.email.toLowerCase().includes(filter.search.toLowerCase()))
-    );
-  });
 
   const getActionItems = (user: User) => {
     const actions: {
@@ -188,14 +224,6 @@ const Users = () => {
     },
   ];
 
-  const resetFilters = () => {
-    setFilter({
-      locked: "",
-      role: "",
-      search: "",
-    });
-  };
-
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -207,80 +235,36 @@ const Users = () => {
           description="Manage your application users"
           showAddButton={false}
         >
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={filter.search}
-                onChange={(e) =>
-                  setFilter({ ...filter, search: e.target.value })
-                }
-                className="pl-8 w-[200px] md:w-[300px]"
-              />
-              {filter.search && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1.5 h-6 w-6 p-0"
-                  onClick={() => setFilter({ ...filter, search: "" })}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <Select
-              value={filter.locked || "all"}
-              onValueChange={(value) =>
-                setFilter({ ...filter, locked: value === "all" ? "" : value })
+          <DataFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
               }
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filter.role || "all"}
-              onValueChange={(value) =>
-                setFilter({ ...filter, role: value === "all" ? "" : value })
-              }
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="User">User</SelectItem>
-                <SelectItem value="Editor">Editor</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {(filter.locked || filter.role || filter.search) && (
-              <Button variant="ghost" onClick={resetFilters}>
-                <X className="mr-2 h-4 w-4" />
-                Clear Filters
-              </Button>
-            )}
-          </div>
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
+            className="mt-2"
+          />
         </PageHeader>
 
         <div className="mt-6">
           <DataTable
-            data={filteredUsers}
+            data={userData}
             columns={columns}
             title="User Management"
-            apiEndpoint="/api/user"
-            onAdd={handleAddUser}
-            onEdit={handleEditUser}
-            onDelete={handleDeleteUser}
             pagination={true}
+            isLoading={isLoading}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
           />
         </div>
 

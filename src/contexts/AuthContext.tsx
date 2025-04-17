@@ -7,7 +7,8 @@ import featureFlagService from '@/services/FeatureFlagService';
 // Define the User interface in one place to avoid conflicts
 export interface User {
   id: string;
-  email: string;
+  username: string;
+  email?: string;
   name: string;
   role: string;
   roles?: string[] | Role[];
@@ -20,10 +21,10 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUserProfile: (data: Partial<User>) => void;
-  resetPassword: (email: string) => Promise<boolean>;
+  resetPassword: (username: string) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
@@ -59,10 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const success = await AuthService.login(email, password);
+      const success = await AuthService.login(username, password);
       if (success) {
         const currentUser = AuthService.getCurrentUser();
         // Make sure we're setting the state with the correct User type
@@ -100,9 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const resetPassword = async (email: string): Promise<boolean> => {
+  const resetPassword = async (username: string): Promise<boolean> => {
     try {
-      await AuthService.resetPassword(email);
+      await AuthService.resetPassword(username);
       toast.success("Password reset email sent", {
         description: "Please check your inbox for instructions"
       });

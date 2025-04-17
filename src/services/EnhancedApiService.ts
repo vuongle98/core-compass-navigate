@@ -231,6 +231,7 @@ class EnhancedApiService {
           "using_mock_data",
           `Using mock data for ${url}`
         );
+        console.log(mockData)
         return {
           data: mockData,
           success: true,

@@ -136,6 +136,7 @@ export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
       );
       
       // If mock data is provided, use it as fallback
+      console.log("mockData", options.mockData);
       if (options.mockData) {
         LoggingService.info(
           "api_query",
