@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -13,6 +13,42 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Handle mouse enter - expand after small delay
+  const handleMouseEnter = () => {
+    if (collapsed) {
+      // Clear any existing timeout
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      
+      // Set a small delay before expanding
+      const timeout = setTimeout(() => {
+        setCollapsed(false);
+      }, 300);
+      
+      setHoverTimeout(timeout);
+    }
+  };
+
+  // Handle mouse leave - collapse after delay
+  const handleMouseLeave = () => {
+    // Clear any existing timeout
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    
+    // Set a delay before collapsing to prevent flicker
+    const timeout = setTimeout(() => {
+      setCollapsed(true);
+    }, 500);
+    
+    setHoverTimeout(timeout);
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+    };
+  }, [hoverTimeout]);
 
   return (
     <div
@@ -21,6 +57,8 @@ export function Sidebar({ className }: SidebarProps) {
         collapsed ? 'w-16' : 'w-64',
         className
       )}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
         {!collapsed && (

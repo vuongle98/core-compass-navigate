@@ -187,46 +187,64 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
                 className={cn(
                   "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   "text-sidebar-foreground hover:bg-sidebar-accent/30",
-                  collapsed ? "justify-center" : ""
+                  collapsed ? "justify-center" : "",
+                  "group transition-all duration-200"
                 )}
               >
-                <group.icon className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
+                <group.icon className={cn(
+                  'h-5 w-5 transition-transform duration-200',
+                  collapsed ? '' : 'mr-3',
+                  openGroups[group.name.toLowerCase()] ? "text-primary" : "text-sidebar-foreground"
+                )} />
                 {!collapsed && (
                   <>
-                    <span className="flex-1">{group.name}</span>
-                    {openGroups[group.name.toLowerCase()] ? 
-                      <ChevronDown className="h-4 w-4" /> : 
-                      <ChevronRight className="h-4 w-4" />
-                    }
+                    <span className={cn(
+                      "flex-1 transition-colors duration-200",
+                      openGroups[group.name.toLowerCase()] ? "text-primary font-medium" : ""
+                    )}>{group.name}</span>
+                    <div className="transition-transform duration-200">
+                      {openGroups[group.name.toLowerCase()] ? 
+                        <ChevronDown className="h-4 w-4" /> : 
+                        <ChevronRight className="h-4 w-4" />
+                      }
+                    </div>
                   </>
                 )}
               </button>
               
               {/* Group items */}
-              {(openGroups[group.name.toLowerCase()] || collapsed) && (
+              <div className={cn(
+                "transition-all duration-200 ease-in-out overflow-hidden",
+                openGroups[group.name.toLowerCase()] || collapsed ? "max-h-96" : "max-h-0",
+              )}>
                 <ul className={cn(
                   "mt-1 space-y-1",
                   collapsed ? "px-0" : "pl-7 pr-2"
                 )}>
                   {group.items.map((item) => (
-                    <li key={item.name}>
+                    <li key={item.name} className="animate-fade-in">
                       <Link
                         to={item.href}
                         className={cn(
-                          'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          'flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
                           location.pathname === item.href
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm'
                             : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                          collapsed ? 'justify-center' : ''
+                          collapsed ? 'justify-center' : '',
+                          "hover:translate-x-1"
                         )}
                       >
-                        <item.icon className={cn('h-5 w-5', collapsed ? '' : 'mr-3')} />
+                        <item.icon className={cn(
+                          'h-5 w-5 transition-colors duration-200',
+                          collapsed ? '' : 'mr-3',
+                          location.pathname === item.href ? 'text-primary' : ''
+                        )} />
                         {!collapsed && <span>{item.name}</span>}
                       </Link>
                     </li>
                   ))}
                 </ul>
-              )}
+              </div>
             </li>
           ))}
         </ul>

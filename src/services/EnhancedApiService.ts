@@ -1,3 +1,4 @@
+
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
@@ -6,6 +7,7 @@ import AuthService from "./AuthService";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 const API_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
+const MAX_RETRY_ATTEMPTS_TOTAL = 5; // Add a global limit to prevent infinite retries
 
 // Add custom metadata property to AxiosRequestConfig
 declare module 'axios' {
@@ -50,6 +52,7 @@ class EnhancedApiService {
       "Content-Type": "application/json",
     },
   });
+  private retryAttemptsTotal = 0; // Track total retry attempts across all requests
 
   private constructor() {
     this.setupInterceptors();
@@ -162,7 +165,8 @@ class EnhancedApiService {
           (error.code === "ECONNABORTED" || 
            error.code === "ERR_NETWORK" || 
            (response && response.status >= 500)) && 
-          retryCount < MAX_RETRIES
+          retryCount < MAX_RETRIES &&
+          this.retryAttemptsTotal < MAX_RETRY_ATTEMPTS_TOTAL
         ) {
           // Exponential backoff
           const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
@@ -171,6 +175,8 @@ class EnhancedApiService {
             "retry_attempt", 
             `Retrying request to ${config.url} (${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms`
           );
+          
+          this.retryAttemptsTotal++;
           
           return new Promise((resolve) => {
             setTimeout(() => {
@@ -183,6 +189,19 @@ class EnhancedApiService {
               resolve(this.apiClient(newConfig));
             }, delay);
           });
+        }
+
+        // Reset total retries after reaching the limit
+        if (this.retryAttemptsTotal >= MAX_RETRY_ATTEMPTS_TOTAL) {
+          LoggingService.warn(
+            "api",
+            "retry_limit_reached",
+            `Maximum total retry attempts (${MAX_RETRY_ATTEMPTS_TOTAL}) reached, stopping retries`
+          );
+          // Reset after a while to allow future requests to retry
+          setTimeout(() => {
+            this.retryAttemptsTotal = 0;
+          }, 60000); // Reset after 1 minute
         }
 
         return Promise.reject(error);
