@@ -42,21 +42,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const { toast } = useToast();
   const [isFocused, setIsFocused] = useState(false);
   
-  // Initialize the editor with initial content if provided
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.innerHTML = initialValue;
     }
   }, [initialValue]);
 
-  // Handle input changes and propagate to parent component
   const handleInput = () => {
     if (editorRef.current && onChange) {
       onChange(editorRef.current.innerHTML);
     }
   };
 
-  // Execute a document command
   const execCommand = (command: string, value: string = '') => {
     if (readOnly) return;
     document.execCommand(command, false, value);
@@ -64,26 +61,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorRef.current?.focus();
   };
 
-  // Format commands
   const formatBold = () => execCommand('bold');
   const formatItalic = () => execCommand('italic');
   const formatUnderline = () => execCommand('underline');
   
-  // Alignment commands
   const alignLeft = () => execCommand('justifyLeft');
   const alignCenter = () => execCommand('justifyCenter');
   const alignRight = () => execCommand('justifyRight');
   
-  // List commands
   const insertUnorderedList = () => execCommand('insertUnorderedList');
   const insertOrderedList = () => execCommand('insertOrderedList');
   
-  // Heading commands
   const formatH1 = () => execCommand('formatBlock', '<h1>');
   const formatH2 = () => execCommand('formatBlock', '<h2>');
   const formatH3 = () => execCommand('formatBlock', '<h3>');
   
-  // Other commands
   const formatQuote = () => execCommand('formatBlock', '<blockquote>');
   const insertCode = () => {
     execCommand('formatBlock', '<pre>');
@@ -97,11 +89,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
   
-  // History commands
   const undo = () => execCommand('undo');
   const redo = () => execCommand('redo');
   
-  // Insert link
   const insertLink = () => {
     const url = prompt('Enter the URL:');
     if (url) {
@@ -109,10 +99,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
   
-  // Clear formatting
   const clearFormatting = () => execCommand('removeFormat');
 
-  // Handle image upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -128,21 +116,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
     
     try {
-      // Show loading state
       toast({
         title: "Uploading...",
         description: "Please wait while the image is being uploaded.",
       });
       
-      // Use the provided uploader function or the default one from BlogService
       const uploadFunction = onImageUpload || BlogService.uploadImage.bind(BlogService);
       const result = await uploadFunction(file);
       
       if (result.success && result.data.url) {
-        // Insert image at cursor position
         execCommand('insertImage', result.data.url);
         
-        // Add the needed classes to the image element
         const images = editorRef.current?.querySelectorAll('img');
         const lastImage = images?.[images.length - 1];
         
@@ -167,20 +151,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         variant: "destructive",
       });
     } finally {
-      // Clear the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // Trigger file input click
   const triggerImageUpload = () => {
     if (readOnly) return;
     fileInputRef.current?.click();
   };
 
-  // Toolbar button component
   const ToolbarButton = ({ 
     icon: Icon, 
     onClick, 
@@ -212,7 +193,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <TooltipContent>
           <p>{tooltip}</p>
         </TooltipContent>
-      </TooltipProvider>
+      </Tooltip>
+    </TooltipProvider>
   );
 
   return (
@@ -291,7 +273,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         className="hidden"
       />
       
-      {/* Attribution - can be removed or modified */}
       {!readOnly && (
         <div className="border-t p-2 text-xs text-muted-foreground flex justify-between items-center">
           <div>Rich Text Editor</div>
