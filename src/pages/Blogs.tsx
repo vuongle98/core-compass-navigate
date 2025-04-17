@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -8,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { BlogPost } from "@/types/Blog";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Eye, Clock, MessageCircle, Tag, Bookmark, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Eye, Clock, MessageCircle, Tag, Bookmark, AlertCircle, Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
@@ -24,7 +23,6 @@ const Blogs = () => {
   const { user } = useAuth();
   const [showError, setShowError] = useState(false);
   
-  // Filter options for DataFilters component
   const filterOptions: FilterOption[] = [
     {
       id: "search",
@@ -55,7 +53,6 @@ const Blogs = () => {
     },
   ];
 
-  // Query for blog posts
   const {
     data: posts,
     isLoading,
@@ -79,7 +76,6 @@ const Blogs = () => {
     onError: () => setShowError(true)
   });
 
-  // Handle delete post
   const handleDelete = async (id: string) => {
     try {
       await BlogService.deletePost(id);
@@ -97,12 +93,10 @@ const Blogs = () => {
     }
   };
 
-  // Check if user has permission to manage blogs
   const hasCreatePermission = useMemo(() => {
     return user?.role === "admin" || user?.role === "editor";
   }, [user]);
 
-  // Define columns for the DataTable
   const columns = useMemo<Column<BlogPost>[]>(
     () => [
       {
@@ -239,14 +233,23 @@ const Blogs = () => {
           </Alert>
         )}
         
-        <Card className="mb-6 p-4">
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-            onReset={resetFilters}
-          />
-        </Card>
+        <div className="flex justify-between mb-4">
+          <Card className="w-full p-4">
+            <DataFilters
+              filters={filters}
+              options={filterOptions}
+              onChange={setFilters}
+              onReset={resetFilters}
+            />
+          </Card>
+          
+          {hasCreatePermission && (
+            <Button onClick={handleCreateBlog} className="ml-4 whitespace-nowrap">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Blog
+            </Button>
+          )}
+        </div>
 
         <DataTable
           data={posts}

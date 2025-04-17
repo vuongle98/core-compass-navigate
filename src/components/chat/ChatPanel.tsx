@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChat } from '@/hooks/use-chat';
-import { Send, Users, User, Globe, Plus, Search, Smile, ChevronRight } from 'lucide-react';
+import { Send, Users, User, Globe, Plus, Search, Smile, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
@@ -25,6 +25,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
   const isPrivateMessagingEnabled = useFeatureFlag('private_messaging');
   const isGroupChatEnabled = useFeatureFlag('group_chat');
   const [activeTab, setActiveTab] = useState<string>('public');
+  const [showChatList, setShowChatList] = useState(true);
   
   const publicChats = chats.filter(chat => chat.type === 'public');
   const privateChats = chats.filter(chat => chat.type === 'private');
@@ -57,6 +58,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
   
   const handleChatSelect = (chatId: string) => {
     selectChat(chatId);
+    // On mobile, automatically switch to chat view after selection
+    if (window.innerWidth < 768) {
+      setShowChatList(false);
+    }
   };
   
   const renderChatList = (chatList: typeof chats) => {
@@ -112,6 +117,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
               </span>
             )}
           </div>
+          {isActive && <ArrowRight size={16} className="text-primary" />}
         </div>
       );
     });
@@ -141,9 +147,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
 
         <div className="flex-1 flex overflow-hidden">
           <CardContent className="p-0 flex-1 flex">
-            <div className="flex h-full w-full">
-              {/* Chat List */}
-              <div className="w-1/3 border-r p-3 overflow-y-auto">
+            <div className="flex h-full w-full relative">
+              {/* Mobile toggle for chat list/detail view */}
+              {activeChat && (
+                <div className="md:hidden absolute top-2 left-2 z-10">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowChatList(!showChatList)}
+                    className="h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm"
+                  >
+                    {showChatList ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Chat List - hidden on mobile when showing chat details */}
+              <div className={`${showChatList ? 'block' : 'hidden'} md:block w-full md:w-1/3 border-r p-3 overflow-y-auto`}>
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="font-medium text-sm">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Chats</h3>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -181,8 +201,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                 </TabsContent>
               </div>
               
-              {/* Chat Messages */}
-              <div className="w-2/3 flex flex-col h-full overflow-hidden">
+              {/* Chat Messages - hidden on mobile when showing chat list */}
+              <div className={`${!showChatList ? 'block' : 'hidden'} md:block w-full md:w-2/3 flex flex-col h-full overflow-hidden`}>
                 {activeChat ? (
                   <>
                     <div className="p-3 border-b flex items-center gap-2">
@@ -231,7 +251,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                   <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col p-4">
                     <Globe className="h-12 w-12 text-muted-foreground/50 mb-2" />
                     <p className="text-center">Select a chat to start messaging</p>
-                    <Button variant="outline" size="sm" className="mt-2">
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => setShowChatList(true)}>
                       <Plus className="mr-2 h-4 w-4" /> New Conversation
                     </Button>
                   </div>
@@ -241,7 +261,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
           </CardContent>
         </div>
 
-        {activeChat && (
+        {activeChat && !showChatList && (
           <CardFooter className="p-3 pt-2">
             <form onSubmit={handleSend} className="flex w-full gap-2 items-center">
               <Button 

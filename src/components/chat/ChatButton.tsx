@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,20 @@ const ChatButton = ({ className }: ChatButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const isChatEnabled = useFeatureFlag('chat_system');
   const [unreadCount, setUnreadCount] = useState(3);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  
+  // Simulate receiving new messages with a ping pong effect
+  useEffect(() => {
+    if (!isOpen && unreadCount > 0) {
+      const interval = setInterval(() => {
+        setHasNewMessage(prev => !prev);
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setHasNewMessage(false);
+    }
+  }, [isOpen, unreadCount]);
   
   if (!isChatEnabled) {
     return null;
@@ -27,11 +41,13 @@ const ChatButton = ({ className }: ChatButtonProps) => {
     }
   };
 
-  const buttonAnimation = getAnimationClass({
-    type: 'bounce',
-    duration: 500,
-    delay: 0
-  });
+  const buttonAnimation = hasNewMessage 
+    ? getAnimationClass({
+        type: 'bounce',
+        duration: 500,
+        delay: 0
+      })
+    : '';
 
   const panelAnimation = isOpen 
     ? getAnimationClass({ type: 'slide-in-right', duration: 300 })
@@ -62,7 +78,7 @@ const ChatButton = ({ className }: ChatButtonProps) => {
       </Button>
 
       {isOpen && (
-        <div className={`${panelAnimation} fixed bottom-20 right-6 w-80 sm:w-96 h-[500px] z-50`}>
+        <div className={`${panelAnimation} fixed bottom-20 right-6 w-96 sm:w-[450px] h-[550px] z-50`}>
           <ChatPanel onClose={() => setIsOpen(false)} />
         </div>
       )}
