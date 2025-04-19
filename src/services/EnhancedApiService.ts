@@ -9,7 +9,7 @@ const MAX_RETRIES = 3;
 const MAX_RETRY_ATTEMPTS_TOTAL = 5; // Add a global limit to prevent infinite retries
 
 // Add custom metadata property to AxiosRequestConfig
-declare module 'axios' {
+declare module "axios" {
   export interface InternalAxiosRequestConfig {
     metadata?: {
       startTime?: number;
@@ -41,6 +41,10 @@ export interface PaginationOptions {
   sort?: string | string[];
   filter?: Record<string, string | number | boolean | string[]>;
   search?: string;
+}
+
+interface UserActionData {
+  [key: string]: unknown;
 }
 
 /**
@@ -81,17 +85,17 @@ class EnhancedApiService {
         if (token && !isAuthEndpoint) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         // Log the request
         const startTime = LoggingService.logApiRequest(
           config.url || "",
           config.method?.toUpperCase() || "GET",
           config.data
         );
-        
+
         // Store start time for calculating duration
         config.metadata = { startTime };
-        
+
         return config;
       },
       (error) => {
@@ -110,7 +114,7 @@ class EnhancedApiService {
       (response) => {
         const { config } = response;
         const startTime = config?.metadata?.startTime || Date.now();
-        
+
         // Log successful response
         LoggingService.logApiResponse(
           config.url || "",
@@ -119,16 +123,16 @@ class EnhancedApiService {
           response.data,
           startTime
         );
-        
+
         return response;
       },
       async (error: AxiosError) => {
         const { config, response } = error;
         if (!config) return Promise.reject(error);
-        
+
         const startTime = config?.metadata?.startTime || Date.now();
         const retryCount = config?.metadata?.retryCount || 0;
-        
+
         // Log the error
         LoggingService.logApiError(
           config.url || "unknown",
@@ -140,7 +144,7 @@ class EnhancedApiService {
         // Handle auth errors
         if (response?.status === 401) {
           // Try to refresh token if not already a refresh request
-          if (!config.url?.includes('/auth/refresh')) {
+          if (!config.url?.includes("/auth/refresh")) {
             try {
               await AuthService.refreshToken();
               // Retry with new token
@@ -165,22 +169,24 @@ class EnhancedApiService {
 
         // Auto retry on network errors or 5xx server errors
         if (
-          (error.code === "ECONNABORTED" || 
-           error.code === "ERR_NETWORK" || 
-           (response && response.status >= 500)) && 
+          (error.code === "ECONNABORTED" ||
+            error.code === "ERR_NETWORK" ||
+            (response && response.status >= 500)) &&
           retryCount < MAX_RETRIES &&
           this.retryAttemptsTotal < MAX_RETRY_ATTEMPTS_TOTAL
         ) {
           // Exponential backoff
           const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
           LoggingService.debug(
-            "api", 
-            "retry_attempt", 
-            `Retrying request to ${config.url} (${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms`
+            "api",
+            "retry_attempt",
+            `Retrying request to ${config.url} (${
+              retryCount + 1
+            }/${MAX_RETRIES}) after ${delay}ms`
           );
-          
+
           this.retryAttemptsTotal++;
-          
+
           return new Promise((resolve) => {
             setTimeout(() => {
               // Update retry count
@@ -228,13 +234,16 @@ class EnhancedApiService {
       return response.data;
     } catch (error) {
       // If mock data provided and we're in development, return it
-      if (mockData !== undefined && (import.meta.env.DEV || import.meta.env.VITE_USE_MOCK_DATA === "true")) {
+      if (
+        mockData !== undefined &&
+        (import.meta.env.DEV || import.meta.env.VITE_USE_MOCK_DATA === "true")
+      ) {
         LoggingService.info(
           "api",
           "using_mock_data",
           `Using mock data for ${url}`
         );
-        console.log(mockData)
+        console.log(mockData);
         return {
           data: mockData,
           success: true,
@@ -250,45 +259,45 @@ class EnhancedApiService {
    */
   private buildQueryParams(options?: PaginationOptions): string {
     if (!options) return "";
-    
+
     const params = new URLSearchParams();
-    
+
     // Add pagination
     if (options.page !== undefined) {
       params.append("page", options.page.toString());
     }
-    
+
     if (options.pageSize !== undefined) {
       params.append("size", options.pageSize.toString());
     }
-    
+
     // Add sorting
     if (options.sort) {
       if (Array.isArray(options.sort)) {
-        options.sort.forEach(sort => params.append("sort", sort));
+        options.sort.forEach((sort) => params.append("sort", sort));
       } else {
         params.append("sort", options.sort);
       }
     }
-    
+
     // Add search
     if (options.search) {
       params.append("search", options.search);
     }
-    
+
     // Add filters
     if (options.filter && Object.keys(options.filter).length > 0) {
       Object.entries(options.filter).forEach(([key, value]) => {
         if (value !== undefined && value !== "") {
           if (Array.isArray(value)) {
-            value.forEach(v => params.append(key, v.toString()));
+            value.forEach((v) => params.append(key, v.toString()));
           } else {
             params.append(key, value.toString());
           }
         }
       });
     }
-    
+
     const queryString = params.toString();
     return queryString ? `?${queryString}` : "";
   }
@@ -301,11 +310,7 @@ class EnhancedApiService {
     params?: Record<string, string | number | boolean | string[]>, // Specify a more specific type
     mockData?: T
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      url, 
-      { method: "GET", params },
-      mockData
-    );
+    return this.request<T>(url, { method: "GET", params }, mockData);
   }
 
   public async post<T>(
@@ -313,11 +318,7 @@ class EnhancedApiService {
     data: unknown,
     mockData?: T
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      url,
-      { method: "POST", data },
-      mockData
-    );
+    return this.request<T>(url, { method: "POST", data }, mockData);
   }
 
   public async put<T>(
@@ -325,11 +326,7 @@ class EnhancedApiService {
     data: unknown,
     mockData?: T
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      url,
-      { method: "PUT", data },
-      mockData
-    );
+    return this.request<T>(url, { method: "PUT", data }, mockData);
   }
 
   public async patch<T>(
@@ -337,22 +334,11 @@ class EnhancedApiService {
     data: unknown,
     mockData?: T
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      url,
-      { method: "PATCH", data },
-      mockData
-    );
+    return this.request<T>(url, { method: "PATCH", data }, mockData);
   }
 
-  public async delete<T>(
-    url: string,
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(
-      url,
-      { method: "DELETE" },
-      mockData
-    );
+  public async delete<T>(url: string, mockData?: T): Promise<ApiResponse<T>> {
+    return this.request<T>(url, { method: "DELETE" }, mockData);
   }
 
   /**
@@ -387,6 +373,26 @@ class EnhancedApiService {
     data?: Record<string, string | number | boolean | object> // Specify a more specific type
   ): void {
     LoggingService.logUserAction(module, action, message, data);
+  }
+
+  public logUserAction2(action: string, data: UserActionData = {}) {
+    // Add timestamp and user info
+    const eventData = {
+      ...data,
+      timestamp: new Date().toISOString(),
+      userId: localStorage.getItem("userId") || `user-${Date.now()}`,
+    };
+
+    // Log to console in development
+    console.info("USER_ACTION:", action, eventData);
+
+    // In a real app, send to analytics service or API
+    if (import.meta.env.PROD) {
+      this.post("/api/analytics/events", {
+        action,
+        data: eventData,
+      }).catch((err) => console.error("Failed to log user action:", err));
+    }
   }
 }
 

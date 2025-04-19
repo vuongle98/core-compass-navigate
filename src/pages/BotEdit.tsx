@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -8,20 +7,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { BotForm } from "@/components/bots/BotForm";
 import { ArrowLeft } from "lucide-react";
-import ApiService from "@/services/ApiService";
-
-interface Bot {
-  id: number;
-  name: string;
-  token: string;
-  webhook_url: string;
-  status: "active" | "inactive" | "error";
-  created_at: string;
-  updated_at: string;
-  description?: string;
-  type: "WEBHOOK" | "LONG_POLLING";
-  polling_interval?: number;
-}
+import EnhancedApiService from "@/services/EnhancedApiService";
+import { Bot } from "./Bots";
 
 // Mock data in case API fails
 const mockBots = [
@@ -35,7 +22,7 @@ const mockBots = [
     updated_at: "2025-04-12",
     scheduled: true,
     description: "Customer support bot with auto-responses",
-    type: "WEBHOOK"
+    type: "WEBHOOK",
   },
   {
     id: 2,
@@ -47,7 +34,7 @@ const mockBots = [
     scheduled: false,
     description: "Automated marketing campaigns and promotions",
     type: "LONG_POLLING",
-    polling_interval: 60
+    polling_interval: 60,
   },
   {
     id: 3,
@@ -59,8 +46,8 @@ const mockBots = [
     updated_at: "2025-04-15",
     scheduled: false,
     description: "Collects and reports analytics data",
-    type: "WEBHOOK"
-  }
+    type: "WEBHOOK",
+  },
 ];
 
 const BotEdit = () => {
@@ -69,27 +56,30 @@ const BotEdit = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch bot data with fallback to mock data
-  const { 
-    data: bot, 
-    isLoading, 
+  const {
+    data: bot,
+    isLoading,
     isError,
-    error 
+    error,
   } = useQuery({
     queryKey: ["bot", id],
     queryFn: async () => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        const response = await ApiService.get<Bot>(`/api/bots/${id}`);
+        const response = await EnhancedApiService.get<Bot>(`/api/bots/${id}`);
         return response.data;
       } catch (error) {
-        console.error("Failed to fetch bot data from API, using mock data:", error);
+        console.error(
+          "Failed to fetch bot data from API, using mock data:",
+          error
+        );
         // Return mock data if API fails
         const botId = parseInt(id);
-        const mockBot = mockBots.find(bot => bot.id === botId);
+        const mockBot = mockBots.find((bot) => bot.id === botId);
         if (!mockBot) throw new Error("Bot not found");
         return mockBot as Bot;
       }
-    }
+    },
   });
 
   // Handle update mutation with mock implementation if API fails
@@ -97,11 +87,14 @@ const BotEdit = () => {
     mutationFn: async (data: Partial<Bot>) => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        return await ApiService.put(`/api/bots/${id}`, data);
+        return await EnhancedApiService.put(`/api/bots/${id}`, data);
       } catch (error) {
-        console.error("Failed to update bot via API, simulating success:", error);
+        console.error(
+          "Failed to update bot via API, simulating success:",
+          error
+        );
         // Simulate successful update
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, 800));
         return { data: { ...bot, ...data } };
       }
     },
@@ -112,7 +105,7 @@ const BotEdit = () => {
     onError: (error) => {
       toast.error("Failed to update bot");
       console.error("Error updating bot:", error);
-    }
+    },
   });
 
   const handleSubmit = async (data: Partial<Bot>) => {
@@ -136,8 +129,8 @@ const BotEdit = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader 
-          title="Edit Bot" 
+        <PageHeader
+          title="Edit Bot"
           description="Update your Telegram bot configuration"
           actions={
             <Button variant="outline" onClick={() => navigate("/bots")}>
@@ -146,7 +139,7 @@ const BotEdit = () => {
             </Button>
           }
         />
-        
+
         <div className="mt-4 max-w-2xl">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
@@ -157,8 +150,8 @@ const BotEdit = () => {
               Failed to load bot data. Please try again.
             </div>
           ) : bot ? (
-            <BotForm 
-              initialData={bot} 
+            <BotForm
+              initialData={bot}
               onSubmit={handleSubmit}
               isLoading={isSaving}
             />

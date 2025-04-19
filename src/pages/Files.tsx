@@ -36,7 +36,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import ApiService from "@/services/ApiService";
+import EnhancedApiService from "@/services/EnhancedApiService";
 import { toast } from "sonner";
 import useApiQuery from "@/hooks/use-api-query";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
@@ -194,7 +194,7 @@ const Files = () => {
 
   const handleDragStart = (fileId: number) => {
     setDraggedFile(fileId);
-    ApiService.logUserAction("file_drag_started", { fileId });
+    EnhancedApiService.logUserAction2("file_drag_started", { fileId });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -216,7 +216,9 @@ const Files = () => {
     }
     // Handle reordering (if draggedFile is set)
     else if (draggedFile !== null) {
-      ApiService.logUserAction("file_reordered", { fileId: draggedFile });
+      EnhancedApiService.logUserAction2("file_reordered", {
+        fileId: draggedFile,
+      });
       toast.success("File order updated");
     }
 
@@ -259,7 +261,9 @@ const Files = () => {
         }
 
         toast.success(`${fileList.length} file(s) uploaded successfully`);
-        ApiService.logUserAction("files_uploaded", { count: fileList.length });
+        EnhancedApiService.logUserAction2("files_uploaded", {
+          count: fileList.length,
+        });
       }
       setUploadProgress(progress);
     }, 100);
@@ -273,7 +277,7 @@ const Files = () => {
 
   const handleDeleteFile = (id: number) => {
     toast.success("File deleted successfully");
-    ApiService.logUserAction("file_deleted", { fileId: id });
+    EnhancedApiService.logUserAction2("file_deleted", { fileId: id });
   };
 
   const columns = [
@@ -316,9 +320,12 @@ const Files = () => {
                       size="icon"
                       onClick={() => {
                         setPreviewFile(fileInfo);
-                        ApiService.logUserAction("file_preview_opened", {
-                          fileId: fileInfo.id,
-                        });
+                        EnhancedApiService.logUserAction2(
+                          "file_preview_opened",
+                          {
+                            fileId: fileInfo.id,
+                          }
+                        );
                       }}
                       draggable
                       onDragStart={() => handleDragStart(fileInfo.id)}
@@ -339,9 +346,12 @@ const Files = () => {
                     size="icon"
                     onClick={() => {
                       toast.info("Download started");
-                      ApiService.logUserAction("file_download_started", {
-                        fileId: fileInfo.id,
-                      });
+                      EnhancedApiService.logUserAction2(
+                        "file_download_started",
+                        {
+                          fileId: fileInfo.id,
+                        }
+                      );
                     }}
                   >
                     <Download className="h-4 w-4" />

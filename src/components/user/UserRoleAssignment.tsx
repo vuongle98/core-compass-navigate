@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import ApiService from "@/services/ApiService";
 import { Role } from "@/types/Auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface UserRoleAssignmentProps {
   userId: string;
@@ -23,10 +22,10 @@ interface UserRoleAssignmentProps {
   onSuccess?: () => void;
 }
 
-export function UserRoleAssignment({ 
-  userId, 
-  currentRoles = [], 
-  onSuccess 
+export function UserRoleAssignment({
+  userId,
+  currentRoles = [],
+  onSuccess,
 }: UserRoleAssignmentProps) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(currentRoles);
@@ -34,16 +33,16 @@ export function UserRoleAssignment({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { hasPermission } = usePermissions();
-  
-  const canAssignRoles = hasPermission('role:assign');
+
+  const canAssignRoles = hasPermission("role:assign");
 
   useEffect(() => {
     const loadRoles = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
-        const response = await ApiService.get<Role[]>('/api/roles');
+        const response = await EnhancedApiService.get<Role[]>("/api/roles");
         if (response.success) {
           setRoles(response.data);
         } else {
@@ -56,37 +55,40 @@ export function UserRoleAssignment({
         setIsLoading(false);
       }
     };
-    
+
     loadRoles();
   }, []);
-  
+
   // Update selected roles when currentRoles prop changes
   useEffect(() => {
     setSelectedRoles(currentRoles);
   }, [currentRoles]);
-  
+
   const toggleRole = (roleId: string) => {
-    setSelectedRoles(prev => 
+    setSelectedRoles((prev) =>
       prev.includes(roleId)
-        ? prev.filter(id => id !== roleId)
+        ? prev.filter((id) => id !== roleId)
         : [...prev, roleId]
     );
   };
-  
+
   const handleSubmit = async () => {
     if (!canAssignRoles) {
       toast.error("You don't have permission to assign roles");
       return;
     }
-    
+
     setIsSaving(true);
     setError(null);
-    
+
     try {
-      const response = await ApiService.put(`/api/users/${userId}/roles`, {
-        roles: selectedRoles
-      });
-      
+      const response = await EnhancedApiService.put(
+        `/api/users/${userId}/roles`,
+        {
+          roles: selectedRoles,
+        }
+      );
+
       if (response.success) {
         toast.success("Roles updated successfully");
         if (onSuccess) {
@@ -104,7 +106,7 @@ export function UserRoleAssignment({
       setIsSaving(false);
     }
   };
-  
+
   if (!canAssignRoles) {
     return (
       <Alert variant="destructive">
@@ -115,7 +117,7 @@ export function UserRoleAssignment({
       </Alert>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader>
@@ -131,14 +133,14 @@ export function UserRoleAssignment({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         {isLoading ? (
           <div className="flex justify-center p-4">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           </div>
         ) : (
           <div className="grid gap-4">
-            {roles.map(role => (
+            {roles.map((role) => (
               <div key={role.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={`role-${role.id}`}
@@ -160,10 +162,7 @@ export function UserRoleAssignment({
         )}
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isLoading || isSaving}
-        >
+        <Button onClick={handleSubmit} disabled={isLoading || isSaving}>
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </CardFooter>

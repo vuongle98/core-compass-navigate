@@ -13,11 +13,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import ApiService from '@/services/ApiService';
 import { NotificationBell } from './NotificationBell';
 import { useState } from 'react';
 import { GlobalSearch } from './GlobalSearch';
 import { usePermissions } from '@/hooks/use-permissions';
+import EnhancedApiService from '@/services/EnhancedApiService';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -28,7 +28,7 @@ export function UserMenu() {
   const handleLogout = async () => {
     try {
       // Call logout API endpoint - adding empty object as second parameter since the post method expects data
-      await ApiService.post('/api/auth/logout', {});
+      await EnhancedApiService.post('/api/auth/logout', {});
       // Then perform client-side logout
       logout();
       toast.success("Logged out successfully");

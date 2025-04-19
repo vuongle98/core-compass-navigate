@@ -18,12 +18,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import ApiService from "@/services/ApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
+
+import PermissionSelect from "@/components/PermissionSelect";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface Role {
   id: number;
@@ -31,6 +33,7 @@ interface Role {
   name: string;
   description: string;
   userCount: number;
+  permissions?: number[];
 }
 
 const Roles = () => {
@@ -64,6 +67,7 @@ const Roles = () => {
     code: "",
     name: "",
     description: "",
+    permissions: [],
   });
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -153,12 +157,20 @@ const Roles = () => {
     }));
   };
 
+  const handlePermissionsChange = (permissions: number[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      permissions,
+    }));
+  };
+
   const openCreateDialog = () => {
     setEditingRole(null);
     setFormData({
       code: "",
       name: "",
       description: "",
+      permissions: [],
     });
     setDialogOpen(true);
   };
@@ -169,6 +181,7 @@ const Roles = () => {
       code: role.code || "",
       name: role.name,
       description: role.description,
+      permissions: role.permissions || [],
     });
     setDialogOpen(true);
   };
@@ -179,7 +192,7 @@ const Roles = () => {
 
     try {
       if (editingRole) {
-        await ApiService.put(`/api/role/${editingRole.id}`, formData);
+        await EnhancedApiService.put(`/api/role/${editingRole.id}`, formData);
 
         setRoles((prev) =>
           prev.map((role) =>
@@ -191,7 +204,7 @@ const Roles = () => {
 
         toast.success("Role updated successfully");
       } else {
-        const response = await ApiService.post("/api/role", formData);
+        const response = await EnhancedApiService.post("/api/role", formData);
 
         const newRole = {
           ...formData,
@@ -217,7 +230,7 @@ const Roles = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await ApiService.delete(`/api/role/${id}`);
+      await EnhancedApiService.delete(`/api/role/${id}`);
 
       setRoles((prev) => prev.filter((role) => role.id !== id));
 
@@ -387,6 +400,13 @@ const Roles = () => {
                     onChange={handleInputChange}
                     placeholder="Role description and permissions"
                     rows={3}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <PermissionSelect
+                    value={formData.permissions || []}
+                    onChange={handlePermissionsChange}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>

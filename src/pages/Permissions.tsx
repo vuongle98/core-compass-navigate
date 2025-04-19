@@ -25,13 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import ApiService from "@/services/ApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ref } from "process";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface Permission {
   id: number;
@@ -141,7 +141,7 @@ const Permissions = () => {
     "PERMISSION",
     "FILE",
     "CONFIGURATION",
-    "SYSTEM"
+    "SYSTEM",
   ];
 
   // Setup for detail view modal
@@ -216,7 +216,7 @@ const Permissions = () => {
 
     try {
       if (editingPermission) {
-        await ApiService.put(
+        await EnhancedApiService.put(
           `/api/permission/${editingPermission.id}`,
           formData
         );
@@ -231,7 +231,10 @@ const Permissions = () => {
 
         toast.success("Permission updated successfully");
       } else {
-        const response = await ApiService.post("/api/permission", formData);
+        const response = await EnhancedApiService.post(
+          "/api/permission",
+          formData
+        );
 
         const newPermission = {
           ...formData,
@@ -258,7 +261,7 @@ const Permissions = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await ApiService.delete(`/api/permission/${id}`);
+      await EnhancedApiService.delete(`/api/permission/${id}`);
 
       setPermissions((prev) =>
         prev.filter((permission) => permission.id !== id)

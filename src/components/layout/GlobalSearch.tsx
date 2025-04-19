@@ -8,9 +8,9 @@ import {
   Search, File, Users, Settings, Bell, Bot, Flag, 
   FileText, Calendar, Layers, Shield, Key, Database
 } from 'lucide-react';
-import ApiService from '@/services/ApiService';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Permission } from '@/types/Auth';
+import EnhancedApiService from '@/services/EnhancedApiService';
 
 type SearchResult = {
   id: string;
@@ -84,7 +84,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         // Only do API search if query is meaningful
         if (debouncedSearchQuery.length >= 3) {
           // Search API for content
-          const response = await ApiService.post<{ results: SearchResult[] }>('/api/search', {
+          const response = await EnhancedApiService.post<{ results: SearchResult[] }>('/api/search', {
             query: debouncedSearchQuery,
             limit: 10
           });

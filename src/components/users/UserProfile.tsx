@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -26,11 +25,22 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
-import { Pencil, Save, ShieldCheck, Building, Mail, Phone, User } from "lucide-react";
-import ApiService from "@/services/ApiService";
+import {
+  Pencil,
+  Save,
+  ShieldCheck,
+  Building,
+  Mail,
+  Phone,
+  User,
+} from "lucide-react";
+import EnhancedApiService from "@/services/EnhancedApiService";
+import { UserInfo } from "@/pages/Users";
+import { add } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 
 interface UserProfileProps {
-  userId: string | number;
+  userId: number;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -38,27 +48,30 @@ interface UserProfileProps {
 const profileFormSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
-  fullName: z.string().optional(),
-  jobTitle: z.string().optional(),
-  department: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   phone: z.string().optional(),
+  address: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-const securityFormSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string(),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const securityFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type SecurityFormValues = z.infer<typeof securityFormSchema>;
 
@@ -67,31 +80,44 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
   const [activeTab, setActiveTab] = useState("profile");
 
   // Mock user data - in a real app, you would fetch this from an API
-  const [user, setUser] = useState({
-    id: userId,
-    username: "johnsmith",
-    email: "john.smith@example.com",
-    fullName: "John Smith",
-    jobTitle: "Product Manager",
-    department: "Product",
-    phone: "+1-555-123-4567",
-    avatar: "",
-    roles: ["Admin"],
-    lastLogin: "2023-04-13T10:30:00",
-    accountCreated: "2020-01-15T08:15:00",
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["userInfo", userId],
+    queryFn: async () => {
+      if (!userId) throw new Error("User ID is required");
+      const response = await EnhancedApiService.get<UserInfo>(
+        `/api/user/${userId}/profile`
+      );
+      return response.data;
+    },
   });
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      jobTitle: user.jobTitle,
-      department: user.department,
-      phone: user.phone,
+      username: user?.username || "",
+      email: user?.email || "",
+      firstName: user?.profile?.firstName || "",
+      lastName: user?.profile?.lastName || "",
+      phone: user?.profile?.phone || "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        username: user.username || "",
+        email: user.email || "",
+        firstName: user.profile?.firstName || "",
+        lastName: user.profile?.lastName || "",
+        phone: user.profile?.phone || "",
+      });
+    }
+  }, [user, profileForm]);
 
   const securityForm = useForm<SecurityFormValues>({
     resolver: zodResolver(securityFormSchema),
@@ -108,9 +134,11 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
 
   const handleSave = (data: ProfileFormValues) => {
     // Here you would call an API to update the user profile
-    ApiService.put(`/api/users/${userId}`, data)
+    delete data.username; // Assuming username is not editable
+    delete data.email; // Assuming email is not editable
+    EnhancedApiService.put(`/api/user/${userId}/profile`, data)
       .then(() => {
-        setUser({ ...user, ...data });
+        // setUser({ ...user, ...data });
         toast.success("Profile updated successfully");
         setIsEditing(false);
       })
@@ -124,9 +152,10 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
 
   const handlePasswordChange = (data: SecurityFormValues) => {
     // Here you would call an API to update the password
-    ApiService.post(`/api/users/${userId}/change-password`, {
+    EnhancedApiService.put(`/api/user/${userId}/change-password`, {
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
+      confirmPassword: data.confirmPassword,
     })
       .then(() => {
         toast.success("Password changed successfully");
@@ -152,6 +181,19 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       .toUpperCase();
   };
 
+  const getFullName = (user: UserInfo) => {
+    if (user.profile?.firstName && user.profile?.lastName) {
+      return `${user.profile.firstName} ${user.profile.lastName}`;
+    }
+    if (user.profile?.firstName) {
+      return user.profile.firstName;
+    }
+    if (user.profile?.lastName) {
+      return user.profile.lastName;
+    }
+    return user.username;
+  };
+
   return (
     <DetailViewModal
       isOpen={isOpen}
@@ -160,286 +202,303 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       size="full"
       showCloseButton={false}
     >
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
-          <Avatar className="h-24 w-24 border">
-            <AvatarImage src={user.avatar} alt={user.fullName} />
-            <AvatarFallback className="text-xl">
-              {getInitials(user.fullName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="space-y-2 flex-1 text-center md:text-left">
-            <h2 className="text-2xl font-bold">{user.fullName}</h2>
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-muted-foreground">
-              <div className="flex items-center justify-center md:justify-start gap-1">
-                <Mail className="h-4 w-4" />
-                <span>{user.email}</span>
-              </div>
-              <div className="flex items-center justify-center md:justify-start gap-1">
-                <Building className="h-4 w-4" />
-                <span>{user.department}</span>
-              </div>
-              <div className="flex items-center justify-center md:justify-start gap-1">
-                <ShieldCheck className="h-4 w-4" />
-                <span>{user.roles.join(", ")}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="profile">
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <ShieldCheck className="h-4 w-4 mr-2" />
-              Security
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile" className="pt-4">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>
-                      Update your personal information
-                    </CardDescription>
-                  </div>
-                  {!isEditing && (
-                    <Button variant="outline" onClick={handleEdit}>
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  )}
+      <div className="space-y-6 relative">
+        {/* Floating Features Button */}
+        <button
+          className="absolute top-0 right-0 z-10 bg-primary text-white rounded-full shadow-lg px-4 py-2 flex items-center gap-2 hover:bg-primary/90 transition"
+          style={{ margin: 8 }}
+          onClick={() => alert("Features coming soon!")}
+        >
+          <span>Features</span>
+          <ShieldCheck className="h-4 w-4" />
+        </button>
+        {user && (
+          <Card className="mb-4">
+            <CardHeader className="flex flex-col md:flex-row items-center gap-4 pb-2">
+              <Avatar className="h-24 w-24 border shadow">
+                <AvatarImage
+                  src={user?.profile?.avatarUrl}
+                  alt={getFullName(user)}
+                />
+                <AvatarFallback className="text-xl">
+                  {getInitials(getFullName(user))}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-2xl font-bold mb-1">{getFullName(user)}</h2>
+                <div className="flex flex-wrap justify-center md:justify-start gap-3 text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <User className="h-4 w-4" /> {user.username}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Mail className="h-4 w-4" /> {user.email}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Building className="h-4 w-4" /> IT
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="h-4 w-4" /> {user.profile?.phone}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <ShieldCheck className="h-4 w-4" /> {user.roles.join(", ")}
+                  </span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Form {...profileForm}>
-                  <form
-                    id="profile-form"
-                    onSubmit={profileForm.handleSubmit(handleSave)}
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={profileForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                placeholder="Username"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-2 text-xs text-muted-foreground">
+                  <span>
+                    Last Login:{" "}
+                    {user.lastLogin
+                      ? new Date(user.lastLogin).toLocaleString()
+                      : "-"}
+                  </span>
+                  <span>
+                    Created:{" "}
+                    {user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString()
+                      : "-"}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        )}
 
-                      <FormField
-                        control={profileForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                type="email"
-                                placeholder="Email"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={profileForm.control}
-                        name="fullName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                placeholder="Full Name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={profileForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                placeholder="Phone"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={profileForm.control}
-                        name="jobTitle"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Job Title</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                placeholder="Job Title"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={profileForm.control}
-                        name="department"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Department</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                disabled={!isEditing}
-                                placeholder="Department"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        {user && (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="security">
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Security
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile" className="pt-4">
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Profile Information</CardTitle>
+                      <CardDescription>
+                        Update your personal information
+                      </CardDescription>
                     </div>
-                  </form>
-                </Form>
-              </CardContent>
-              {isEditing && (
-                <CardFooter className="flex justify-end space-x-2 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      profileForm.reset();
-                      setIsEditing(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" form="profile-form">
+                    {!isEditing && (
+                      <Button variant="outline" onClick={handleEdit}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Form {...profileForm}>
+                    <form
+                      id="profile-form"
+                      onSubmit={profileForm.handleSubmit(handleSave)}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={profileForm.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Username</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!isEditing}
+                                  placeholder="Username"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!isEditing}
+                                  type="email"
+                                  placeholder="Email"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!isEditing}
+                                  placeholder="First Name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!isEditing}
+                                  placeholder="Last Name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  disabled={!isEditing}
+                                  placeholder="Phone"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+                {isEditing && (
+                  <CardFooter className="flex justify-end space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        profileForm.reset();
+                        setIsEditing(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" form="profile-form">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
+            </TabsContent>
+            <TabsContent value="security" className="pt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Change Password</CardTitle>
+                  <CardDescription>
+                    Update your password to keep your account secure
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...securityForm}>
+                    <form
+                      id="security-form"
+                      onSubmit={securityForm.handleSubmit(handlePasswordChange)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={securityForm.control}
+                        name="currentPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="password"
+                                placeholder="Enter your current password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={securityForm.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>New Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="password"
+                                placeholder="Enter your new password"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Password must be at least 8 characters and include
+                              at least one uppercase letter, one lowercase
+                              letter, and one number.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={securityForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirm New Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="password"
+                                placeholder="Confirm your new password"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+                </CardContent>
+                <CardFooter className="flex justify-end pt-2">
+                  <Button type="submit" form="security-form">
                     <Save className="h-4 w-4 mr-2" />
-                    Save Changes
+                    Change Password
                   </Button>
                 </CardFooter>
-              )}
-            </Card>
-          </TabsContent>
-          <TabsContent value="security" className="pt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Update your password to keep your account secure
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...securityForm}>
-                  <form
-                    id="security-form"
-                    onSubmit={securityForm.handleSubmit(handlePasswordChange)}
-                    className="space-y-4"
-                  >
-                    <FormField
-                      control={securityForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="Enter your current password"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={securityForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="Enter your new password"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Password must be at least 8 characters and include at
-                            least one uppercase letter, one lowercase letter, and one
-                            number.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={securityForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="Confirm your new password"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </form>
-                </Form>
-              </CardContent>
-              <CardFooter className="flex justify-end pt-2">
-                <Button type="submit" form="security-form">
-                  <Save className="h-4 w-4 mr-2" />
-                  Change Password
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </DetailViewModal>
   );

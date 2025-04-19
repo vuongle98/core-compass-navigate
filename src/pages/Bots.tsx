@@ -39,7 +39,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import ApiService from "@/services/ApiService";
+import EnhancedApiService from "@/services/EnhancedApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 
@@ -205,7 +205,7 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      await ApiService.post(`/api/bots/${botId}/${action}`, {}).catch(() => {
+      await EnhancedApiService.post(`/api/bots/${botId}/${action}`, {}).catch(() => {
         return new Promise((resolve) => setTimeout(resolve, 500));
       });
 

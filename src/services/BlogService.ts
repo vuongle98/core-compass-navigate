@@ -340,7 +340,7 @@ class BlogService {
       // Try API request first
       const apiResponse = await EnhancedApiService.get<{ content: BlogPost[], totalItems: number, totalPages: number }>(
         '/api/blog/posts', 
-        { ...filters, page, pageSiz }, 
+        { ...filters, page, pageSize }, 
         { content: [], totalItems: 0, totalPages: 0 },
       );
       

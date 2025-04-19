@@ -11,13 +11,13 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import ApiService from "@/services/ApiService";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { BotInfo } from "./BotInfo";
 import { BotStatus } from "./BotStatus";
 import { BotScheduledMessages } from "./BotScheduledMessages";
 import { Bot } from "@/pages/Bots";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface BotDetailProps {
   bot: Bot;
@@ -30,7 +30,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
 
   const handleBotAction = async (action: string) => {
     try {
-      await ApiService.post(`/api/bots/${bot.id}/${action}`, {});
+      await EnhancedApiService.post(`/api/bots/${bot.id}/${action}`, {});
       toast.success(`Bot ${action} action completed`);
       onRefresh();
     } catch (error) {
@@ -47,7 +47,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     queryKey: ["botScheduledMessages", bot.id],
     queryFn: async () => {
       try {
-        const response = await ApiService.get<ScheduledMessage[]>(
+        const response = await EnhancedApiService.get<ScheduledMessage[]>(
           `/api/bots/${bot.id}/scheduled-messages`
         );
         return response.data || [];
@@ -67,7 +67,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     queryKey: ["botStatus", bot.id],
     queryFn: async () => {
       try {
-        const response = await ApiService.get<BotStatus[]>(`/api/bots/status`);
+        const response = await EnhancedApiService.get<BotStatus[]>(`/api/bots/status`);
         return response.data || [];
       } catch (error) {
         console.error("Failed to fetch bot status:", error);

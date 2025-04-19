@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -12,9 +11,16 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import ApiService from "@/services/ApiService";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Loader2, Pencil } from "lucide-react";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -41,7 +47,7 @@ const Profile = () => {
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSubmitting(true);
     try {
-      await ApiService.put('/api/user/profile', values);
+      await EnhancedApiService.put("/api/user/profile", values);
       toast.success("Profile updated successfully");
       setIsEditing(false);
       // Update local user data would happen through auth context
@@ -57,28 +63,32 @@ const Profile = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader 
-          title="User Profile" 
+        <PageHeader
+          title="User Profile"
           description="Manage your account and preferences"
         />
-        
+
         <div className="mt-4 grid gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                  <AvatarFallback>{user?.name?.substring(0, 2) || "U"}</AvatarFallback>
+                  <AvatarFallback>
+                    {user?.name?.substring(0, 2) || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle>{user?.name || "User"}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.email || ""}
+                  </p>
                 </div>
               </div>
               {!isEditing && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsEditing(true)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
@@ -89,7 +99,10 @@ const Profile = () => {
             <CardContent>
               {isEditing ? (
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-4"
+                  >
                     <FormField
                       control={form.control}
                       name="name"
@@ -130,23 +143,22 @@ const Profile = () => {
                       )}
                     />
                     <div className="flex justify-end space-x-2 pt-4">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => setIsEditing(false)}
                         type="button"
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        type="submit"
-                        disabled={isSubmitting}
-                      >
+                      <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Saving...
                           </>
-                        ) : "Save Changes"}
+                        ) : (
+                          "Save Changes"
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -155,23 +167,33 @@ const Profile = () => {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
                     <Label>Name</Label>
-                    <p className="text-sm text-muted-foreground">{user?.name || ""}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.name || ""}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label>Email</Label>
-                    <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.email || ""}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label>Role</Label>
-                    <p className="text-sm text-muted-foreground">{user?.role || ""}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.role || ""}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label>Join Date</Label>
-                    <p className="text-sm text-muted-foreground">{user?.joinDate || ""}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.joinDate || ""}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label>Last Login</Label>
-                    <p className="text-sm text-muted-foreground">{user?.lastLogin || ""}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.lastLogin || ""}
+                    </p>
                   </div>
                 </div>
               )}

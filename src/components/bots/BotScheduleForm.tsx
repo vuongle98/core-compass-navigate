@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -14,42 +13,55 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BotScheduleItem } from "@/pages/BotSchedule";
 
 // Define the form schema
 const scheduleFormSchema = z.object({
   schedule_type: z.enum(["daily", "weekly", "custom"]),
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
+  time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
   days: z.array(z.string()).optional(),
   custom_cron: z.string().optional(),
   send_notification: z.boolean().default(false),
 });
 
-type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
-
 interface BotScheduleFormProps {
-  onSubmit: (data: ScheduleFormValues) => Promise<void> | void;
+  onSubmit: (data: BotScheduleItem) => Promise<void> | void;
   isLoading?: boolean;
 }
 
-export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleFormProps) {
+export function BotScheduleForm({
+  onSubmit,
+  isLoading = false,
+}: BotScheduleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const form = useForm<ScheduleFormValues>({
+
+  const form = useForm<BotScheduleItem>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
-      schedule_type: "daily",
-      time: "12:00",
+      name: "",
+      scheduled: false,
+      description: "",
+      type: "daily",
+      time: "00:00",
       days: [],
       custom_cron: "",
-      send_notification: false,
+      sendNotification: false,
     },
   });
 
-  const scheduleType = form.watch("schedule_type");
+  const scheduleType = form.watch("type");
 
-  const handleSubmit = async (data: ScheduleFormValues) => {
+  const handleSubmit = async (data: BotScheduleItem) => {
     setIsSubmitting(true);
     try {
       await onSubmit(data);
@@ -57,7 +69,7 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
       setIsSubmitting(false);
     }
   };
-  
+
   const weekdayOptions = [
     { value: "monday", label: "Monday" },
     { value: "tuesday", label: "Tuesday" },
@@ -73,14 +85,11 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="schedule_type"
+          name="type"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Schedule Type</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a schedule type" />
@@ -92,14 +101,12 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                How often should this bot run
-              </FormDescription>
+              <FormDescription>How often should this bot run</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         {scheduleType !== "custom" && (
           <FormField
             control={form.control}
@@ -118,7 +125,7 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
             )}
           />
         )}
-        
+
         {scheduleType === "weekly" && (
           <FormField
             control={form.control}
@@ -138,8 +145,8 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
                       control={form.control}
                       name="days"
                       render={({ field }) => (
-                        <FormItem 
-                          key={day.value} 
+                        <FormItem
+                          key={day.value}
                           className="flex flex-row items-center space-x-3 space-y-0"
                         >
                           <FormControl>
@@ -147,7 +154,10 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
                               checked={field.value?.includes(day.value)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  const newValue = [...(field.value || []), day.value];
+                                  const newValue = [
+                                    ...(field.value || []),
+                                    day.value,
+                                  ];
                                   field.onChange(newValue);
                                 } else {
                                   const newValue = field.value?.filter(
@@ -171,7 +181,7 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
             )}
           />
         )}
-        
+
         {scheduleType === "custom" && (
           <FormField
             control={form.control}
@@ -183,17 +193,18 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
                   <Input placeholder="* * * * *" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Enter a valid cron expression (e.g., "0 12 * * 1-5" for weekdays at noon)
+                  Enter a valid cron expression (e.g., "0 12 * * 1-5" for
+                  weekdays at noon)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         )}
-        
+
         <FormField
           control={form.control}
-          name="send_notification"
+          name="sendNotification"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
               <FormControl>
@@ -211,7 +222,7 @@ export function BotScheduleForm({ onSubmit, isLoading = false }: BotScheduleForm
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={isSubmitting || isLoading}>
           {isSubmitting ? "Scheduling..." : "Schedule Bot"}
         </Button>

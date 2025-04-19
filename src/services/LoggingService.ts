@@ -1,4 +1,3 @@
-
 import AuthService from "./AuthService";
 
 export type LogLevel = "info" | "warning" | "error" | "debug";
@@ -9,8 +8,8 @@ export type LogEvent = {
   module: string;
   action: string;
   message: string;
-  data?: Record<string, any>;
-  userId?: string;
+  data?: Record<string, unknown>;
+  userId?: number;
 };
 
 export interface LoggerConfig {
@@ -29,7 +28,7 @@ class LoggingService {
   private static instance: LoggingService;
   private logQueue: LogEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
-  
+
   private config: LoggerConfig = {
     minLevel: "info",
     enableConsole: true,
@@ -41,9 +40,9 @@ class LoggingService {
 
   private constructor() {
     this.setupFlushTimer();
-    
+
     // Flush logs on window unload
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener("beforeunload", () => {
       this.flush(true);
     });
   }
@@ -66,14 +65,14 @@ class LoggingService {
   /**
    * Log an API request
    */
-  public logApiRequest(
-    url: string, 
-    method: string, 
-    data?: any, 
+  public logApiRequest<T>(
+    url: string,
+    method: string,
+    data?: T,
     startTime?: number
   ): number {
     const timestamp = Date.now();
-    
+
     this.log({
       level: "info",
       module: "api",
@@ -81,7 +80,7 @@ class LoggingService {
       message: `API ${method} ${url}`,
       data: { url, method, requestData: data, timestamp },
     });
-    
+
     return startTime || timestamp;
   }
 
@@ -92,14 +91,14 @@ class LoggingService {
     url: string,
     method: string,
     status: number,
-    data: any,
+    data: unknown,
     startTime: number
   ): void {
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
+
     const level: LogLevel = status >= 400 ? "error" : "info";
-    
+
     this.log({
       level,
       module: "api",
@@ -115,18 +114,26 @@ class LoggingService {
   public logApiError(
     url: string,
     method: string,
-    error: any,
+    error: unknown,
     startTime: number
   ): void {
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
+
     this.log({
       level: "error",
       module: "api",
       action: "request_failed",
-      message: `API Error: ${method} ${url} - ${duration}ms - ${error.message || "Unknown error"}`,
-      data: { url, method, error: error.message, stack: error.stack, duration },
+      message: `API Error: ${method} ${url} - ${duration}ms - ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      data: {
+        url,
+        method,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        duration,
+      },
     });
   }
 
@@ -137,7 +144,7 @@ class LoggingService {
     module: string,
     action: string,
     message: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ): void {
     this.log({
       level: "info",
@@ -153,7 +160,7 @@ class LoggingService {
    */
   public log(event: Omit<LogEvent, "timestamp" | "userId">): void {
     const user = AuthService.getCurrentUser();
-    
+
     const logEvent: LogEvent = {
       ...event,
       timestamp: new Date().toISOString(),
@@ -180,19 +187,39 @@ class LoggingService {
   /**
    * Log helpers for different levels
    */
-  public info(module: string, action: string, message: string, data?: Record<string, any>): void {
+  public info(
+    module: string,
+    action: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     this.log({ level: "info", module, action, message, data });
   }
 
-  public warn(module: string, action: string, message: string, data?: Record<string, any>): void {
+  public warn(
+    module: string,
+    action: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     this.log({ level: "warning", module, action, message, data });
   }
 
-  public error(module: string, action: string, message: string, data?: Record<string, any>): void {
+  public error(
+    module: string,
+    action: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     this.log({ level: "error", module, action, message, data });
   }
 
-  public debug(module: string, action: string, message: string, data?: Record<string, any>): void {
+  public debug(
+    module: string,
+    action: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     this.log({ level: "debug", module, action, message, data });
   }
 
@@ -201,7 +228,7 @@ class LoggingService {
    */
   private queueLog(event: LogEvent): void {
     this.logQueue.push(event);
-    
+
     // Flush if we've reached batch size
     if (this.logQueue.length >= (this.config.batchSize || 10)) {
       this.flush();
@@ -213,22 +240,36 @@ class LoggingService {
    */
   private logToConsole(event: LogEvent): void {
     const timestamp = new Date(event.timestamp).toLocaleTimeString();
-    const prefix = `[${timestamp}] [${event.level.toUpperCase()}] [${event.module}]`;
-    
+    const prefix = `[${timestamp}] [${event.level.toUpperCase()}] [${
+      event.module
+    }]`;
+
     // Format based on log level
     switch (event.level) {
       case "error":
-        console.error(`${prefix} ${event.action}: ${event.message}`, event.data || '');
+        console.error(
+          `${prefix} ${event.action}: ${event.message}`,
+          event.data || ""
+        );
         break;
       case "warning":
-        console.warn(`${prefix} ${event.action}: ${event.message}`, event.data || '');
+        console.warn(
+          `${prefix} ${event.action}: ${event.message}`,
+          event.data || ""
+        );
         break;
       case "debug":
-        console.debug(`${prefix} ${event.action}: ${event.message}`, event.data || '');
+        console.debug(
+          `${prefix} ${event.action}: ${event.message}`,
+          event.data || ""
+        );
         break;
       case "info":
       default:
-        console.log(`${prefix} ${event.action}: ${event.message}`, event.data || '');
+        console.log(
+          `${prefix} ${event.action}: ${event.message}`,
+          event.data || ""
+        );
         break;
     }
   }
@@ -241,9 +282,12 @@ class LoggingService {
       clearInterval(this.flushTimer);
       this.flushTimer = null;
     }
-    
+
     if (this.config.enableApi && this.config.flushInterval) {
-      this.flushTimer = setInterval(() => this.flush(), this.config.flushInterval);
+      this.flushTimer = setInterval(
+        () => this.flush(),
+        this.config.flushInterval
+      );
     }
   }
 
@@ -254,26 +298,26 @@ class LoggingService {
     if (!this.config.enableApi || (!force && this.logQueue.length === 0)) {
       return;
     }
-    
+
     const logs = [...this.logQueue];
     this.logQueue = [];
-    
+
     // In development, just console log the batch
     if (import.meta.env.DEV) {
-      console.debug('[LoggingService] Would send logs to API:', logs);
+      console.debug("[LoggingService] Would send logs to API:", logs);
       return;
     }
-    
+
     // In production, send to API
-    fetch(this.config.apiEndpoint || '/api/logs', {
-      method: 'POST',
+    fetch(this.config.apiEndpoint || "/api/logs", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AuthService.getAccessToken() || ''}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${AuthService.getAccessToken() || ""}`,
       },
       body: JSON.stringify({ logs }),
-    }).catch(err => {
-      console.error('Failed to send logs:', err);
+    }).catch((err) => {
+      console.error("Failed to send logs:", err);
       // Re-queue failed logs
       this.logQueue = [...logs, ...this.logQueue];
     });

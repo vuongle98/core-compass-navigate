@@ -11,12 +11,24 @@ import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 
-interface User {
+export interface UserProfile {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  avatarUrl?: string;
+}
+
+export interface UserInfo {
   id: number;
   username: string;
   email: string;
   roles: string[];
-  locked: boolean;
+  locked?: boolean;
+  profile?: UserProfile;
+  lastLogin?: string;
+  createdAt?: string;
 }
 
 const Users = () => {
@@ -62,7 +74,7 @@ const Users = () => {
     isModalOpen: isProfileOpen,
     openDetail: openUserProfile,
     closeModal: closeUserProfile,
-  } = useDetailView<User>({
+  } = useDetailView<UserInfo>({
     modalThreshold: 15,
     detailRoute: "/users",
   });
@@ -80,7 +92,7 @@ const Users = () => {
       type: "select",
       options: [
         { value: "false", label: "Active" },
-        { value: "true", label: "Inactive" }
+        { value: "true", label: "Inactive" },
       ],
     },
     {
@@ -90,7 +102,7 @@ const Users = () => {
       options: [
         { value: "ADMIN", label: "ADMIN" },
         { value: "MANAGE", label: "MANAGE" },
-        { value: "USER", label: "USER" }
+        { value: "USER", label: "USER" },
       ],
     },
   ];
@@ -108,7 +120,7 @@ const Users = () => {
     totalItems,
     refresh,
     error,
-  } = useApiQuery<User>({
+  } = useApiQuery<UserInfo>({
     endpoint: "/api/user",
     queryKey: ["users", debouncedSearchTerm],
     initialPage: 0,
@@ -129,11 +141,11 @@ const Users = () => {
     },
   });
 
-  const handleAddUser = (newUser: Omit<(typeof mockUsers)[0], "id">) => {
+  const handleAddUser = (newUser: Omit<UserInfo, "id">) => {
     toast.success("User added successfully");
   };
 
-  const handleEditUser = (updatedUser: (typeof mockUsers)[0]) => {
+  const handleEditUser = (updatedUser: UserInfo) => {
     toast.success("User updated successfully");
   };
 
@@ -141,11 +153,11 @@ const Users = () => {
     toast.success("User deleted successfully");
   };
 
-  const handleViewUser = (user: User) => {
+  const handleViewUser = (user: UserInfo) => {
     openUserProfile(user);
   };
 
-  const getActionItems = (user: User) => {
+  const getActionItems = (user: UserInfo) => {
     const actions: {
       type: ActionType;
       label: string;
@@ -176,7 +188,7 @@ const Users = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: User) => (
+      cell: (item: UserInfo) => (
         <span className="text-muted-foreground">{item.id}</span>
       ),
       sortable: true,
@@ -198,14 +210,14 @@ const Users = () => {
       accessorKey: "roles" as const,
       sortable: true,
       filterable: true,
-      cell: (user: User) => user.roles.join(", "),
+      cell: (user: UserInfo) => user.roles.join(", "),
     },
     {
       header: "Status",
       accessorKey: "locked" as const,
       sortable: true,
       filterable: true,
-      cell: (user: User) => (
+      cell: (user: UserInfo) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
             user.locked === true
@@ -220,7 +232,7 @@ const Users = () => {
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: (user: User) => <ActionsMenu actions={getActionItems(user)} />,
+      cell: (user: UserInfo) => <ActionsMenu actions={getActionItems(user)} />,
     },
   ];
 
