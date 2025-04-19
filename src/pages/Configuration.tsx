@@ -233,7 +233,7 @@ const Configuration = () => {
           description="System configuration parameters"
         />
         
-        <div className="mt-6">
+        <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2 md:grid-cols-5 gap-2">
               <TabsTrigger value="general">
@@ -258,7 +258,7 @@ const Configuration = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="general" className="mt-6 space-y-6">
+            <TabsContent value="general" className="mt-4 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>General Settings</CardTitle>
@@ -267,7 +267,7 @@ const Configuration = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="app-name">Application Name</Label>
                       <Input id="app-name" defaultValue="Core Application" />
@@ -338,7 +338,7 @@ const Configuration = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="date-format">Date Format</Label>
                       <Select defaultValue="MM/DD/YYYY">
@@ -386,7 +386,7 @@ const Configuration = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="api" className="mt-6 space-y-6">
+            <TabsContent value="api" className="mt-4 space-y-6">
               <Card>
                 <CardHeader>
                   <div className="flex justify-between">
@@ -421,7 +421,7 @@ const Configuration = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="stripe-key">Stripe API Key</Label>
                       <Input id="stripe-key" type="password" defaultValue="sk_test_************************" />
@@ -439,7 +439,7 @@ const Configuration = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="features" className="mt-6 space-y-6">
+            <TabsContent value="features" className="mt-4 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Feature Flags</CardTitle>
@@ -514,7 +514,7 @@ const Configuration = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="email" className="mt-6 space-y-6">
+            <TabsContent value="email" className="mt-4 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Email Configuration</CardTitle>
@@ -523,7 +523,7 @@ const Configuration = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="smtp-host">SMTP Host</Label>
                       <Input id="smtp-host" defaultValue="smtp.example.com" />
@@ -574,7 +574,7 @@ const Configuration = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="sms-provider">SMS Provider</Label>
                       <Select defaultValue="twilio">
@@ -612,7 +612,7 @@ const Configuration = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="advanced" className="mt-6">
+            <TabsContent value="advanced" className="mt-4">
               <Card>
                 <CardHeader>
                   <CardTitle>System Configuration</CardTitle>
@@ -626,7 +626,6 @@ const Configuration = () => {
                     columns={configColumns} 
                     title="Configuration Parameters"
                     pagination={true}
-                    apiEndpoint="/api/configuration"
                   />
                 </CardContent>
               </Card>

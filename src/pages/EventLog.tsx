@@ -308,7 +308,7 @@ const EventLog = () => {
           }
         />
         
-        <div className="mt-6">
+        <div className="mt-4">
           <DataFilters
             filters={filters}
             options={filterOptions}
@@ -317,7 +317,7 @@ const EventLog = () => {
           />
           
           {events.length === 0 ? (
-            <div className="border rounded-lg p-8 text-center mt-6">
+            <div className="border rounded-lg p-8 text-center mt-4">
               <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No logs found</h3>
               <p className="text-muted-foreground mb-4">There are no event logs available or matching your filters.</p>

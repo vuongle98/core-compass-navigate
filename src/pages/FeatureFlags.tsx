@@ -211,7 +211,7 @@ const FeatureFlags = () => {
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Enabled Features</CardTitle>
@@ -287,7 +287,7 @@ const FeatureFlags = () => {
           </Card>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -304,7 +304,6 @@ const FeatureFlags = () => {
                 columns={columns}
                 title=""
                 pagination={true}
-                apiEndpoint="/api/featureFlag"
               />
             </CardContent>
           </Card>

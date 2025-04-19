@@ -147,7 +147,7 @@ const BotEdit = () => {
           }
         />
         
-        <div className="mt-6 max-w-2xl">
+        <div className="mt-4 max-w-2xl">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <p>Loading bot data...</p>

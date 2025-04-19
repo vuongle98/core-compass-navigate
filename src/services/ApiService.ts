@@ -213,7 +213,7 @@ const getPaginated = async <T>(
     // Add filters if present
     if (options.filter && Object.keys(options.filter).length > 0) {
       Object.entries(options.filter).forEach(([key, value]) => {
-        queryParams.append(`filter[${key}]`, value.toString());
+        queryParams.append(key, value.toString());
       });
     }
 

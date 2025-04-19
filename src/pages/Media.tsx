@@ -209,7 +209,7 @@ const Media = () => {
           }
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Tabs defaultValue="all" className="space-y-4">
             <div className="flex justify-between items-center">
               <TabsList>

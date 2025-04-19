@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,14 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Bot } from "@/pages/Bots";
 
 // Define the form schema with conditional fields based on bot type
 const botFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   token: z.string().min(10, "Please enter a valid Telegram bot token"),
   type: z.enum(["WEBHOOK", "LONG_POLLING"]),
-  webhook_url: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
-  polling_interval: z.number().min(5).optional(),
+  webhookUrl: z
+    .string()
+    .url("Please enter a valid URL")
+    .optional()
+    .or(z.literal("")),
+  pollingInterval: z.number().min(5).optional(),
   description: z.string().optional(),
 });
 
@@ -37,27 +41,31 @@ type BotFormValues = z.infer<typeof botFormSchema>;
 
 interface BotFormProps {
   initialData?: Partial<BotFormValues>;
-  onSubmit: (data: BotFormValues) => Promise<void> | void;
+  onSubmit: (data: Bot) => Promise<void> | void;
   isLoading?: boolean;
 }
 
-export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormProps) {
+export function BotForm({
+  initialData,
+  onSubmit,
+  isLoading = false,
+}: BotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [botType, setBotType] = useState(initialData?.type || "WEBHOOK");
-  
-  const form = useForm<BotFormValues>({
+
+  const form = useForm<Bot>({
     resolver: zodResolver(botFormSchema),
     defaultValues: {
       name: initialData?.name || "",
       token: initialData?.token || "",
       type: initialData?.type || "WEBHOOK",
-      webhook_url: initialData?.webhook_url || "",
-      polling_interval: initialData?.polling_interval || 30,
+      webhookUrl: initialData?.webhookUrl || "",
+      pollingInterval: initialData?.pollingInterval || 30,
       description: initialData?.description || "",
     },
   });
 
-  const handleSubmit = async (data: BotFormValues) => {
+  const handleSubmit = async (data: Bot) => {
     setIsSubmitting(true);
     try {
       await onSubmit(data);
@@ -83,7 +91,7 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="token"
@@ -91,7 +99,10 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             <FormItem>
               <FormLabel>Bot Token</FormLabel>
               <FormControl>
-                <Input placeholder="1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ" {...field} />
+                <Input
+                  placeholder="1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
                 The token provided by BotFather when you created your bot
@@ -131,11 +142,11 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             </FormItem>
           )}
         />
-        
+
         {botType === "WEBHOOK" && (
           <FormField
             control={form.control}
-            name="webhook_url"
+            name="webhookUrl"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Webhook URL</FormLabel>
@@ -154,7 +165,7 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
         {botType === "LONG_POLLING" && (
           <FormField
             control={form.control}
-            name="polling_interval"
+            name="pollingInterval"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Polling Interval (seconds)</FormLabel>
@@ -174,7 +185,7 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             )}
           />
         )}
-        
+
         <FormField
           control={form.control}
           name="description"
@@ -182,17 +193,17 @@ export function BotForm({ initialData, onSubmit, isLoading = false }: BotFormPro
             <FormItem>
               <FormLabel>Description (Optional)</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="A brief description of what this bot does"
                   className="resize-none"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={isSubmitting || isLoading}>
           {isSubmitting ? "Saving..." : "Save Bot"}
         </Button>

@@ -1,32 +1,41 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { 
-  Archive, 
-  BellOff, 
-  Check, 
-  Download, 
-  FileUp, 
-  Trash2, 
+import {
+  Archive,
+  BellOff,
+  Check,
+  Download,
+  FileUp,
+  Trash2,
   Upload,
   Bell,
-  BellRing
+  BellRing,
 } from "lucide-react";
 import { toast } from "sonner";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import useApiQuery from "@/hooks/use-api-query";
+import useDebounce from "@/hooks/use-debounce";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 
 interface Notification {
   id: number;
@@ -37,7 +46,7 @@ interface Notification {
   status: string;
   selected?: boolean;
   content?: string;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: "low" | "medium" | "high";
 }
 
 const Notifications = () => {
@@ -49,8 +58,9 @@ const Notifications = () => {
       audience: "All Users",
       scheduledFor: "2025-04-20",
       status: "Scheduled",
-      content: "The system will undergo maintenance from 2-4 AM EST. Please save your work.",
-      priority: 'medium'
+      content:
+        "The system will undergo maintenance from 2-4 AM EST. Please save your work.",
+      priority: "medium",
     },
     {
       id: 2,
@@ -59,8 +69,9 @@ const Notifications = () => {
       audience: "Premium Users",
       scheduledFor: "2025-04-18",
       status: "Sent",
-      content: "We've added exciting new features to your premium subscription!",
-      priority: 'low'
+      content:
+        "We've added exciting new features to your premium subscription!",
+      priority: "low",
     },
     {
       id: 3,
@@ -70,7 +81,7 @@ const Notifications = () => {
       scheduledFor: "Automated",
       status: "Active",
       content: "Please verify your account to access all features.",
-      priority: 'high'
+      priority: "high",
     },
     {
       id: 4,
@@ -80,7 +91,7 @@ const Notifications = () => {
       scheduledFor: "2025-04-30",
       status: "Draft",
       content: "Our offices will be closed during the upcoming holiday.",
-      priority: 'low'
+      priority: "low",
     },
     {
       id: 5,
@@ -89,8 +100,9 @@ const Notifications = () => {
       audience: "Premium Users",
       scheduledFor: "2025-05-01",
       status: "Scheduled",
-      content: "Your subscription will renew soon. Please update payment details if needed.",
-      priority: 'medium'
+      content:
+        "Your subscription will renew soon. Please update payment details if needed.",
+      priority: "medium",
     },
   ]);
 
@@ -100,32 +112,102 @@ const Notifications = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showDetails, setShowDetails] = useState<number | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   const handleSelectItem = (id: number, isSelected: boolean) => {
     if (isSelected) {
-      setSelectedItems(prev => [...prev, id]);
+      setSelectedItems((prev) => [...prev, id]);
     } else {
-      setSelectedItems(prev => prev.filter(itemId => itemId !== id));
+      setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
     }
   };
 
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected) {
-      setSelectedItems(notifications.map(item => item.id));
+      setSelectedItems(notificationsData.map((item) => item.id));
     } else {
       setSelectedItems([]);
     }
   };
+
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search notifications...",
+    },
+    {
+      id: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { value: "sent", label: "Sent" },
+        { value: "scheduled", label: "Scheduled" },
+        { value: "draft", label: "Draft" },
+        { value: "active", label: "Active" },
+      ],
+    },
+    {
+      id: "channel",
+      label: "Channel",
+      type: "select",
+      options: [
+        { value: "email", label: "Email" },
+        { value: "sms", label: "SMS" },
+        { value: "inapp", label: "In-app" },
+        { value: "push", label: "Push" },
+      ],
+    },
+  ];
+
+  const {
+    data: notificationsData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    refresh,
+    error,
+  } = useApiQuery<Notification>({
+    endpoint: "/api/notification",
+    queryKey: ["notifications", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch roles:", err);
+      toast.error("Failed to load roles, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
+      });
+    },
+    mockData: {
+      content: notifications,
+      totalElements: notifications.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
 
   const handleBulkDelete = () => {
     if (selectedItems.length === 0) {
       toast.error("No items selected");
       return;
     }
-    
-    setNotifications(prev => 
-      prev.filter(item => !selectedItems.includes(item.id))
+
+    setNotifications((prev) =>
+      prev.filter((item) => !selectedItems.includes(item.id))
     );
-    
+
     toast.success(`${selectedItems.length} notifications deleted`);
     setSelectedItems([]);
   };
@@ -135,7 +217,7 @@ const Notifications = () => {
       toast.error("No items selected");
       return;
     }
-    
+
     toast.success(`${selectedItems.length} notifications archived`);
     setSelectedItems([]);
   };
@@ -145,16 +227,16 @@ const Notifications = () => {
       toast.error("No items selected");
       return;
     }
-    
-    setNotifications(prev => 
-      prev.map(item => {
+
+    setNotifications((prev) =>
+      prev.map((item) => {
         if (selectedItems.includes(item.id)) {
           return { ...item, status: "Sent" };
         }
         return item;
       })
     );
-    
+
     toast.success(`${selectedItems.length} notifications published`);
     setSelectedItems([]);
   };
@@ -171,7 +253,7 @@ const Notifications = () => {
           scheduledFor: "2025-06-15",
           status: "Draft",
           content: "This was imported from a CSV file",
-          priority: 'low'
+          priority: "low",
         },
         {
           id: 7,
@@ -181,17 +263,17 @@ const Notifications = () => {
           scheduledFor: "2025-06-20",
           status: "Draft",
           content: "Another notification imported from CSV",
-          priority: 'medium'
-        }
+          priority: "medium",
+        },
       ];
-      
-      setNotifications(prev => [...prev, ...newNotifications]);
+
+      setNotifications((prev) => [...prev, ...newNotifications]);
       setIsImportModalOpen(false);
       toast.success("2 notifications imported successfully");
     }, 1000);
   };
 
-  const handleExportData = (format: 'csv' | 'excel') => {
+  const handleExportData = (format: "csv" | "excel") => {
     // Mock implementation
     toast.success(`Notifications exported as ${format.toUpperCase()}`);
     setIsExportModalOpen(false);
@@ -201,44 +283,55 @@ const Notifications = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: Notification) => <span className="text-muted-foreground">{item.id}</span>
+      cell: (item: Notification) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
     },
-    { 
-      header: "Title", 
+    {
+      header: "Title",
       accessorKey: "title",
       cell: (item: Notification) => (
-        <div className="font-medium cursor-pointer" onClick={() => setShowDetails(item.id)}>
+        <div
+          className="font-medium cursor-pointer"
+          onClick={() => setShowDetails(item.id)}
+        >
           {item.title}
         </div>
-      )
+      ),
     },
-    { 
-      header: "Channel", 
+    {
+      header: "Channel",
       accessorKey: "channel",
       cell: (item: Notification) => {
-        const channels = item.channel.split(', ');
+        const channels = item.channel.split(", ");
         return (
           <div className="flex gap-1">
-            {channels.includes('Email') && 
-              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Email</span>
-            }
-            {channels.includes('In-App') && 
-              <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">In-App</span>
-            }
-            {channels.includes('SMS') && 
-              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">SMS</span>
-            }
+            {channels.includes("Email") && (
+              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                Email
+              </span>
+            )}
+            {channels.includes("In-App") && (
+              <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                In-App
+              </span>
+            )}
+            {channels.includes("SMS") && (
+              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                SMS
+              </span>
+            )}
           </div>
         );
-      }
+      },
     },
-    { 
-      header: "Audience", 
-      accessorKey: "audience" 
+    {
+      header: "Audience",
+      accessorKey: "audience",
     },
-    { 
-      header: "Scheduled For", 
-      accessorKey: "scheduledFor" 
+    {
+      header: "Scheduled For",
+      accessorKey: "scheduledFor",
     },
     {
       header: "Status",
@@ -287,14 +380,15 @@ const Notifications = () => {
             {label}
           </span>
         ) : null;
-      }
-    }
+      },
+    },
   ];
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
+        <Breadcrumbs />
         <PageHeader
           title="Notifications"
           description="Manage system notifications"
@@ -302,24 +396,24 @@ const Notifications = () => {
             <div className="flex space-x-2">
               {selectedItems.length > 0 && (
                 <>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleBulkDelete}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete ({selectedItems.length})
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleBulkArchive}
                   >
                     <Archive className="mr-2 h-4 w-4" />
                     Archive
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleBulkPublish}
                   >
@@ -328,14 +422,14 @@ const Notifications = () => {
                   </Button>
                 </>
               )}
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setIsImportModalOpen(true)}
               >
                 <Upload className="mr-2 h-4 w-4" />
                 Import
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setIsExportModalOpen(true)}
               >
@@ -344,10 +438,31 @@ const Notifications = () => {
               </Button>
             </div>
           }
-        />
+        >
+          <DataFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+              refresh();
+            }}
+          />
+        </PageHeader>
 
-        <div className="mt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="mt-4">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid w-[400px] grid-cols-2 mb-4">
               <TabsTrigger value="overview">
                 <Bell className="mr-2 h-4 w-4" />
@@ -358,21 +473,25 @@ const Notifications = () => {
                 Delivery Analytics
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="overview">
               <DataTable
-                data={notifications}
+                data={notificationsData}
                 columns={columns}
                 title="Notification Management"
                 pagination={true}
-                onSelectItems={handleSelectItem}
-                onSelectAll={handleSelectAll}
-                selectedItems={selectedItems}
+                isLoading={isLoading}
+                pageIndex={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                totalItems={totalItems}
+                showAddButton={true}
               />
             </TabsContent>
-            
+
             <TabsContent value="analytics">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle>Delivery Success Rate</CardTitle>
@@ -381,10 +500,12 @@ const Notifications = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">98.2%</div>
                     <Progress value={98.2} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">+2.1% from last month</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      +2.1% from last month
+                    </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle>Open Rate</CardTitle>
@@ -393,10 +514,12 @@ const Notifications = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">62.5%</div>
                     <Progress value={62.5} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">-1.8% from last month</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      -1.8% from last month
+                    </p>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle>Click Rate</CardTitle>
@@ -405,11 +528,13 @@ const Notifications = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">37.8%</div>
                     <Progress value={37.8} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">+4.3% from last month</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      +4.3% from last month
+                    </p>
                   </CardContent>
                 </Card>
               </div>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>Channel Performance</CardTitle>
@@ -440,7 +565,9 @@ const Notifications = () => {
                     </div>
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">Push Notification</span>
+                        <span className="text-sm font-medium">
+                          Push Notification
+                        </span>
                         <span className="text-sm">89.6%</span>
                       </div>
                       <Progress value={89.6} />
@@ -453,56 +580,80 @@ const Notifications = () => {
         </div>
 
         {/* Detail Modal */}
-        <Dialog open={showDetails !== null} onOpenChange={() => setShowDetails(null)}>
+        <Dialog
+          open={showDetails !== null}
+          onOpenChange={() => setShowDetails(null)}
+        >
           <DialogContent className="sm:max-w-lg">
-            {showDetails !== null && (() => {
-              const notification = notifications.find(n => n.id === showDetails);
-              if (!notification) return null;
-              
-              return (
-                <>
-                  <DialogHeader>
-                    <DialogTitle>{notification.title}</DialogTitle>
-                    <DialogDescription>
-                      Scheduled for {notification.scheduledFor} • {notification.audience}
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="grid gap-4 py-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Content</h3>
-                      <p>{notification.content}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
+            {showDetails !== null &&
+              (() => {
+                const notification = notificationsData.find(
+                  (n) => n.id === showDetails
+                );
+                if (!notification) return null;
+
+                return (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>{notification.title}</DialogTitle>
+                      <DialogDescription>
+                        Scheduled for {notification.scheduledFor} •{" "}
+                        {notification.audience}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
                       <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
-                        <p>{notification.status}</p>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                          Content
+                        </h3>
+                        <p>{notification.content}</p>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Channel</h3>
-                        <p>{notification.channel}</p>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                            Status
+                          </h3>
+                          <p>{notification.status}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                            Channel
+                          </h3>
+                          <p>{notification.channel}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowDetails(null)}>Close</Button>
-                    {notification.status !== "Sent" && (
-                      <Button onClick={() => {
-                        setNotifications(prev => 
-                          prev.map(item => item.id === showDetails ? { ...item, status: "Sent" } : item)
-                        );
-                        toast.success("Notification published");
-                        setShowDetails(null);
-                      }}>
-                        Publish Now
+
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDetails(null)}
+                      >
+                        Close
                       </Button>
-                    )}
-                  </DialogFooter>
-                </>
-              );
-            })()}
+                      {notification.status !== "Sent" && (
+                        <Button
+                          onClick={() => {
+                            setNotifications((prev) =>
+                              prev.map((item) =>
+                                item.id === showDetails
+                                  ? { ...item, status: "Sent" }
+                                  : item
+                              )
+                            );
+                            toast.success("Notification published");
+                            setShowDetails(null);
+                          }}
+                        >
+                          Publish Now
+                        </Button>
+                      )}
+                    </DialogFooter>
+                  </>
+                );
+              })()}
           </DialogContent>
         </Dialog>
 
@@ -521,16 +672,22 @@ const Notifications = () => {
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <FileUp className="w-8 h-8 mb-4 text-gray-500" />
                     <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">CSV, XLSX (MAX. 10MB)</p>
+                    <p className="text-xs text-gray-500">
+                      CSV, XLSX (MAX. 10MB)
+                    </p>
                   </div>
                   <input id="dropzone-file" type="file" className="hidden" />
                 </label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsImportModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleImportCSV}>Import</Button>
@@ -549,18 +706,18 @@ const Notifications = () => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="flex justify-around">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-40 h-32 flex flex-col items-center justify-center"
-                  onClick={() => handleExportData('csv')}
+                  onClick={() => handleExportData("csv")}
                 >
                   <FileUp className="w-8 h-8 mb-4" />
                   <span>CSV</span>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-40 h-32 flex flex-col items-center justify-center"
-                  onClick={() => handleExportData('excel')}
+                  onClick={() => handleExportData("excel")}
                 >
                   <FileUp className="w-8 h-8 mb-4" />
                   <span>Excel</span>
@@ -568,7 +725,10 @@ const Notifications = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsExportModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsExportModalOpen(false)}
+              >
                 Cancel
               </Button>
             </DialogFooter>

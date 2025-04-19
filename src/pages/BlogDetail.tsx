@@ -193,10 +193,10 @@ const BlogDetail = () => {
             { label: "Blogs", path: "/blogs" },
             { label: post?.title || "Blog Post", path: `/blogs/${id}` },
           ]}
-          className="mb-6"
+          className="mb-4"
         />
         
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <PageHeader
             title={post.title}
             description={`Published on ${format(new Date(post.publishDate), "MMMM dd, yyyy")}`}
@@ -271,7 +271,7 @@ const BlogDetail = () => {
               {post.content}
             </div>
             
-            <div className="flex flex-wrap mt-6">
+            <div className="flex flex-wrap mt-4">
               {post.categoryName && (
                 <div className="flex items-center mr-4">
                   <Bookmark className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -310,7 +310,7 @@ const BlogDetail = () => {
         
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Comments</h2>
-          <Separator className="mb-6" />
+          <Separator className="mb-4" />
           
           {commentLoading ? (
             <div className="space-y-4">

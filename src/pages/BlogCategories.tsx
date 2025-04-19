@@ -163,7 +163,7 @@ const BlogCategories = () => {
             { label: "Blogs", path: "/blogs" },
             { label: "Categories", path: "/blog-categories" },
           ]}
-          className="mb-6"
+          className="mb-4"
         />
         <PageHeader
           title="Blog Categories"
@@ -173,7 +173,7 @@ const BlogCategories = () => {
           onAddButtonClick={addNewCategory}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
           {loading ? (
             // Skeleton loading state
             Array.from({ length: 6 }).map((_, i) => (
@@ -255,7 +255,7 @@ const BlogCategories = () => {
         </div>
 
         {categories.length === 0 && !loading && (
-          <Card className="mt-6 p-8 text-center">
+          <Card className="mt-4 p-8 text-center">
             <Tag className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">No Categories Found</h3>
             <p className="mt-2 text-sm text-muted-foreground">

@@ -10,60 +10,38 @@ import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { User } from "@/contexts/AuthContext";
 
-interface Token {
+interface EndpointSecure {
   id: number;
-  token: string;
-  issuedAt: string;
-  expireAt: string;
-  blacklisted: boolean;
-  user: User;
+  endpointPattern: string;
+  method: string;
+  authority: string;
+  isRole: boolean;
 }
 
-const Tokens = () => {
+const EndpointSecures = () => {
   // Mock data
-  const [tokens, setTokens] = useState([
+  const [endpointSecures, setEndpointSecures] = useState([
     {
       id: 1,
-      token: "Mobile API Token",
-      issuedAt: "2023-07-10",
-      expireAt: "2023-07-10",
-      blacklisted: false,
-      user: {
-        id: 1,
-        username: "johndoe",
-        name: "John Doe",
-        role: "admin",
-      },
+      endpointPattern: "/api/v1/users",
+      method: "GET",
+      authority: "ROLE_USER",
+      isRole: true,
     },
     {
       id: 2,
-      token: "Web Integration",
-      issuedAt: "2023-04-09",
-      expireAt: "2023-05-15",
-      blacklisted: true,
-      user: {
-        id: 1,
-        username: "johndoe",
-        email: "",
-        name: "John Doe",
-        role: "admin",
-      },
+      endpointPattern: "/api/v1/admin",
+      method: "POST",
+      authority: "ROLE_ADMIN",
+      isRole: false,
     },
     {
       id: 3,
-      token: "Analytics Service",
-      issuedAt: "2023-04-01",
-      expireAt: "2023-04-05",
-      blacklisted: false,
-      user: {
-        id: 1,
-        username: "johndoe",
-        email: "",
-        name: "John Doe",
-        role: "admin",
-      },
+      endpointPattern: "/api/v1/products",
+      method: "PUT",
+      authority: "ROLE_USER, ROLE_ADMIN",
+      isRole: true,
     },
   ]);
 
@@ -74,16 +52,16 @@ const Tokens = () => {
 
   // Setup for detail view modal
   const {
-    selectedItem: selectedToken,
+    selectedItem: selectedEndpoint,
     isModalOpen: isDetailOpen,
-    openDetail: openTokenDetail,
-    closeModal: closeTokenDetail,
-  } = useDetailView<Token>({
-    modalThreshold: 10,
+    openDetail: openEndpointDetail,
+    closeModal: closeEndpointDetail,
+  } = useDetailView<EndpointSecure>({
+    modalThreshold: 15
   });
 
   const {
-    data: tokensData,
+    data: endpointSecuresData,
     isLoading,
     filters,
     setFilters,
@@ -95,21 +73,21 @@ const Tokens = () => {
     totalItems,
     refresh,
     error,
-  } = useApiQuery<Token>({
-    endpoint: "/api/token",
-    queryKey: ["tokens", debouncedSearchTerm],
+  } = useApiQuery<EndpointSecure>({
+    endpoint: "/api/endpointSecure",
+    queryKey: ["endpointSecures", debouncedSearchTerm],
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
     onError: (err) => {
-      console.error("Failed to fetch tokens:", err);
-      toast.error("Failed to load tokens, using cached data", {
+      console.error("Failed to fetch endpoint secure:", err);
+      toast.error("Failed to load endpoint secure, using cached data", {
         description: "Could not connect to the server. Please try again later.",
       });
     },
     mockData: {
-      content: tokens,
-      totalElements: tokens.length,
+      content: endpointSecures,
+      totalElements: endpointSecures.length,
       totalPages: 1,
       number: 0,
       size: 10,
@@ -122,110 +100,114 @@ const Tokens = () => {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search tokens...",
+      placeholder: "Search endpoints...",
     },
     {
-      id: "blacklisted",
-      label: "Black listed status",
+      id: "isRole",
+      label: "Is Role",
       type: "select",
       options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Expired" },
+        { value: "true", label: "Use role" },
+        { value: "false", label: "Not use role" },
       ],
     },
     {
-      id: "type",
-      label: "Token Type",
+      id: "method",
+      label: "Method",
       type: "select",
       options: [
-        { value: "ACCESS", label: "Access" },
-        { value: "REFRESH", label: "Refresh" }
+        { value: "GET", label: "GET" },
+        { value: "POST", label: "POST" },
+        { value: "PUT", label: "PUT" },
+        { value: "DELETE", label: "DELETE" },
       ],
     },
     {
-      id: "user",
-      label: "User",
+      id: "module",
+      label: "Module",
       type: "select",
       options: [
-        { value: "admin", label: "John Doe" },
-        { value: "janedoe", label: "Jane Doe" },
+        { value: "USER", label: "User" },
+        { value: "ADMIN", label: "Admin" },
+        { value: "product", label: "Product" },
       ],
     },
   ];
 
-  // Actions for tokens
-  const getActionItems = (token: Token) => {
+  // Actions for endpoints
+  const getActionItems = (endpoint: EndpointSecure) => {
     return [
       {
         type: "view" as ActionType,
-        label: "View Token",
-        onClick: () => openTokenDetail(token),
+        label: "View Endpoint",
+        onClick: () => openEndpointDetail(endpoint),
       },
       {
         type: "edit" as ActionType,
-        label: "Regenerate Token",
-        onClick: () => handleRegenerateToken(token.id),
+        label: "Edit Endpoint",
+        onClick: () => handleEditEndpoint(endpoint.id),
       },
       {
         type: "delete" as ActionType,
-        label: "Revoke Token",
-        onClick: () => handleRevokeToken(token.id),
+        label: "Delete Endpoint",
+        onClick: () => handleDeleteEndpoint(endpoint.id),
       },
     ];
   };
 
-  // Handle token operations
-  const handleRegenerateToken = (id: number) => {
-    // Regenerate token logic would go here
-    toast.success("Token regenerated successfully");
+  // Handle endpoint operations
+  const handleEditEndpoint = (id: number) => {
+    // Regenerate endpoint logic would go here
+    toast.success("Endpoint regenerated successfully");
   };
 
-  const handleRevokeToken = (id: number) => {
-    setTokens(tokens.filter((token) => token.id !== id));
-    toast.success("Token revoked successfully");
+  const handleDeleteEndpoint = (id: number) => {
+    toast.success("Endpoint revoked successfully");
   };
 
   const columns = [
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: Token) => (
+      cell: (item: EndpointSecure) => (
         <span className="text-muted-foreground">{item.id}</span>
       ),
       sortable: true,
     },
     {
-      header: "Token",
-      accessorKey: "token",
+      header: "Endpoint",
+      accessorKey: "endpointPattern",
       sortable: true,
-      cell: (item: Token) => (
+      cell: (item: EndpointSecure) => (
         <span className="text-muted-foreground">
-          {item?.token?.slice(0, 30)}...
+          {item?.endpointPattern?.slice(0, 30)}...
         </span>
       ),
     },
-    { header: "Issued at", accessorKey: "issuedAt", sortable: true },
-    { header: "Expire at", accessorKey: "expireAt", sortable: true },
+    { header: "Method", accessorKey: "method", sortable: true },
+    { header: "Authority", accessorKey: "authority", sortable: true },
     {
-      header: "Status",
-      accessorKey: "status",
+      header: "Is role",
+      accessorKey: "isRole",
       sortable: true,
-      cell: (token: Token) => (
+      cell: (endpoint: EndpointSecure) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            token.blacklisted
+            endpoint.isRole
               ? "bg-green-100 text-green-800"
               : "bg-red-100 text-red-800"
           }`}
         >
-          {token.blacklisted ? "Inactive" : "Active"}
+          {endpoint.isRole ? "Use role" : "Not use role"}
         </span>
       ),
     },
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (token: Token) => <ActionsMenu actions={getActionItems(token)} />,
+      cell: (endpoint: EndpointSecure) => (
+        <ActionsMenu actions={getActionItems(endpoint)} />
+      ),
     },
   ];
 
@@ -236,8 +218,8 @@ const Tokens = () => {
         <Breadcrumbs />
 
         <PageHeader
-          title="API Tokens"
-          description="Manage API access tokens"
+          title="Endpoint Management"
+          description="Manage access endpoints"
           showAddButton={false}
         >
           <DataFilters
@@ -261,9 +243,9 @@ const Tokens = () => {
 
         <div className="mt-4">
           <DataTable
-            data={tokensData}
+            data={endpointSecuresData}
             columns={columns}
-            title="Token Management"
+            title="Endpoint Management"
             pagination={true}
             showAddButton={false}
             isLoading={isLoading}
@@ -275,39 +257,39 @@ const Tokens = () => {
           />
         </div>
 
-        {/* Token Detail Modal */}
-        {selectedToken && (
+        {/* Endpoint Detail Modal */}
+        {selectedEndpoint && (
           <DetailViewModal
             isOpen={isDetailOpen}
-            onClose={closeTokenDetail}
-            title="Token Details"
+            onClose={closeEndpointDetail}
+            title="Endpoint Details"
             size="md"
             showCloseButton={false}
           >
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium">Token</h3>
-                <p className="mt-1">{selectedToken.token}</p>
+                <h3 className="text-sm font-medium">Endpoint</h3>
+                <p className="mt-1">{selectedEndpoint.endpointPattern}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium">Issued at</h3>
-                <p className="mt-1">{selectedToken.issuedAt}</p>
+                <h3 className="text-sm font-medium">Method</h3>
+                <p className="mt-1">{selectedEndpoint.method}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium">Expire at</h3>
-                <p className="mt-1">{selectedToken.expireAt}</p>
+                <h3 className="text-sm font-medium">Authority</h3>
+                <p className="mt-1">{selectedEndpoint.authority}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium">Status</h3>
+                <h3 className="text-sm font-medium">Is role</h3>
                 <p className="mt-1">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedToken.blacklisted
+                      selectedEndpoint.isRole
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {selectedToken.blacklisted ? "Inactive" : "Active"}
+                    {selectedEndpoint.isRole ? "Is role" : "Not use role"}
                   </span>
                 </p>
               </div>
@@ -319,4 +301,4 @@ const Tokens = () => {
   );
 };
 
-export default Tokens;
+export default EndpointSecures;

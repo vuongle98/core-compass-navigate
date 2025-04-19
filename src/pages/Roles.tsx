@@ -21,6 +21,9 @@ import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { DetailViewModal } from "@/components/ui/detail-view-modal";
+import { useDetailView } from "@/hooks/use-detail-view";
 
 interface Role {
   id: number;
@@ -84,7 +87,27 @@ const Roles = () => {
         { value: "high", label: "High (31+)" },
       ],
     },
+    {
+      id: "type",
+      label: "Type",
+      type: "select",
+      options: [
+        { value: "ADMIN", label: "Admin" },
+        { value: "MANAGE", label: "Manager" },
+        { value: "USER", label: "User" },
+      ],
+    },
   ];
+
+  // Setup for detail view modal
+  const {
+    selectedItem: selectedItem,
+    isModalOpen: isDetailOpen,
+    openDetail: openItemDetail,
+    closeModal: closeItemDetail,
+  } = useDetailView<Role>({
+    modalThreshold: 10,
+  });
 
   const {
     data: roleData,
@@ -97,6 +120,7 @@ const Roles = () => {
     setPage,
     setPageSize,
     totalItems,
+    refresh,
     error,
   } = useApiQuery<Role>({
     endpoint: "/api/role",
@@ -231,7 +255,7 @@ const Roles = () => {
             {
               type: "view" as ActionType,
               label: "View Details",
-              onClick: () => toast.info(`Viewing ${item.name}`),
+              onClick: () => openItemDetail(item),
             },
             {
               type: "edit" as ActionType,
@@ -253,6 +277,7 @@ const Roles = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
+        <Breadcrumbs />
         <PageHeader
           title="Roles"
           description="Define user roles in your application"
@@ -270,6 +295,7 @@ const Roles = () => {
             onReset={() => {
               resetFilters();
               setSearchTerm("");
+              refresh();
             }}
             className="mt-2"
           />
@@ -287,8 +313,35 @@ const Roles = () => {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             totalItems={totalItems}
+            showAddButton={true}
+            onAddClick={openCreateDialog}
           />
         </div>
+
+        {selectedItem && (
+          <DetailViewModal
+            isOpen={isDetailOpen}
+            onClose={closeItemDetail}
+            title="Role Details"
+            size="md"
+            showCloseButton={false}
+          >
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Code</h3>
+                <p className="mt-1">{selectedItem.code}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Name</h3>
+                <p className="mt-1">{selectedItem.name}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Description</h3>
+                <p className="mt-1">{selectedItem.description}</p>
+              </div>
+            </div>
+          </DetailViewModal>
+        )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>

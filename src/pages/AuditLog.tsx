@@ -287,7 +287,7 @@ const AuditLog = () => {
           />
         </PageHeader>
 
-        <div className="mt-6">
+        <div className="mt-4">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-8 w-full" />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
-import useDebounce from "@/hooks/use-debounce";
+import ErrorBoundary from "./ErrorBoundary";
 
 export interface FilterOption {
   id: string;
@@ -37,7 +36,8 @@ export function DataFilters({
   className = "",
 }: DataFiltersProps) {
   const [searchInputs, setSearchInputs] = useState<Record<string, string>>({});
-  
+  const [debouncedSearchInputs, setDebouncedSearchInputs] = useState<Record<string, string>>({});
+
   // Set initial search values
   useEffect(() => {
     const initialSearchValues: Record<string, string> = {};
@@ -49,28 +49,33 @@ export function DataFilters({
     setSearchInputs(initialSearchValues);
   }, []);
 
-  // Apply debounce for each search field
-  const debouncedSearches: Record<string, string> = {};
-  Object.keys(searchInputs).forEach(key => {
-    debouncedSearches[key] = useDebounce(searchInputs[key], 500);
-  });
+  // Debounce search inputs
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchInputs(searchInputs);
+    }, 500);
 
-  // Update filters when debounced search changes
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchInputs]);
+
+  // Update filters when debounced search inputs change
   useEffect(() => {
     const updatedFilters = { ...filters };
     let hasChanges = false;
-    
-    Object.entries(debouncedSearches).forEach(([key, value]) => {
+
+    Object.entries(debouncedSearchInputs).forEach(([key, value]) => {
       if (updatedFilters[key]?.toString() !== value) {
         updatedFilters[key] = value;
         hasChanges = true;
       }
     });
-    
+
     if (hasChanges) {
       onChange(updatedFilters);
     }
-  }, [debouncedSearches]);
+  }, [debouncedSearchInputs]);
 
   const updateFilter = (id: string, value: string) => {
     // For select filters, convert "all" value to empty string
@@ -90,65 +95,67 @@ export function DataFilters({
   );
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {options.map((option) => {
-        if (option.type === "search") {
-          return (
-            <div className="relative" key={option.id}>
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchInputs[option.id] || ""}
-                onChange={(e) => updateFilter(option.id, e.target.value)}
-                placeholder={option.placeholder || "Search..."}
-                className="pl-8 w-[150px] md:w-[200px]"
-              />
-              {searchInputs[option.id] && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1.5 h-6 w-6 p-0"
-                  onClick={() => {
-                    updateFilter(option.id, "");
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          );
-        }
+    <ErrorBoundary>
+      <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+        {options.map((option) => {
+          if (option.type === "search") {
+            return (
+              <div className="relative" key={option.id}>
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchInputs[option.id] || ""}
+                  onChange={(e) => updateFilter(option.id, e.target.value)}
+                  placeholder={option.placeholder || "Search..."}
+                  className="pl-8 w-[150px] md:w-[200px]"
+                />
+                {searchInputs[option.id] && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1.5 h-6 w-6 p-0"
+                    onClick={() => {
+                      updateFilter(option.id, "");
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          }
 
-        if (option.type === "select" && option.options) {
-          return (
-            <Select
-              key={option.id}
-              value={filters[option.id]?.toString() || "all"}
-              onValueChange={(value) => updateFilter(option.id, value)}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder={option.label} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All {option.label}</SelectItem>
-                {option.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          );
-        }
+          if (option.type === "select" && option.options) {
+            return (
+              <Select
+                key={option.id}
+                value={filters[option.id]?.toString() || "all"}
+                onValueChange={(value) => updateFilter(option.id, value)}
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder={option.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All {option.label}</SelectItem>
+                  {option.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          }
 
-        return null;
-      })}
+          return null;
+        })}
 
-      {hasActiveFilters && (
-        <Button variant="ghost" onClick={onReset}>
-          <X className="mr-2 h-4 w-4" />
-          Clear Filters
-        </Button>
-      )}
-    </div>
+        {hasActiveFilters && (
+          <Button variant="ghost" onClick={onReset}>
+            <X className="mr-2 h-4 w-4" />
+            Clear Filters
+          </Button>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

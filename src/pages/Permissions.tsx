@@ -28,6 +28,10 @@ import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { ref } from "process";
+import { useDetailView } from "@/hooks/use-detail-view";
+import { DetailViewModal } from "@/components/ui/detail-view-modal";
 
 interface Permission {
   id: number;
@@ -132,13 +136,23 @@ const Permissions = () => {
   };
 
   const modules = [
-    "Users",
-    "Roles",
-    "Permissions",
-    "Files",
-    "Configuration",
-    "System",
+    "USER",
+    "ROLE",
+    "PERMISSION",
+    "FILE",
+    "CONFIGURATION",
+    "SYSTEM"
   ];
+
+  // Setup for detail view modal
+  const {
+    selectedItem: selectedPermission,
+    isModalOpen: isDetailOpen,
+    openDetail: openPermDetail,
+    closeModal: closePermDetail,
+  } = useDetailView<Permission>({
+    modalThreshold: 15,
+  });
 
   const {
     data: permissionsData,
@@ -151,6 +165,7 @@ const Permissions = () => {
     setPage,
     setPageSize,
     totalItems,
+    refresh,
     error,
   } = useApiQuery<Permission>({
     endpoint: "/api/permission",
@@ -288,7 +303,7 @@ const Permissions = () => {
             {
               type: "view" as ActionType,
               label: "View Details",
-              onClick: () => toast.info(`Viewing ${item.name}`),
+              onClick: () => openPermDetail(item),
             },
             {
               type: "edit" as ActionType,
@@ -310,6 +325,7 @@ const Permissions = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
+        <Breadcrumbs />
         <PageHeader title="Permissions" description="Manage system permissions">
           <DataFilters
             filters={filters}
@@ -324,6 +340,7 @@ const Permissions = () => {
             onReset={() => {
               resetFilters();
               setSearchTerm("");
+              refresh();
             }}
             className="mt-2"
           />
@@ -341,8 +358,39 @@ const Permissions = () => {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             totalItems={totalItems}
+            showAddButton={true}
+            onAddClick={openCreateDialog}
           />
         </div>
+
+        {selectedPermission && (
+          <DetailViewModal
+            isOpen={isDetailOpen}
+            onClose={closePermDetail}
+            title="Permission Details"
+            size="md"
+            showCloseButton={false}
+          >
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Code</h3>
+                <p className="mt-1">{selectedPermission.code}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Name</h3>
+                <p className="mt-1">{selectedPermission.name}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Description</h3>
+                <p className="mt-1">{selectedPermission.description}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Module</h3>
+                <p className="mt-1">{selectedPermission.module}</p>
+              </div>
+            </div>
+          </DetailViewModal>
+        )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>

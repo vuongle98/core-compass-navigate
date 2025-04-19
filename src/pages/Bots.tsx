@@ -40,22 +40,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import ApiService from "@/services/ApiService";
+import useApiQuery from "@/hooks/use-api-query";
+import useDebounce from "@/hooks/use-debounce";
 
+export interface BotConfiguration {
+  webhookUrl?: string;
+  pollingInterval?: number;
+  allowedUpdates?: string[];
+  maxConnections?: number;
+  ipAddress?: string;
+  secretToken?: string;
+  dropPendingUpdates?: boolean;
+  maxThreads?: number;
+  updateMethod?: "LONG_POLLING" | "WEBHOOK";
+}
 export interface Bot {
   id: number;
   name: string;
-  token: string;
-  webhook_url?: string;
-  status: "active" | "inactive" | "error";
-  created_at: string;
-  updated_at: string;
-  scheduled?: boolean;
+  apiToken?: string;
+  status: "RUNNING" | "STOPPED" | "ERRORED"; // STARTING, RUNNING, STOPPING, STOPPED, ERRORED
+  pollingInterval?: number;
+  configuration?: BotConfiguration;
   description?: string;
-  users_count?: number;
-  messages_count?: number;
-  platform?: string;
-  type: "WEBHOOK" | "LONG_POLLING";
-  polling_interval?: number;
+  scheduled?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface Column {
@@ -71,85 +80,60 @@ const mockBots: Bot[] = [
   {
     id: 1,
     name: "Support Bot",
-    token: "1234567890:ABCDEF1234567890ABCDEF",
-    webhook_url: "https://example.com/webhook/bot1",
-    status: "active",
-    created_at: "2025-03-15",
-    updated_at: "2025-04-12",
-    scheduled: true,
+    apiToken: "1234567890:ABCDEF1234567890ABCDEF",
+    configuration: {
+      webhookUrl: "https://example.com/webhook/bot1",
+    },
+    status: "RUNNING",
     description: "Customer support bot with auto-responses",
-    users_count: 1542,
-    messages_count: 27835,
-    platform: "Telegram",
-    type: "WEBHOOK",
   },
   {
     id: 2,
     name: "Marketing Bot",
-    token: "0987654321:FEDCBA0987654321FEDCBA",
-    status: "inactive",
-    created_at: "2025-03-20",
-    updated_at: "2025-04-08",
-    scheduled: false,
+    apiToken: "0987654321:FEDCBA0987654321FEDCBA",
     description: "Automated marketing campaigns and promotions",
-    users_count: 856,
-    messages_count: 12405,
-    platform: "Telegram",
-    type: "LONG_POLLING",
+    status: "STOPPED",
   },
   {
     id: 3,
     name: "Analytics Bot",
-    token: "5432167890:BDFACE5432167890BDFACE",
-    webhook_url: "https://example.com/webhook/bot3",
-    status: "error",
-    created_at: "2025-04-01",
-    updated_at: "2025-04-15",
-    scheduled: false,
+    apiToken: "5432167890:BDFACE5432167890BDFACE",
+    configuration: {
+      pollingInterval: 5,
+      updateMethod: "LONG_POLLING",
+      webhookUrl: "https://example.com/webhook/bot3",
+    },
+    status: "RUNNING",
     description: "Collects and reports analytics data",
-    users_count: 243,
-    messages_count: 4129,
-    platform: "Telegram",
-    type: "WEBHOOK",
   },
   {
     id: 4,
     name: "Notifications Bot",
-    token: "6789054321:ACEFBD6789054321ACEFBD",
-    status: "active",
-    created_at: "2025-04-05",
-    updated_at: "2025-04-14",
-    scheduled: true,
+    apiToken: "6789054321:ACEFBD6789054321ACEFBD",
+    status: "RUNNING",
     description: "Sends notifications and alerts to users",
-    users_count: 1021,
-    messages_count: 18762,
-    platform: "Telegram",
-    type: "LONG_POLLING",
+    configuration: {
+      webhookUrl: "https://example.com/webhook/bot4",
+      allowedUpdates: ["message", "callback_query"],
+      maxConnections: 10,
+      dropPendingUpdates: true,
+      updateMethod: "WEBHOOK",
+    },
   },
   {
     id: 5,
     name: "Test Bot",
-    token: "1357924680:FDBECA1357924680FDBECA",
-    webhook_url: "https://example.com/webhook/bot5",
-    status: "inactive",
-    created_at: "2025-04-08",
-    updated_at: "2025-04-10",
-    scheduled: false,
+    apiToken: "1357924680:FDBECA1357924680FDBECA",
+    configuration: {
+      webhookUrl: "https://example.com/webhook/bot5",
+    },
+    status: "RUNNING",
     description: "Development and testing purposes only",
-    users_count: 12,
-    messages_count: 567,
-    platform: "Telegram",
-    type: "WEBHOOK",
   },
 ];
 
 const Bots = () => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({
-    status: "",
-    type: "",
-    search: "",
-  });
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const {
@@ -164,84 +148,45 @@ const Bots = () => {
     pageSize: 10,
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   const {
     data: botsData,
     isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    totalItems,
+    refresh,
     isError,
-    refetch,
-  } = useQuery({
-    queryKey: ["bots", filters, pagination.pageIndex, pagination.pageSize],
-    queryFn: async () => {
-      try {
-        const response = await ApiService.get<any>(
-          `/api/bots?page=${pagination.pageIndex}&size=${pagination.pageSize}&status=${filters.status}&type=${filters.type}&search=${filters.search}`
-        );
-        return response.data;
-      } catch (error) {
-        console.log("Failed to fetch from API, using mock data:", error);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        console.log("Fetching bots with params:", {
-          filters,
-          page: pagination.pageIndex,
-          size: pagination.pageSize,
-        });
-
-        let filteredBots = [...mockBots];
-
-        if (filters.status) {
-          filteredBots = filteredBots.filter(
-            (bot) => bot.status === filters.status
-          );
-        }
-
-        if (filters.type) {
-          filteredBots = filteredBots.filter(
-            (bot) => bot.type === filters.type
-          );
-        }
-
-        if (filters.search) {
-          const searchLower = filters.search.toLowerCase();
-          filteredBots = filteredBots.filter(
-            (bot) =>
-              bot.name.toLowerCase().includes(searchLower) ||
-              bot.description?.toLowerCase().includes(searchLower)
-          );
-        }
-
-        return {
-          content: filteredBots.slice(
-            pagination.pageIndex * pagination.pageSize,
-            (pagination.pageIndex + 1) * pagination.pageSize
-          ),
-          totalElements: filteredBots.length,
-          totalPages: Math.ceil(filteredBots.length / pagination.pageSize),
-          number: pagination.pageIndex,
-          size: pagination.pageSize,
-        };
-      }
+    error,
+  } = useApiQuery<Bot>({
+    endpoint: "/api/v1/bots",
+    queryKey: ["bots", debouncedSearchTerm],
+    initialPage: 0,
+    initialPageSize: 10,
+    persistFilters: true,
+    onError: (err) => {
+      console.error("Failed to fetch bots:", err);
+      toast.error("Failed to load bots, using cached data", {
+        description: "Could not connect to the server. Please try again later.",
+      });
+    },
+    mockData: {
+      content: mockBots,
+      totalElements: mockBots.length,
+      totalPages: 1,
+      number: 0,
+      size: 10,
     },
   });
-
-  const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters,
-    }));
-    setPagination((prev) => ({
-      ...prev,
-      pageIndex: 0,
-    }));
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      status: "",
-      type: "",
-      search: "",
-    });
-  };
 
   const handleCreateBot = async (
     data: Omit<Bot, "id" | "created_at" | "updated_at" | "status">
@@ -251,7 +196,7 @@ const Bots = () => {
 
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
-      refetch();
+      refresh();
     } catch (error) {
       toast.error("Failed to create bot");
       console.error(error);
@@ -265,7 +210,7 @@ const Bots = () => {
       });
 
       toast.success(`Bot ${action} action completed`);
-      refetch();
+      refresh();
     } catch (error) {
       toast.error(`Failed to ${action} bot`);
       console.error(error);
@@ -283,7 +228,7 @@ const Bots = () => {
 
       toast.success(`${action} completed for ${selectedBots.length} bots`);
       setSelectedBots([]);
-      refetch();
+      refresh();
     } catch (error) {
       toast.error(`Failed to ${action} bots`);
       console.error(error);
@@ -291,7 +236,13 @@ const Bots = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
       active: { variant: "default", label: "Active" },
       inactive: { variant: "secondary", label: "Inactive" },
       error: { variant: "destructive", label: "Error" },
@@ -306,7 +257,13 @@ const Bots = () => {
   };
 
   const getTypeBadge = (type: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
       WEBHOOK: { variant: "outline", label: "Webhook" },
       LONG_POLLING: { variant: "outline", label: "Long Polling" },
     };
@@ -333,7 +290,7 @@ const Bots = () => {
       },
     ];
 
-    if (bot.status === "inactive") {
+    if (bot.status === "STOPPED") {
       actions.push({
         type: "play" as ActionType,
         label: "Start Bot",
@@ -341,7 +298,7 @@ const Bots = () => {
       });
     }
 
-    if (bot.status === "active") {
+    if (bot.status === "RUNNING") {
       actions.push({
         type: "square" as ActionType,
         label: "Stop Bot",
@@ -376,20 +333,6 @@ const Bots = () => {
     return actions;
   };
 
-  const handlePageChange = (pageIndex: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      pageIndex,
-    }));
-  };
-
-  const handlePageSizeChange = (pageSize: number) => {
-    setPagination({
-      pageIndex: 0,
-      pageSize,
-    });
-  };
-
   const handleSelectItem = (id: number | string, selected: boolean) => {
     setSelectedBots((prev) => {
       if (selected) {
@@ -402,7 +345,7 @@ const Bots = () => {
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      const allIds = botsData?.content.map((bot) => bot.id) || [];
+      const allIds = botsData.map((bot) => bot.id) || [];
       setSelectedBots(allIds);
     } else {
       setSelectedBots([]);
@@ -428,7 +371,7 @@ const Bots = () => {
     {
       header: "Type",
       accessorKey: "type",
-      cell: (item: Bot) => getTypeBadge(item.type),
+      cell: (item: Bot) => getTypeBadge(item.configuration?.updateMethod || ""),
       sortable: true,
       filterable: true,
     },
@@ -438,24 +381,6 @@ const Bots = () => {
       cell: (item: Bot) => getStatusBadge(item.status),
       sortable: true,
       filterable: true,
-    },
-    {
-      header: "Users",
-      accessorKey: "users_count",
-      cell: (item: Bot) => (
-        <div className="font-medium">{item.users_count?.toLocaleString()}</div>
-      ),
-      sortable: true,
-    },
-    {
-      header: "Messages",
-      accessorKey: "messages_count",
-      cell: (item: Bot) => (
-        <div className="font-medium">
-          {item.messages_count?.toLocaleString()}
-        </div>
-      ),
-      sortable: true,
     },
     {
       header: "Created At",
@@ -476,9 +401,9 @@ const Bots = () => {
       label: "Status",
       type: "select",
       options: [
-        { value: "active", label: "Active" },
-        { value: "inactive", label: "Inactive" },
-        { value: "error", label: "Error" },
+        { value: "RUNNING", label: "Running" },
+        { value: "STOPPED", label: "Stopped" },
+        { value: "ERRORED", label: "Error" },
       ],
     },
     {
@@ -503,15 +428,7 @@ const Bots = () => {
   };
 
   const getActiveBotsCount = () =>
-    botsData?.content.filter((bot) => bot.status === "active").length || 0;
-  const getTotalMessagesCount = () =>
-    botsData?.content.reduce(
-      (sum, bot) => sum + (bot.messages_count || 0),
-      0
-    ) || 0;
-  const getTotalUsersCount = () =>
-    botsData?.content.reduce((sum, bot) => sum + (bot.users_count || 0), 0) ||
-    0;
+    botsData?.filter((bot) => bot.status === "RUNNING").length || 0;
 
   const bulkActions = [
     {
@@ -550,63 +467,56 @@ const Bots = () => {
           description="Manage your Telegram bots"
           actions={
             <div className="flex space-x-2">
-              {selectedBots.length > 0 ? (
+              {selectedBots.length > 0 && (
                 <BotBulkActions
                   selectedCount={selectedBots.length}
                   actions={bulkActions}
                 />
-              ) : (
-                <Button onClick={() => setIsCreateModalOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create New Bot
-                </Button>
               )}
             </div>
           }
         />
 
         <BotStatsCards
-          totalBots={botsData?.totalElements || 0}
+          totalBots={botsData?.length || 0}
           activeBots={getActiveBotsCount()}
-          totalUsers={getTotalUsersCount()}
-          totalMessages={getTotalMessagesCount()}
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           <DataFilters
+            className="mb-4"
             filters={filters}
             options={filterOptions}
-            onChange={handleFilterChange}
-            onReset={resetFilters}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+              refresh();
+            }}
           />
 
-          {isLoading ? (
-            <div className="space-y-3 mt-6">
-              <ButtonSkeleton />
-              <ButtonSkeleton />
-              <ButtonSkeleton />
-            </div>
-          ) : isError ? (
-            <div className="text-center p-4 text-destructive">
-              <AlertCircle className="h-6 w-6 mx-auto mb-2" />
-              Failed to load bots. Please try again.
-            </div>
-          ) : (
-            <DataTable
-              data={botsData?.content || []}
-              columns={columns}
-              title="Telegram Bots"
-              pagination={true}
-              selectedItems={selectedBots}
-              onSelectItems={handleSelectItem}
-              onSelectAll={handleSelectAll}
-              initialPageSize={pagination.pageSize}
-              pageSizeOptions={[5, 10, 25, 50]}
-              showAddButton={false}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-            />
-          )}
+          <DataTable
+            data={botsData || []}
+            columns={columns}
+            title="Telegram Bots"
+            pagination={true}
+            initialPageSize={pagination.pageSize}
+            pageSizeOptions={[5, 10, 25, 50]}
+            isLoading={isLoading}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
+            showAddButton={true}
+            onAddClick={() => setIsCreateModalOpen(true)}
+          />
         </div>
 
         <DetailViewModal
@@ -616,7 +526,7 @@ const Bots = () => {
           size="lg"
           showCloseButton={false}
         >
-          {selectedBot && <BotDetail bot={selectedBot} onRefresh={refetch} />}
+          {selectedBot && <BotDetail bot={selectedBot} onRefresh={refresh} />}
         </DetailViewModal>
 
         <DetailViewModal
@@ -624,6 +534,7 @@ const Bots = () => {
           onClose={() => setIsCreateModalOpen(false)}
           title="Create New Bot"
           size="lg"
+          showCloseButton={false}
         >
           <BotForm onSubmit={handleCreateBot} />
         </DetailViewModal>

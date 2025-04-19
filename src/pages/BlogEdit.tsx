@@ -54,7 +54,7 @@ const BlogEdit = () => {
             { label: "Blogs", path: "/blogs" },
             { label: "Edit Post", path: `/blogs/${id}/edit` },
           ]}
-          className="mb-6"
+          className="mb-4"
         />
         <PageHeader
           title="Edit Blog Post"
@@ -63,13 +63,13 @@ const BlogEdit = () => {
         />
         
         {loading ? (
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-4">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
         ) : post ? (
-          <div className="mt-6">
+          <div className="mt-4">
             <BlogPostForm 
               post={post} 
               onSuccess={handleSuccess} 
@@ -77,7 +77,7 @@ const BlogEdit = () => {
             />
           </div>
         ) : (
-          <div className="mt-6 text-center p-8">
+          <div className="mt-4 text-center p-8">
             <p>Blog post not found.</p>
           </div>
         )}

@@ -123,7 +123,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
       />
       
       {!collapsed && (
-        <div className="mt-6">
+        <div className="mt-4">
           <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">
             System
           </h3>
@@ -137,6 +137,12 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
         collapsed={collapsed}
       />
       <NavItem
+        href="/endpoint-secure"
+        icon={Blocks}
+        title="Endpoint Secure"
+        collapsed={collapsed}
+      />
+      <NavItem
         href="/feature-flags"
         icon={Flag}
         title="Feature Flags"
@@ -144,7 +150,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
       />
       
       {!collapsed && (
-        <div className="mt-6">
+        <div className="mt-4">
           <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">
             Logs
           </h3>

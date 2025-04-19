@@ -54,7 +54,7 @@ export function DataTable<T>({
   onPageChange,
   onPageSizeChange,
   initialPageSize,
-  pageSizeOptions
+  pageSizeOptions,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);

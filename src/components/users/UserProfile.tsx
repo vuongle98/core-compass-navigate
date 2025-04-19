@@ -161,7 +161,7 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       showCloseButton={false}
     >
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+        <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
           <Avatar className="h-24 w-24 border">
             <AvatarImage src={user.avatar} alt={user.fullName} />
             <AvatarFallback className="text-xl">

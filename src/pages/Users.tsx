@@ -7,16 +7,6 @@ import { useDetailView } from "@/hooks/use-detail-view";
 import { UserProfile } from "@/components/users/UserProfile";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Filter, X, Eye, Search } from "lucide-react";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
@@ -85,13 +75,22 @@ const Users = () => {
       placeholder: "Search roles...",
     },
     {
-      id: "userCount",
-      label: "User Count",
+      id: "blocked",
+      label: "User Active",
       type: "select",
       options: [
-        { value: "low", label: "Low (0-10)" },
-        { value: "medium", label: "Medium (11-30)" },
-        { value: "high", label: "High (31+)" },
+        { value: "false", label: "Active" },
+        { value: "true", label: "Inactive" }
+      ],
+    },
+    {
+      id: "roles",
+      label: "Roles",
+      type: "select",
+      options: [
+        { value: "ADMIN", label: "ADMIN" },
+        { value: "MANAGE", label: "MANAGE" },
+        { value: "USER", label: "USER" }
       ],
     },
   ];
@@ -107,6 +106,7 @@ const Users = () => {
     setPage,
     setPageSize,
     totalItems,
+    refresh,
     error,
   } = useApiQuery<User>({
     endpoint: "/api/user",
@@ -248,12 +248,13 @@ const Users = () => {
             onReset={() => {
               resetFilters();
               setSearchTerm("");
+              refresh();
             }}
             className="mt-2"
           />
         </PageHeader>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <DataTable
             data={userData}
             columns={columns}
@@ -265,6 +266,7 @@ const Users = () => {
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             totalItems={totalItems}
+            showAddButton={true}
           />
         </div>
 

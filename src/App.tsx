@@ -31,6 +31,7 @@ import BlogDetail from "./pages/BlogDetail";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ChatButton from "./components/chat/ChatButton";
 import { useFeatureFlag } from "./hooks/use-feature-flag";
+import EndpointSecures from "./pages/EndpointSecure";
 
 // Create a protected route component using our new useAuth hook
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
+              <Route path="/endpoint-secure" element={<ProtectedRoute><EndpointSecures /></ProtectedRoute>} />
               <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
               <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />

@@ -34,6 +34,7 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
   }, []);
 
   const openDetail = (item: T) => {
+    console.log("Opening detail view for item:", item);
     const itemSize = Object.keys(item).length;
     
     // If the item is small enough, show it in a modal

@@ -1,34 +1,23 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Play, Square, X, Calendar, Edit, RefreshCw, Clock } from "lucide-react";
+import {
+  Play,
+  Square,
+  X,
+  Calendar,
+  Edit,
+  RefreshCw,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
 import ApiService from "@/services/ApiService";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { BotInfo } from "./BotInfo";
 import { BotStatus } from "./BotStatus";
 import { BotScheduledMessages } from "./BotScheduledMessages";
-
-interface Bot {
-  id: number;
-  name: string;
-  token: string;
-  webhook_url?: string;
-  status: "active" | "inactive" | "error";
-  created_at: string;
-  updated_at: string;
-  scheduled?: boolean;
-  description?: string;
-  type: "WEBHOOK" | "LONG_POLLING";
-  polling_interval?: number;
-  last_polling_time?: string;
-}
+import { Bot } from "@/pages/Bots";
 
 interface BotDetailProps {
   bot: Bot;
@@ -50,21 +39,31 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     }
   };
 
-  const { data: scheduledMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = useQuery({
+  const {
+    data: scheduledMessages,
+    isLoading: isLoadingMessages,
+    refetch: refetchMessages,
+  } = useQuery({
     queryKey: ["botScheduledMessages", bot.id],
     queryFn: async () => {
       try {
-        const response = await ApiService.get<ScheduledMessage[]>(`/api/bots/${bot.id}/scheduled-messages`);
+        const response = await ApiService.get<ScheduledMessage[]>(
+          `/api/bots/${bot.id}/scheduled-messages`
+        );
         return response.data || [];
       } catch (error) {
         console.error("Failed to fetch scheduled messages:", error);
         return [];
       }
     },
-    enabled: bot.scheduled === true
+    enabled: bot.scheduled === true,
   });
 
-  const { data: botStatuses, isLoading: isLoadingStatus, refetch: refetchStatus } = useQuery({
+  const {
+    data: botStatuses,
+    isLoading: isLoadingStatus,
+    refetch: refetchStatus,
+  } = useQuery({
     queryKey: ["botStatus", bot.id],
     queryFn: async () => {
       try {
@@ -75,11 +74,14 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         return [];
       }
     },
-    refetchInterval: 30000 // Refetch every 30 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
-  
+
   // Find the status for this specific bot from the array of statuses
-  const botStatus = botStatuses && Array.isArray(botStatuses) ? botStatuses.find((status: BotStatus) => status.bot_id === bot.id) : null;
+  const botStatus =
+    botStatuses && Array.isArray(botStatuses)
+      ? botStatuses.find((status: BotStatus) => status.bot_id === bot.id)
+      : null;
 
   const refreshData = () => {
     refetchMessages();
@@ -101,56 +103,65 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="info">Information</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
-          <TabsTrigger value="messages" disabled={!bot.scheduled}>Scheduled Messages</TabsTrigger>
+          <TabsTrigger value="messages" disabled={!bot.scheduled}>
+            Scheduled Messages
+          </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="info">
           <BotInfo bot={bot} />
         </TabsContent>
-        
+
         <TabsContent value="status">
-          <BotStatus botStatus={botStatus} bot={bot} isLoading={isLoadingStatus} />
+          <BotStatus
+            botStatus={botStatus}
+            bot={bot}
+            isLoading={isLoadingStatus}
+          />
         </TabsContent>
-        
+
         <TabsContent value="messages">
-          <BotScheduledMessages 
-            messages={scheduledMessages} 
-            isLoading={isLoadingMessages} 
-            botId={bot.id} 
+          <BotScheduledMessages
+            messages={scheduledMessages}
+            isLoading={isLoadingMessages}
+            botId={bot.id}
           />
         </TabsContent>
       </Tabs>
-      
+
       <div className="flex flex-wrap gap-3">
-        {bot.status === "inactive" && (
+        {bot.status === "RUNNING" && (
           <Button onClick={() => handleBotAction("start")}>
             <Play className="mr-2 h-4 w-4" />
             Start Bot
           </Button>
         )}
-        
-        {bot.status === "active" && (
+
+        {bot.status === "STOPPED" && (
           <Button onClick={() => handleBotAction("stop")}>
             <Square className="mr-2 h-4 w-4" />
             Stop Bot
           </Button>
         )}
-        
+
         {!bot.scheduled && (
           <Button variant="outline" onClick={() => handleBotAction("schedule")}>
             <Calendar className="mr-2 h-4 w-4" />
             Schedule Messages
           </Button>
         )}
-        
+
         {bot.scheduled && (
           <Button variant="outline" onClick={() => handleBotAction("cancel")}>
             <X className="mr-2 h-4 w-4" />
             Cancel Schedule
           </Button>
         )}
-        
-        <Button variant="outline" onClick={() => navigate(`/bots/${bot.id}/edit`)}>
+
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/bots/${bot.id}/edit`)}
+        >
           <Edit className="mr-2 h-4 w-4" />
           Edit Bot
         </Button>

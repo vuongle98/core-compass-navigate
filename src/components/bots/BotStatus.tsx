@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Bot } from "@/pages/Bots";
 
 interface BotStatusData {
   bot_id: number;
@@ -10,12 +11,6 @@ interface BotStatusData {
   memory_usage?: string;
   cpu_usage?: string;
   uptime?: string;
-}
-
-interface Bot {
-  id: number;
-  type: "WEBHOOK" | "LONG_POLLING";
-  last_polling_time?: string;
 }
 
 interface BotStatusProps {
@@ -59,12 +54,12 @@ export function BotStatus({ botStatus, bot, isLoading }: BotStatusProps) {
               <dt className="text-sm font-medium text-muted-foreground">Uptime</dt>
               <dd className="mt-1 text-sm">{botStatus.uptime || "N/A"}</dd>
             </div>
-            {bot.type === "LONG_POLLING" && bot.last_polling_time && (
+            {/* {bot.type === "LONG_POLLING" && bot.last_polling_time && (
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Last Polling Time</dt>
                 <dd className="mt-1 text-sm">{new Date(bot.last_polling_time).toLocaleString()}</dd>
               </div>
-            )}
+            )} */}
           </dl>
         ) : (
           <div className="text-center py-4 text-muted-foreground">

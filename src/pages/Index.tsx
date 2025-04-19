@@ -41,7 +41,7 @@ const Index = () => {
     isLoading: isLoadingMetrics 
   } = useQuery({
     queryKey: ['dashboard-metrics', dateRange],
-    queryFn: () => DashboardService.getMetrics(),
+    queryFn: () => DashboardService.getMetrics(dateRange),
     meta: {
       onError: () => {
         toast({
@@ -179,7 +179,7 @@ const Index = () => {
           </div>
         </PageHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           {isLoadingMetrics ? (
             Array(7).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-32" />
@@ -199,13 +199,13 @@ const Index = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           <SystemAlertsWidget />
           <RecentLoginsWidget />
           <UpcomingEventsWidget />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           {isLoadingPerformance ? (
             <Skeleton className="h-[350px]" />
           ) : (
@@ -221,7 +221,7 @@ const Index = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           {isLoadingActivity ? (
             Array(3).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-[250px]" />
@@ -256,7 +256,7 @@ const Index = () => {
           )}
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Link to="/users" className="block">
             <ActiveUsers
               users={activeUsers}
@@ -265,7 +265,7 @@ const Index = () => {
           </Link>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <div className="border rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Getting Started</h2>
             <p className="text-muted-foreground">

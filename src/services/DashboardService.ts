@@ -1,4 +1,5 @@
 
+import { DateRange } from 'react-day-picker';
 import EnhancedApiService, { ApiResponse } from './EnhancedApiService';
 import LoggingService from './LoggingService';
 
@@ -20,11 +21,13 @@ export interface DashboardData {
 
 class DashboardService {
   
-  async getMetrics(): Promise<ApiResponse<DashboardMetric[]>> {
+  async getMetrics(dateRange: DateRange): Promise<ApiResponse<DashboardMetric[]>> {
     try {
-      return await EnhancedApiService.get<DashboardMetric[]>(
-        '/api/dashboard/metrics',
-        {},
+      return await EnhancedApiService.post<DashboardMetric[]>(
+        '/api/report/metrics',
+        {
+          ...dateRange
+        },
         // Fallback mock data
         [
           { id: 'users', name: 'Total Users', value: 2458, change: 12.5 },

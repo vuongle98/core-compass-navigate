@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
@@ -7,31 +7,19 @@ import { useNavigate } from "react-router-dom";
 import { BlogPost } from "@/types/Blog";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import {
-  Pencil,
-  Trash2,
-  Eye,
-  Clock,
-  MessageCircle,
-  Bookmark,
-  AlertCircle,
-  Plus,
-} from "lucide-react";
+import { Pencil, Eye, Clock, MessageCircle, Bookmark } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
 import { ActionsMenu } from "@/components/common/ActionsMenu";
 import BlogService from "@/services/BlogService";
 import { DataTable, Column } from "@/components/ui/DataTable";
-import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import useDebounce from "@/hooks/use-debounce";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 
 const Blogs = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [showError, setShowError] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -60,7 +48,6 @@ const Blogs = () => {
       label: "Category",
       type: "select",
       options: [
-        { value: "all", label: "All Categories" },
         { value: "development", label: "Development" },
         { value: "design", label: "Design" },
         { value: "business", label: "Business" },
@@ -136,14 +123,12 @@ const Blogs = () => {
     setPageSize,
     totalItems,
     refresh,
-    error,
   } = useApiQuery<BlogPost>({
     endpoint: "/api/blog/posts",
     queryKey: ["blog-posts", debouncedSearchTerm],
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
-    onError: () => setShowError(true),
     mockData: {
       content: mockBlogs,
       totalElements: mockBlogs.length,
@@ -153,25 +138,31 @@ const Blogs = () => {
     },
   });
 
-  const handleDelete = async (id: string) => {
-    try {
-      await BlogService.deletePost(id);
-      refresh();
-      toast({
-        title: "Post deleted",
-        description: "The blog post has been deleted successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete the blog post. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await BlogService.deletePost(id);
+        refresh();
+        toast({
+          title: "Post deleted",
+          description: "The blog post has been deleted successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete the blog post. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+    [refresh, toast]
+  );
 
   const hasCreatePermission = useMemo(() => {
-    return user?.roles.includes("SUPER_ADMIN") || user?.role === "editor";
+    return (
+      user?.roles.some((role) => role == "SUPER_ADMIN") ||
+      user?.role === "editor"
+    );
   }, [user]);
 
   const columns = useMemo<Column<BlogPost>[]>(
@@ -193,17 +184,21 @@ const Blogs = () => {
         header: "Status",
         accessorKey: "status",
         cell: (post: BlogPost) => {
-          let badgeVariant = "default";
+          let badgeVariant:
+            | "default"
+            | "destructive"
+            | "secondary"
+            | "outline" = "default";
 
           switch (post.status) {
             case "published":
-              badgeVariant = "success";
+              badgeVariant = "default";
               break;
             case "draft":
               badgeVariant = "secondary";
               break;
             case "scheduled":
-              badgeVariant = "warning";
+              badgeVariant = "outline";
               break;
           }
 
@@ -218,7 +213,7 @@ const Blogs = () => {
               {post.status === "scheduled" && (
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
               )}
-              <Badge variant={badgeVariant as any} className="capitalize">
+              <Badge variant={badgeVariant} className="capitalize">
                 {post.status}
               </Badge>
             </div>
@@ -288,7 +283,7 @@ const Blogs = () => {
         ),
       },
     ],
-    [navigate]
+    [navigate, handleDelete]
   );
 
   const handleCreateBlog = () => {
@@ -298,63 +293,44 @@ const Blogs = () => {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8 bg-gray-50 dark:bg-gray-900">
+      <main className="flex-1 overflow-y-auto p-8">
+        <Breadcrumbs />
         <PageHeader
           title="Blog Management"
           description="Create, edit, and manage your blog posts"
-        />
-
-        {showError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              There was an error loading blog posts. Using fallback data.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="flex flex-col lg:flex-row justify-between mb-4 gap-4">
-          <Card className="w-full p-4 mt-4">
-            <DataFilters
-              filters={filters}
-              options={filterOptions}
-              onChange={(newFilters) => {
-                setFilters(newFilters);
-                // Update the search term when filters change
-                if (newFilters.search !== undefined) {
-                  setSearchTerm(newFilters.search.toString());
-                }
-              }}
-              onReset={() => {
-                resetFilters();
-                setSearchTerm("");
-              }}
-            />
-          </Card>
-
-          {hasCreatePermission && (
-            <Button
-              onClick={handleCreateBlog}
-              className="lg:ml-4 whitespace-nowrap h-fit mt-4"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Blog
-            </Button>
-          )}
+        >
+          <DataFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={(newFilters) => {
+              setFilters(newFilters);
+              // Update the search term when filters change
+              if (newFilters.search !== undefined) {
+                setSearchTerm(newFilters.search.toString());
+              }
+            }}
+            onReset={() => {
+              resetFilters();
+              setSearchTerm("");
+            }}
+          />
+        </PageHeader>
+        <div className="mt-4">
+          <DataTable
+            data={posts} // Use mockBlogs when API call fails
+            columns={columns}
+            title="Blog Posts"
+            pagination={true}
+            isLoading={isLoading}
+            totalItems={totalItems} // Adjust total items for mock data
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            showAddButton={true}
+            onAddClick={handleCreateBlog}
+          />
         </div>
-
-        <DataTable
-          data={posts}
-          columns={columns}
-          title="Blog Posts"
-          pagination={true}
-          isLoading={isLoading}
-          totalItems={totalItems}
-          pageIndex={page}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
       </main>
     </div>
   );

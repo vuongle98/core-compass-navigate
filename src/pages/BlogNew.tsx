@@ -22,14 +22,14 @@ const BlogNew = () => {
             { label: "Blogs", path: "/blogs" },
             { label: "New Post", path: "/blogs/new" },
           ]}
-          className="mb-6"
+          className="mb-4"
         />
         <PageHeader
           title="Create New Blog Post"
           description="Create a new blog post with rich content"
           showAddButton={false}
         />
-        <div className="mt-6">
+        <div className="mt-4">
           <BlogPostForm 
             onSuccess={handleSuccess}
             isSubmitting={isSubmitting}

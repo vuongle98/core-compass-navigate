@@ -62,7 +62,7 @@ const Profile = () => {
           description="Manage your account and preferences"
         />
         
-        <div className="mt-6 grid gap-6">
+        <div className="mt-4 grid gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">

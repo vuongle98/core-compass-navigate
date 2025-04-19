@@ -1,4 +1,3 @@
-
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
@@ -12,7 +11,11 @@ const MAX_RETRY_ATTEMPTS_TOTAL = 5; // Add a global limit to prevent infinite re
 // Add custom metadata property to AxiosRequestConfig
 declare module 'axios' {
   export interface InternalAxiosRequestConfig {
-    metadata?: Record<string, any>;
+    metadata?: {
+      startTime?: number;
+      retryCount?: number;
+      [key: string]: string | number | undefined; // Specify a more specific type
+    };
   }
 }
 
@@ -278,9 +281,9 @@ class EnhancedApiService {
       Object.entries(options.filter).forEach(([key, value]) => {
         if (value !== undefined && value !== "") {
           if (Array.isArray(value)) {
-            value.forEach(v => params.append(`filter[${key}]`, v.toString()));
+            value.forEach(v => params.append(key, v.toString()));
           } else {
-            params.append(`filter[${key}]`, value.toString());
+            params.append(key, value.toString());
           }
         }
       });
@@ -295,7 +298,7 @@ class EnhancedApiService {
    */
   public async get<T>(
     url: string,
-    params?: Record<string, any>,
+    params?: Record<string, string | number | boolean | string[]>, // Specify a more specific type
     mockData?: T
   ): Promise<ApiResponse<T>> {
     return this.request<T>(
@@ -381,7 +384,7 @@ class EnhancedApiService {
     module: string,
     action: string,
     message: string,
-    data?: Record<string, any>
+    data?: Record<string, string | number | boolean | object> // Specify a more specific type
   ): void {
     LoggingService.logUserAction(module, action, message, data);
   }

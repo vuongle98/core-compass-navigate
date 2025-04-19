@@ -10,6 +10,10 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8081,
     proxy: {
+      '/api/v1/bots': {
+        target: 'http://localhost:8081',  // The backend API URL
+        changeOrigin: true,               // Ensures the origin is changed to the target
+      },
       '/api': {
         target: 'http://localhost:8080',  // The backend API URL
         changeOrigin: true,               // Ensures the origin is changed to the target

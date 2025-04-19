@@ -6,7 +6,7 @@ import featureFlagService from '@/services/FeatureFlagService';
 
 // Define the User interface in one place to avoid conflicts
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email?: string;
   name: string;

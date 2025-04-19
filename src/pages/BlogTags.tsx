@@ -170,7 +170,7 @@ const BlogTags = () => {
             { label: "Blogs", path: "/blogs" },
             { label: "Tags", path: "/blog-tags" },
           ]}
-          className="mb-6"
+          className="mb-4"
         />
         <PageHeader
           title="Blog Tags"
@@ -180,7 +180,7 @@ const BlogTags = () => {
           onAddButtonClick={addNewTag}
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle>All Tags</CardTitle>

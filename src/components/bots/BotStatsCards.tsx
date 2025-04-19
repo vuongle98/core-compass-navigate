@@ -12,8 +12,8 @@ import {
 interface BotStatsCardsProps {
   totalBots: number;
   activeBots: number;
-  totalUsers: number;
-  totalMessages: number;
+  totalUsers?: number;
+  totalMessages?: number;
 }
 
 export function BotStatsCards({ 
@@ -23,7 +23,7 @@ export function BotStatsCards({
   totalMessages 
 }: BotStatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Total Bots</CardTitle>
@@ -50,7 +50,7 @@ export function BotStatsCards({
         </CardContent>
       </Card>
       
-      <Card>
+      {/* <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           <CardDescription>Across all bots</CardDescription>
@@ -74,7 +74,7 @@ export function BotStatsCards({
             <div className="text-2xl font-bold">{totalMessages.toLocaleString()}</div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

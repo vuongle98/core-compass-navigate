@@ -139,6 +139,7 @@ const Files = () => {
     setPage,
     setPageSize,
     totalItems,
+    refresh,
     error,
   } = useApiQuery<FileItem>({
     endpoint: "/api/file",
@@ -169,13 +170,24 @@ const Files = () => {
       placeholder: "Search roles...",
     },
     {
-      id: "userCount",
-      label: "User Count",
+      id: "size",
+      label: "File size",
       type: "select",
       options: [
-        { value: "low", label: "Low (0-10)" },
-        { value: "medium", label: "Medium (11-30)" },
-        { value: "high", label: "High (31+)" },
+        { value: "large", label: "Large (> 50MB)" },
+        { value: "medium", label: "Medium (> 10MB)" },
+        { value: "small", label: "Small (< 10MB)" },
+      ],
+    },
+    {
+      id: "type",
+      label: "File type",
+      type: "select",
+      options: [
+        { value: "image", label: "Image" },
+        { value: "pdf", label: "PDF" },
+        { value: "zip", label: "Zip" },
+        { value: "other", label: "Others" },
       ],
     },
   ];
@@ -432,6 +444,7 @@ const Files = () => {
             onReset={() => {
               resetFilters();
               setSearchTerm("");
+              refresh();
             }}
             className="mt-2"
           />
@@ -447,7 +460,7 @@ const Files = () => {
         )}
 
         {isUploading && (
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
               <span>Uploading...</span>
               <span>{uploadProgress}%</span>
@@ -472,7 +485,7 @@ const Files = () => {
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-4">
           <DataTable
             data={fileData}
             columns={columns}

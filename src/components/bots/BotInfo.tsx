@@ -2,21 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface Bot {
-  id: number;
-  name: string;
-  token: string;
-  webhook_url?: string;
-  status: "active" | "inactive" | "error";
-  created_at: string;
-  updated_at: string;
-  scheduled?: boolean;
-  description?: string;
-  type: "WEBHOOK" | "LONG_POLLING";
-  polling_interval?: number;
-  last_polling_time?: string;
-}
+import { Bot } from "@/pages/Bots";
 
 interface BotInfoProps {
   bot: Bot;
@@ -36,9 +22,9 @@ export function BotInfo({ bot }: BotInfoProps) {
             <dd className="mt-1">
               <Badge
                 variant={
-                  bot.status === "active"
+                  bot.status === "RUNNING"
                     ? "default"
-                    : bot.status === "inactive"
+                    : bot.status === "STOPPED"
                     ? "secondary"
                     : "destructive"
                 }
@@ -50,26 +36,26 @@ export function BotInfo({ bot }: BotInfoProps) {
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Type</dt>
             <dd className="mt-1">
-              <Badge variant="outline">{bot.type}</Badge>
+              <Badge variant="outline">{bot.configuration?.updateMethod}</Badge>
             </dd>
           </div>
-          {bot.type === "WEBHOOK" && bot.webhook_url && (
+          {bot.configuration?.updateMethod === "WEBHOOK" && bot.configuration?.webhookUrl && (
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Webhook URL</dt>
-              <dd className="mt-1 text-sm break-all">{bot.webhook_url}</dd>
+              <dd className="mt-1 text-sm break-all">{bot.configuration?.webhookUrl}</dd>
             </div>
           )}
-          {bot.type === "LONG_POLLING" && bot.polling_interval && (
+          {bot.configuration?.updateMethod === "LONG_POLLING" && bot.configuration.pollingInterval && (
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Polling Interval</dt>
-              <dd className="mt-1 text-sm">{bot.polling_interval} seconds</dd>
+              <dd className="mt-1 text-sm">{bot.configuration.pollingInterval} seconds</dd>
             </div>
           )}
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Token</dt>
             <dd className="mt-1 text-sm">
               <code className="bg-muted px-1 py-0.5 rounded">
-                {bot.token.substring(0, 10)}...
+                {bot.apiToken?.substring(0, 10)}...
               </code>
             </dd>
           </div>
