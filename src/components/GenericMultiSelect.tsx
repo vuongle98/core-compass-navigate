@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import useApiQuery from "@/hooks/use-api-query";
 
 interface GenericMultiSelectProps<T> {
-  value: Array<string | number>;
-  onChange: (value: Array<string | number>) => void;
+  /**
+   * The selected values - can be an array of primitive values (string|number) 
+   * or an array of objects that match type T
+   */
+  value: T[];
+  onChange: (value: T[]) => void;
   endpoint: string;
   queryKey: string | any[];
   getOptionLabel: (option: T) => React.ReactNode;
@@ -14,6 +21,22 @@ interface GenericMultiSelectProps<T> {
   disabled?: boolean;
   placeholder?: string;
   transformData?: (data: any) => T[];
+  maxHeight?: number;
+  showSelectedTags?: boolean;
+  className?: string;
+  initialSearch?: string;
+  /**
+   * Determines if the component allows multiple selections (default) or just a single selection
+   */
+  multiple?: boolean;
+  /**
+   * Show checkboxes in multiple selection mode
+   */
+  showCheckboxes?: boolean;
+  /**
+   * Optional custom label styling
+   */
+  labelClassName?: string;
 }
 
 function GenericMultiSelect<T>({
@@ -27,13 +50,21 @@ function GenericMultiSelect<T>({
   disabled = false,
   placeholder = "Select options...",
   transformData,
+  maxHeight = 300,
+  showSelectedTags = true,
+  className = "",
+  initialSearch = "",
+  multiple = true,
+  showCheckboxes = true,
+  labelClassName = "",
 }: GenericMultiSelectProps<T>) {
 
   const [allOptions, setAllOptions] = React.useState<T[]>([]);
   const [isFetchingMore, setIsFetchingMore] = React.useState(false);
   const [last, setLast] = React.useState(false);
-
-  const [page, setPage] = React.useState(0);
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [search, setSearch] = React.useState(initialSearch);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data,
@@ -42,116 +73,276 @@ function GenericMultiSelect<T>({
     refresh,
     pageSize,
     setPageSize,
-    totalPages
+    setPage,
+    page,
+    totalPages,
+    setSearch: apiSetSearch
   } = useApiQuery<T>({
-    endpoint: endpoint.includes("page=") ? endpoint.replace(/page=\d+/, `page=${page}`) : `${endpoint}${endpoint.includes("?") ? "&" : "?"}page=${page}`,
-    queryKey: Array.isArray(queryKey) ? [...queryKey, page] : [queryKey, page],
+    endpoint,
+    queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
     initialPage: 0,
     initialPageSize: 10,
+    initialFilters: initialSearch ? { search: initialSearch } : undefined,
     mockData: { content: [], totalElements: 0, totalPages: 1, number: 0, size: 1000 },
+    debounceMs: 300,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     let pageOptions: T[] = [];
-    let isLast = true;
+
     if (transformData) {
       pageOptions = transformData(data);
     } else if (data && Array.isArray(data)) {
       pageOptions = data;
     }
 
-    // Use page and totalPages to determine last page
-    isLast = typeof totalPages === "number" ? page >= totalPages - 1 : true;
+    const isLast = typeof totalPages === "number" ? page >= totalPages - 1 : true;
     setLast(isLast);
     setIsFetchingMore(false);
 
-    console.log("pageOptions", pageOptions);
-    console.log("isLast", isLast);
+    setAllOptions((prev) => {
+      if (page === 0) {
+        return pageOptions;
+      }
 
-    if (page === 0) {
-      // Only update if new options are different
-      if (JSON.stringify(allOptions) !== JSON.stringify(pageOptions)) {
-        setAllOptions(pageOptions);
-      }
-    } else if (pageOptions.length > 0) {
-      // Only add truly new options
+      const existingIds = new Set(prev.map((item) => getOptionValue(item)));
       const newOptions = pageOptions.filter(
-        (option) => !allOptions.some((existing) => getOptionValue(existing) === getOptionValue(option))
+        (item) => !existingIds.has(getOptionValue(item))
       );
-      if (newOptions.length > 0) {
-        setAllOptions((prev) => [...prev, ...newOptions]);
-      }
+
+      return [...prev, ...newOptions];
+    });
+  }, [data, page, totalPages]);
+
+
+  // Handle search changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearch = e.target.value;
+    setSearch(newSearch);
+    setPage(0); // Reset to first page on search
+    apiSetSearch(newSearch);
+  };
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
     }
-    // eslint-disable-next-line
-  }, [data, page]); // Remove transformData unless memoized
+  }, [isOpen]);
 
 
   const handleFetchMore = () => {
     if (!last && !isFetchingMore) {
       setIsFetchingMore(true);
-      setPage((prev) => prev + 1);
+      setPage(page + 1);
     }
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Improved scroll detection function
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 24 && !last && !isFetchingMore) {
+
+    const scrollThreshold = 50;
+
+    if (scrollHeight - scrollTop - clientHeight < scrollThreshold && !last && !isFetchingMore) {
       handleFetchMore();
     }
   };
 
-  const handleSelect = (optionValue: string | number) => {
-    if (value.includes(optionValue)) {
-      onChange(value.filter((id) => id !== optionValue));
-    } else {
-      onChange([...value, optionValue]);
-    }
+  // Get normalized values (extract IDs from objects)
+  const getNormalizedValues = (): Array<string | number> => {
+    if (!Array.isArray(value)) return [];
+
+    return value.map(val => {
+      if (typeof val === 'string' || typeof val === 'number') {
+        return val;
+      }
+      // Handle object values using getOptionValue
+      return getOptionValue(val);
+    });
   };
 
+  // Unified value handling for both objects and primitives
+  const handleSelect = (optionValue: T) => {
+    // if (!multiple) {
+    //   onChange(optionValue);
+    //   setIsOpen(false);
+    // } else {
+    //   const currentIds = getNormalizedValues();
+    //   const newIds = currentIds.includes(optionValue)
+    //     ? currentIds.filter(id => id !== optionValue)
+    //     : [...currentIds, optionValue];
+    //   onChange(newIds);
+    // }
+
+    console.log("dooo")
+
+    if (!multiple) {
+      onChange([optionValue]);
+      setIsOpen(false);
+      return;
+    }
+
+    const newValues = value.some(v => getOptionValue(v) === getOptionValue(optionValue)) ?
+      value.filter(v => getOptionValue(v) !== getOptionValue(optionValue)) : [...value, optionValue];
+
+    onChange(newValues);
+  };
 
   return (
-    <div>
-      {label && <label className="block mb-1 font-medium">{label}</label>}
-      {isLoading && page === 0 ? (
-        <div className="text-muted-foreground">Loading...</div>
-      ) : error ? (
+    <div className={cn("generic-multi-select", className)}>
+      {label && <label className={cn("block mb-2 font-medium text-foreground", labelClassName)}>{label}</label>}
+      {error ? (
         <div className="text-destructive">{String(error)}</div>
       ) : (
-        <Select disabled={disabled}>
+        <Select
+          disabled={disabled}
+          onOpenChange={(open) => setIsOpen(open)}
+          onValueChange={() => { }} // Prevent default select behavior
+          value="placeholder" // Keep empty value to prevent auto-closing
+          open={isOpen} // Explicitly control open state
+        >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={placeholder} />
+            <SelectValue placeholder={placeholder}>
+              {value.length > 0 && (
+                <span className="text-sm">
+                  {!multiple ? (
+                    // For single select, try to find and display the selected option label
+                    allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0])) ?
+                      <span className="truncate max-w-[200px] inline-block">
+                        {allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0])) &&
+                          React.isValidElement(getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!)) ?
+                          React.Children.toArray(getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!))[0] :
+                          getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!)}
+                      </span> :
+                      "1 selected"
+                  ) : (
+                    // For multi-select, show count
+                    `${value.length} selected`
+                  )}
+                </span>
+              )}
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent onScroll={handleScroll} style={{ maxHeight: 300, overflowY: 'auto' }}>
-            {allOptions.map((option) => {
-              const optionValue = getOptionValue(option);
-              return (
-                <SelectItem
-                  key={optionValue}
-                  value={String(optionValue)}
-                  onClick={() => handleSelect(optionValue)}
-                  className={value.includes(optionValue) ? "bg-primary/10" : ""}
-                >
-                  {getOptionLabel(option)}
-                </SelectItem>
-              );
-            })}
-            {isFetchingMore && (
-              <div className="flex justify-center py-2 text-xs text-muted-foreground">Loading more...</div>
-            )}
-            {!isFetchingMore && last && allOptions.length === 0 && (
-              <div className="flex justify-center py-2 text-xs text-muted-foreground">No options</div>
-            )}
+          <SelectContent
+            style={{ maxHeight }}
+            className="p-0"
+          >
+            <div className="sticky top-0 z-10 p-2 bg-background border-b">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={search}
+                  onChange={handleSearchChange}
+                  placeholder="Search..."
+                  className="pl-8 h-9 w-full"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch('');
+                      apiSetSearch('');
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              ref={scrollContainerRef}
+              className="py-1 max-h-[350px] overflow-y-auto"
+              onScroll={handleScroll}
+            >
+
+              {isLoading && page === 0 ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : allOptions.length === 0 ? (
+                <div className="flex justify-center py-4 text-sm text-muted-foreground">
+                  No results found
+                </div>
+              ) : (
+                <>
+                  {allOptions.map((option) => {
+                    const optionValue = getOptionValue(option);
+                    const isSelected = value.some(v => getOptionValue(v) === optionValue);
+                    return (
+                      <div
+                        key={String(optionValue)}
+                        className={cn(
+                          "cursor-pointer px-3 py-2 my-1 hover:bg-accent rounded-md",
+                          isSelected ? "bg-primary/10" : ""
+                        )}
+                        onClick={() => handleSelect(option)}
+                      >
+                        {multiple && showCheckboxes ? (
+                          <div className="flex items-center gap-2 w-full">
+                            <div
+                              className="flex h-4 w-4 items-center justify-center rounded border border-primary cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelect(option);
+                              }}
+                              role="checkbox"
+                              aria-checked={isSelected}
+                            >
+                              {isSelected && <Check className="h-3 w-3 text-primary" />}
+                            </div>
+                            <div className="flex-1">
+                              {getOptionLabel(option)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 w-full">
+                            {isSelected && !multiple && <Check className="h-4 w-4 text-primary" />}
+                            <div className="flex-1">{getOptionLabel(option)}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {isFetchingMore && (
+                <div className="flex justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
           </SelectContent>
         </Select>
       )}
-      {value.length > 0 && (
+
+      {showSelectedTags && value.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {allOptions
-            .filter((option) => value.includes(getOptionValue(option)))
+            .filter((option) => getNormalizedValues().includes(getOptionValue(option)))
             .map((option) => (
-              <span key={getOptionValue(option)} className="px-2 py-1 rounded bg-primary/10 text-xs">
-                {getOptionLabel(option)}
-              </span>
+              <div
+                key={getOptionValue(option)}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
+              >
+                <span>{getOptionLabel(option)}</span>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             ))}
         </div>
       )}

@@ -24,7 +24,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 
-import PermissionSelect from "@/components/PermissionSelect";
+import PermissionSelect, { Permission } from "@/components/PermissionSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface Role {
@@ -33,7 +33,8 @@ interface Role {
   name: string;
   description: string;
   userCount: number;
-  permissions?: number[];
+  permissions?: Permission[];
+  permissionIds?: number[];
 }
 
 const Roles = () => {
@@ -68,11 +69,9 @@ const Roles = () => {
     name: "",
     description: "",
     permissions: [],
+    permissionIds: [],
   });
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Debounce the search term to avoid too many API calls
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const filterOptions: FilterOption[] = [
     {
@@ -128,10 +127,11 @@ const Roles = () => {
     error,
   } = useApiQuery<Role>({
     endpoint: "/api/role",
-    queryKey: ["roles", debouncedSearchTerm],
+    queryKey: ["roles"],
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
+    debounceMs: 300,
     onError: (err) => {
       console.error("Failed to fetch roles:", err);
       toast.error("Failed to load roles, using cached data", {
@@ -157,9 +157,10 @@ const Roles = () => {
     }));
   };
 
-  const handlePermissionsChange = (permissions: number[]) => {
+  const handlePermissionsChange = (permissions: Permission[], permissionIds: number[]) => {
     setFormData((prev) => ({
       ...prev,
+      permissionIds,
       permissions,
     }));
   };
@@ -182,6 +183,7 @@ const Roles = () => {
       name: role.name,
       description: role.description,
       permissions: role.permissions || [],
+      permissionIds: role.permissions?.map(p => p.id) || [],
     });
     setDialogOpen(true);
   };
@@ -300,14 +302,9 @@ const Roles = () => {
             options={filterOptions}
             onChange={(newFilters) => {
               setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
             }}
             onReset={() => {
               resetFilters();
-              setSearchTerm("");
               refresh();
             }}
             className="mt-2"
@@ -351,6 +348,21 @@ const Roles = () => {
               <div>
                 <h3 className="text-sm font-medium">Description</h3>
                 <p className="mt-1">{selectedItem.description}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Permissions</h3>
+                {selectedItem.permissions?.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedItem.permissions?.map(perm => (
+                      <div key={perm.id} className="border rounded-md p-3 bg-muted/40">
+                        <div className="font-semibold">{perm.name}</div>
+                        <div className="text-xs text-muted-foreground">{perm.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-1">No permissions assigned</p>
+                )}
               </div>
             </div>
           </DetailViewModal>
@@ -423,8 +435,8 @@ const Roles = () => {
                   {isSubmitting
                     ? "Processing..."
                     : editingRole
-                    ? "Save Changes"
-                    : "Create Role"}
+                      ? "Save Changes"
+                      : "Create Role"}
                 </Button>
               </DialogFooter>
             </form>
