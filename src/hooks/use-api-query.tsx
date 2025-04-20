@@ -169,6 +169,8 @@ export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey,
     queryFn: fetchData,
+    retry: 1,
+    retryDelay: 200,
     meta: {
       onError: options.onError,
     },

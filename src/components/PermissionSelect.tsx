@@ -86,14 +86,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   const handlePermissionChange = (newValues: Permission[]) => {
     // Convert to numbers if they're not already
     const numericValues = newValues.map(v => v.id);
-
-    // If formField is provided, structure the data as an object with the formField as key
-
-    // Otherwise just return the array of IDs
-
-    console.log(newValues, numericValues)
     onChange(newValues, numericValues);
-
   };
 
   return (

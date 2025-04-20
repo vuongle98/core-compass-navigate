@@ -41,25 +41,33 @@ import { toast } from "sonner";
 import useApiQuery from "@/hooks/use-api-query";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import useDebounce from "@/hooks/use-debounce";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 
 interface FileItem {
   id: number;
   name: string;
-  type: string;
-  size: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  url?: string;
-  actions?: string;
+  extension: string;
+  size: number;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  path: string;
+  contentType?: string;
 }
 
-const FileTypeIcon = ({ type }: { type: string }) => {
-  switch (type.toLowerCase()) {
-    case "image":
+const FileTypeIcon = ({ extension }: { extension: string }) => {
+  switch (extension?.toLowerCase()) {
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
       return <FileImage className="h-4 w-4" />;
-    case "audio":
+    case "mp3":
+    case "wav":
+    case "ogg":
       return <FileAudio className="h-4 w-4" />;
-    case "video":
+    case "mp4":
+    case "webm":
+    case "mov":
       return <FileVideo className="h-4 w-4" />;
     case "pdf":
       return <FileText className="h-4 w-4" />;
@@ -79,47 +87,47 @@ const Files = () => {
     {
       id: 1,
       name: "annual-report.pdf",
-      type: "PDF",
-      size: "2.4 MB",
+      extension: "PDF",
+      size: 2400000,
       uploadedBy: "Alice Smith",
       uploadedAt: "2023-04-10",
-      url: null,
+      path: null,
     },
     {
       id: 2,
       name: "user-avatar.png",
-      type: "Image",
-      size: "156 KB",
+      extension: "PNG",
+      size: 156000,
       uploadedBy: "Bob Johnson",
       uploadedAt: "2023-04-09",
-      url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
+      path: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
     },
     {
       id: 3,
       name: "data-export.csv",
-      type: "CSV",
-      size: "1.2 MB",
+      extension: "CSV",
+      size: 1200000,
       uploadedBy: "Carol Davis",
       uploadedAt: "2023-04-08",
-      url: null,
+      path: null,
     },
     {
       id: 4,
       name: "product-photo.jpg",
-      type: "Image",
-      size: "1.8 MB",
+      extension: "JPG",
+      size: 1800000,
       uploadedBy: "Dave Wilson",
       uploadedAt: "2023-04-07",
-      url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
+      path: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
     },
     {
       id: 5,
       name: "marketing-banner.png",
-      type: "Image",
-      size: "2.1 MB",
+      extension: "PNG",
+      size: 2100000,
       uploadedBy: "Eve Brown",
       uploadedAt: "2023-04-06",
-      url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
+      path: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
     },
   ];
 
@@ -225,59 +233,117 @@ const Files = () => {
     setDraggedFile(null);
   };
 
-  const handleFileUpload = (fileList: FileList) => {
-    // Simulated optimistic UI update
-    const newFiles: FileItem[] = [];
-
+  const handleFileUpload = async (fileList: FileList) => {
     setIsUploading(true);
+    setUploadProgress(0);
 
-    // Start progress simulation
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 5;
-      if (progress > 100) {
-        clearInterval(interval);
-        setIsUploading(false);
+    const uploadedFiles: FileItem[] = [];
 
-        // Add mock files after "upload" completes
-        for (let i = 0; i < fileList.length; i++) {
-          const file = fileList[i];
+    try {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        const formData = new FormData();
+        formData.append('file', file);
 
-          const newFile: FileItem = {
-            id: Date.now() + i,
-            name: file.name,
-            type:
-              file.type.split("/")[0].charAt(0).toUpperCase() +
-              file.type.split("/")[0].slice(1),
-            size: (file.size / 1024).toFixed(2) + " KB",
-            uploadedBy: "Current User",
-            uploadedAt: new Date().toLocaleDateString(),
-            url: file.type.startsWith("image/")
-              ? URL.createObjectURL(file)
-              : null,
-          };
+        // Optionally, you can track progress using XMLHttpRequest for more accuracy
+        // Here, we use fetch and simulate progress
+        const { data, success } = await EnhancedApiService.post<FileItem>('/api/file', formData);
 
-          newFiles.push(newFile);
+        if (!success) {
+          throw new Error(`Failed to upload file: ${file.name}`);
         }
 
-        toast.success(`${fileList.length} file(s) uploaded successfully`);
-        EnhancedApiService.logUserAction2("files_uploaded", {
-          count: fileList.length,
+        // Simulate progress for each file
+        setUploadProgress(Math.round(((i + 1) / fileList.length) * 100));
+
+        uploadedFiles.push({
+          id: data.id,
+          name: data.name,
+          extension: data.extension,
+          size: data.size,
+          uploadedBy: "Current User",
+          uploadedAt: new Date().toLocaleDateString(),
+          path: data.path,
         });
       }
-      setUploadProgress(progress);
-    }, 100);
+      toast.success(`${fileList.length} file(s) uploaded successfully`);
+      EnhancedApiService.logUserAction2("files_uploaded", {
+        count: fileList.length,
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'File upload failed');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(100);
+      // Optionally update your file list state here with uploadedFiles
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFileUpload(e.target.files);
+      refresh();
     }
+  };
+
+  const handleDownloadFile = (fileInfo: FileItem) => {
+    toast.success("File downloaded successfully");
+    EnhancedApiService.logUserAction2("file_downloaded", { fileId: fileInfo.id });
+
+    EnhancedApiService.get<Blob>(`/api/file/${fileInfo.id}/download`, { responseType: "blob" })
+      .then((response) => {
+        const file = new Blob([response.data], { type: fileInfo.contentType });
+        const url = window.URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileInfo.name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      })
+      .catch((error) => {
+        toast.error("Failed to download file");
+        console.error("Failed to download file:", error);
+      });
+  };
+
+  const handleViewFile = (fileInfo: FileItem) => {
+    toast.success("File previewed successfully");
+
+    return <div className="space-y-2">
+      <h4 className="text-sm font-semibold">{fileInfo.name}</h4>
+      <div className="text-sm">
+        <p>
+          <span className="font-medium">Type:</span> {fileInfo.contentType}
+        </p>
+        <p>
+          <span className="font-medium">Size:</span> {calculateFileSize(fileInfo.size)}
+        </p>
+        <p>
+          <span className="font-medium">Uploaded by:</span>{" "}
+          {fileInfo.uploadedBy}
+        </p>
+        <p>
+          <span className="font-medium">Date:</span>{" "}
+          {fileInfo.uploadedAt}
+        </p>
+        <p>
+          <span className="font-medium">ID:</span> {fileInfo.id}
+        </p>
+      </div>
+    </div>
   };
 
   const handleDeleteFile = (id: number) => {
     toast.success("File deleted successfully");
     EnhancedApiService.logUserAction2("file_deleted", { fileId: id });
+  };
+
+  const calculateFileSize = (size: number) => {
+    if (size < 1024) return `${size} bytes`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const columns = [
@@ -292,144 +358,56 @@ const Files = () => {
     {
       header: "File Name",
       accessorKey: "name" as const,
-      cell: (fileInfo) => {
+      cell: (fileInfo: FileItem) => {
         return (
           <div className="flex items-center space-x-2">
-            <FileTypeIcon type={fileInfo.type} />
-            <span>{fileInfo.name}</span>
+            <FileTypeIcon extension={fileInfo.extension} />
+            <span className="truncate" title={fileInfo.name}>{fileInfo.name?.length > 15 ? fileInfo.name?.slice(0, 20) + "..." : fileInfo.name}</span>
+            <span className="text-muted-foreground">({fileInfo.extension})</span>
           </div>
         );
       },
     },
-    { header: "Type", accessorKey: "type" as const },
-    { header: "Size", accessorKey: "size" as const },
+    { header: "Type", accessorKey: "type" as const, cell: (fileInfo: FileItem) => fileInfo.contentType },
+    { header: "Size", accessorKey: "size" as const, cell: (fileInfo: FileItem) => calculateFileSize(fileInfo.size) },
     { header: "Uploaded By", accessorKey: "uploadedBy" as const },
     { header: "Upload Date", accessorKey: "uploadedAt" as const },
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: (fileInfo) => {
-        return (
-          <div className="flex space-x-1">
-            {fileInfo.type === "Image" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setPreviewFile(fileInfo);
-                        EnhancedApiService.logUserAction2(
-                          "file_preview_opened",
-                          {
-                            fileId: fileInfo.id,
-                          }
-                        );
-                      }}
-                      draggable
-                      onDragStart={() => handleDragStart(fileInfo.id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Preview Image</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      toast.info("Download started");
-                      EnhancedApiService.logUserAction2(
-                        "file_download_started",
-                        {
-                          fileId: fileInfo.id,
-                        }
-                      );
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Download File</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteFile(fileInfo.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete File</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">{fileInfo.name}</h4>
-                  <div className="text-sm">
-                    <p>
-                      <span className="font-medium">Type:</span> {fileInfo.type}
-                    </p>
-                    <p>
-                      <span className="font-medium">Size:</span> {fileInfo.size}
-                    </p>
-                    <p>
-                      <span className="font-medium">Uploaded by:</span>{" "}
-                      {fileInfo.uploadedBy}
-                    </p>
-                    <p>
-                      <span className="font-medium">Date:</span>{" "}
-                      {fileInfo.uploadedAt}
-                    </p>
-                    <p>
-                      <span className="font-medium">ID:</span> {fileInfo.id}
-                    </p>
-                  </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          </div>
-        );
-      },
+      cell: (fileInfo: FileItem) => (
+        <ActionsMenu
+          actions={[
+            {
+              type: "view" as ActionType,
+              label: "Preview",
+              onClick: () => setPreviewFile(fileInfo),
+            },
+            {
+              type: "view" as ActionType,
+              label: "View Details",
+              onClick: () => handleViewFile(fileInfo),
+            },
+            // {
+            //   type: "edit" as ActionType,
+            //   label: "Edit",
+            //   onClick: () => openEditDialog(fileInfo),
+            // },
+            {
+              type: "delete" as ActionType,
+              label: "Delete",
+              onClick: () => handleDeleteFile(fileInfo.id),
+            },
+            {
+              type: "download" as ActionType,
+              label: "Download",
+              onClick: () => handleDownloadFile(fileInfo),
+            }
+          ]}
+        />
+      )
     },
   ];
-
-  const renderFileSkeletons = () => {
-    return Array(5)
-      .fill(0)
-      .map((_, index) => (
-        <div key={index} className="flex items-center space-x-4 p-4 border-b">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-4 w-1/4" />
-            <Skeleton className="h-4 w-1/3" />
-          </div>
-          <div className="flex space-x-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-8 w-8 rounded-full" />
-          </div>
-        </div>
-      ));
-  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -524,9 +502,9 @@ const Files = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-center p-2">
-              {previewFile?.url ? (
+              {previewFile?.path ? (
                 <img
-                  src={previewFile.url}
+                  src={previewFile.path}
                   alt={previewFile.name}
                   className="max-h-[70vh] object-contain rounded-md"
                 />

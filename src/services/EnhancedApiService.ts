@@ -1,6 +1,7 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError, AxiosResponseHeaders, RawAxiosResponseHeaders } from "axios";
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
+import { AxiosHeaders } from "axios";
 
 // Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
@@ -25,6 +26,7 @@ export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   error?: string;
+  headers?: RawAxiosResponseHeaders | AxiosResponseHeaders;
 }
 
 export interface PaginatedData<T> {
@@ -318,7 +320,12 @@ class EnhancedApiService {
     data: unknown,
     mockData?: T
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { method: "POST", data }, mockData);
+    // Determine if the data is FormData (for file upload)
+    let options: AxiosRequestConfig = { method: "POST", data };
+    if (typeof FormData !== "undefined" && data instanceof FormData) {
+      options.headers = { 'Content-Type': 'multipart/form-data' };
+    }
+    return this.request<T>(url, options, mockData);
   }
 
   public async put<T>(
