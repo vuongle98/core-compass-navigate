@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import GenericMultiSelect from "@/components/GenericMultiSelect";
+import GenericMultiSelect from "@/components/common/GenericMultiSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
 export interface Permission {

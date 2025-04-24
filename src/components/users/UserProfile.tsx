@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -36,8 +36,9 @@ import {
 } from "lucide-react";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { UserInfo } from "@/pages/Users";
-import { add } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
+import RoleSelect from "./RoleSelect";
+import { Role } from "@/pages/Roles";
 
 interface UserProfileProps {
   userId: number;
@@ -55,17 +56,22 @@ const profileFormSchema = z.object({
   avatarUrl: z.string().optional(),
 });
 
+const roleFormSchema = z.object({
+  roleIds: z.array(z.number()).optional()
+});
+type RoleFormValues = z.infer<typeof roleFormSchema>;
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const securityFormSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
     newPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+      .string(),
+    // .min(8, "Password must be at least 8 characters")
+    // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    // .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    // .regex(/[0-9]/, "Password must contain at least one number"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -77,6 +83,7 @@ type SecurityFormValues = z.infer<typeof securityFormSchema>;
 
 export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingRole, setIsEditingRole] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
 
   // Mock user data - in a real app, you would fetch this from an API
@@ -107,6 +114,13 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
     },
   });
 
+  const roleForm = useForm<RoleFormValues>({
+    resolver: zodResolver(roleFormSchema),
+    defaultValues: {
+      roleIds: []
+    },
+  });
+
   useEffect(() => {
     if (user) {
       profileForm.reset({
@@ -130,6 +144,10 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
 
   const handleEdit = () => {
     setIsEditing(true);
+  };
+
+  const handleRoleEdit = () => {
+    setIsEditingRole(true);
   };
 
   const handleSave = (data: ProfileFormValues) => {
@@ -173,6 +191,32 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       });
   };
 
+  const onSelectRoleChange = (rawValue: Role[], codes: string[]) => {
+    console.log("Selected roles:", rawValue, codes);
+    roleForm.setValue(
+      "roleIds",
+      rawValue.map((role) => role.id)
+    );
+    roleForm.trigger("roleIds");
+  };
+
+  const handleRoleChange = (data: RoleFormValues) => {
+    // Here you would call an API to update the user roles
+    EnhancedApiService.put(`/api/user/${userId}`, {
+      roleIds: data.roleIds,
+    })
+      .then(() => {
+        toast.success("Roles updated successfully");
+        // setUser({ ...user, roles: data.roleIds });
+      })
+      .catch((error) => {
+        console.error("Failed to update roles:", error);
+        toast.error("Failed to update roles", {
+          description: "There was an error updating user roles.",
+        });
+      });
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -203,15 +247,6 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       showCloseButton={false}
     >
       <div className="space-y-6 relative">
-        {/* Floating Features Button */}
-        <button
-          className="absolute top-0 right-0 z-10 bg-primary text-white rounded-full shadow-lg px-4 py-2 flex items-center gap-2 hover:bg-primary/90 transition"
-          style={{ margin: 8 }}
-          onClick={() => alert("Features coming soon!")}
-        >
-          <span>Features</span>
-          <ShieldCheck className="h-4 w-4" />
-        </button>
         {user && (
           <Card className="mb-4">
             <CardHeader className="flex flex-col md:flex-row items-center gap-4 pb-2">
@@ -264,7 +299,7 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
 
         {user && (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
                 Profile
@@ -272,6 +307,10 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
               <TabsTrigger value="security">
                 <ShieldCheck className="h-4 w-4 mr-2" />
                 Security
+              </TabsTrigger>
+              <TabsTrigger value="roles">
+                <Building className="h-4 w-4 mr-2" />
+                Roles
               </TabsTrigger>
             </TabsList>
             <TabsContent value="profile" className="pt-4">
@@ -495,6 +534,71 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
                     Change Password
                   </Button>
                 </CardFooter>
+              </Card>
+            </TabsContent>
+            <TabsContent value="roles" className="pt-4">
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>User Roles</CardTitle>
+                      <CardDescription>
+                        Assign roles to the user
+                      </CardDescription>
+                    </div>
+                    {!isEditing && (
+                      <Button variant="outline" onClick={handleRoleEdit}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Form {...roleForm}>
+                    <form
+                      id="role-form"
+                      onSubmit={roleForm.handleSubmit(handleRoleChange)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={roleForm.control}
+                        name="roleIds"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Roles</FormLabel>
+                            <FormControl>
+                              <RoleSelect
+                                value={(field.value || []).map(
+                                  (id) => ({ id } as Role)
+                                )} // Convert roles to list of role IDs
+                                onChange={onSelectRoleChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </form>
+                  </Form>
+                </CardContent>
+                {isEditingRole && (
+                  <CardFooter className="flex justify-end space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        roleForm.reset();
+                        setIsEditingRole(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" form="role-form">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Roles
+                    </Button>
+                  </CardFooter>
+                )}
               </Card>
             </TabsContent>
           </Tabs>

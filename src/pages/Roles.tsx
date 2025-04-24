@@ -3,7 +3,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import {
@@ -19,15 +18,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import useApiQuery from "@/hooks/use-api-query";
-import useDebounce from "@/hooks/use-debounce";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 
-import PermissionSelect, { Permission } from "@/components/PermissionSelect";
+import PermissionSelect, {
+  Permission,
+} from "@/components/permission/PermissionSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
-interface Role {
+export interface Role {
   id: number;
   code?: string;
   name: string;
@@ -71,7 +71,6 @@ const Roles = () => {
     permissions: [],
     permissionIds: [],
   });
-
 
   const filterOptions: FilterOption[] = [
     {
@@ -157,7 +156,10 @@ const Roles = () => {
     }));
   };
 
-  const handlePermissionsChange = (permissions: Permission[], permissionIds: number[]) => {
+  const handlePermissionsChange = (
+    permissions: Permission[],
+    permissionIds: number[]
+  ) => {
     setFormData((prev) => ({
       ...prev,
       permissionIds,
@@ -183,7 +185,7 @@ const Roles = () => {
       name: role.name,
       description: role.description,
       permissions: role.permissions || [],
-      permissionIds: role.permissions?.map(p => p.id) || [],
+      permissionIds: role.permissions?.map((p) => p.id) || [],
     });
     setDialogOpen(true);
   };
@@ -353,10 +355,15 @@ const Roles = () => {
                 <h3 className="text-sm font-medium">Permissions</h3>
                 {selectedItem.permissions?.length > 0 ? (
                   <div className="space-y-2">
-                    {selectedItem.permissions?.map(perm => (
-                      <div key={perm.id} className="border rounded-md p-3 bg-muted/40">
+                    {selectedItem.permissions?.map((perm) => (
+                      <div
+                        key={perm.id}
+                        className="border rounded-md p-3 bg-muted/40"
+                      >
                         <div className="font-semibold">{perm.name}</div>
-                        <div className="text-xs text-muted-foreground">{perm.description}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {perm.description}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -435,8 +442,8 @@ const Roles = () => {
                   {isSubmitting
                     ? "Processing..."
                     : editingRole
-                      ? "Save Changes"
-                      : "Create Role"}
+                    ? "Save Changes"
+                    : "Create Role"}
                 </Button>
               </DialogFooter>
             </form>

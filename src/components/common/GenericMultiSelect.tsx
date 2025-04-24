@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,7 +14,7 @@ import useApiQuery from "@/hooks/use-api-query";
 
 interface GenericMultiSelectProps<T> {
   /**
-   * The selected values - can be an array of primitive values (string|number) 
+   * The selected values - can be an array of primitive values (string|number)
    * or an array of objects that match type T
    */
   value: T[];
@@ -58,7 +64,6 @@ function GenericMultiSelect<T>({
   showCheckboxes = true,
   labelClassName = "",
 }: GenericMultiSelectProps<T>) {
-
   const [allOptions, setAllOptions] = React.useState<T[]>([]);
   const [isFetchingMore, setIsFetchingMore] = React.useState(false);
   const [last, setLast] = React.useState(false);
@@ -76,14 +81,20 @@ function GenericMultiSelect<T>({
     setPage,
     page,
     totalPages,
-    setSearch: apiSetSearch
+    setSearch: apiSetSearch,
   } = useApiQuery<T>({
     endpoint,
     queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
     initialPage: 0,
     initialPageSize: 10,
     initialFilters: initialSearch ? { search: initialSearch } : undefined,
-    mockData: { content: [], totalElements: 0, totalPages: 1, number: 0, size: 1000 },
+    mockData: {
+      content: [],
+      totalElements: 0,
+      totalPages: 1,
+      number: 0,
+      size: 1000,
+    },
     debounceMs: 300,
   });
 
@@ -96,7 +107,8 @@ function GenericMultiSelect<T>({
       pageOptions = data;
     }
 
-    const isLast = typeof totalPages === "number" ? page >= totalPages - 1 : true;
+    const isLast =
+      typeof totalPages === "number" ? page >= totalPages - 1 : true;
     setLast(isLast);
     setIsFetchingMore(false);
 
@@ -113,7 +125,6 @@ function GenericMultiSelect<T>({
       return [...prev, ...newOptions];
     });
   }, [data, page, totalPages]);
-
 
   // Handle search changes
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +143,6 @@ function GenericMultiSelect<T>({
     }
   }, [isOpen]);
 
-
   const handleFetchMore = () => {
     if (!last && !isFetchingMore) {
       setIsFetchingMore(true);
@@ -148,7 +158,11 @@ function GenericMultiSelect<T>({
 
     const scrollThreshold = 50;
 
-    if (scrollHeight - scrollTop - clientHeight < scrollThreshold && !last && !isFetchingMore) {
+    if (
+      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+      !last &&
+      !isFetchingMore
+    ) {
       handleFetchMore();
     }
   };
@@ -157,8 +171,8 @@ function GenericMultiSelect<T>({
   const getNormalizedValues = (): Array<string | number> => {
     if (!Array.isArray(value)) return [];
 
-    return value.map(val => {
-      if (typeof val === 'string' || typeof val === 'number') {
+    return value.map((val) => {
+      if (typeof val === "string" || typeof val === "number") {
         return val;
       }
       // Handle object values using getOptionValue
@@ -168,34 +182,33 @@ function GenericMultiSelect<T>({
 
   // Unified value handling for both objects and primitives
   const handleSelect = (optionValue: T) => {
-    // if (!multiple) {
-    //   onChange(optionValue);
-    //   setIsOpen(false);
-    // } else {
-    //   const currentIds = getNormalizedValues();
-    //   const newIds = currentIds.includes(optionValue)
-    //     ? currentIds.filter(id => id !== optionValue)
-    //     : [...currentIds, optionValue];
-    //   onChange(newIds);
-    // }
-
-    console.log("dooo")
-
     if (!multiple) {
       onChange([optionValue]);
       setIsOpen(false);
       return;
     }
 
-    const newValues = value.some(v => getOptionValue(v) === getOptionValue(optionValue)) ?
-      value.filter(v => getOptionValue(v) !== getOptionValue(optionValue)) : [...value, optionValue];
+    const newValues = value.some(
+      (v) => getOptionValue(v) === getOptionValue(optionValue)
+    )
+      ? value.filter((v) => getOptionValue(v) !== getOptionValue(optionValue))
+      : [...value, optionValue];
 
     onChange(newValues);
   };
 
   return (
     <div className={cn("generic-multi-select", className)}>
-      {label && <label className={cn("block mb-2 font-medium text-foreground", labelClassName)}>{label}</label>}
+      {label && (
+        <label
+          className={cn(
+            "block mb-2 font-medium text-foreground",
+            labelClassName
+          )}
+        >
+          {label}
+        </label>
+      )}
       {error ? (
         <div className="text-destructive">{String(error)}</div>
       ) : (
@@ -212,14 +225,42 @@ function GenericMultiSelect<T>({
                 <span className="text-sm">
                   {!multiple ? (
                     // For single select, try to find and display the selected option label
-                    allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0])) ?
+                    allOptions.find(
+                      (opt) => getOptionValue(opt) === getOptionValue(value[0])
+                    ) ? (
                       <span className="truncate max-w-[200px] inline-block">
-                        {allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0])) &&
-                          React.isValidElement(getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!)) ?
-                          React.Children.toArray(getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!))[0] :
-                          getOptionLabel(allOptions.find(opt => getOptionValue(opt) === getOptionValue(value[0]))!)}
-                      </span> :
+                        {allOptions.find(
+                          (opt) =>
+                            getOptionValue(opt) === getOptionValue(value[0])
+                        ) &&
+                          React.isValidElement(
+                            getOptionLabel(
+                              allOptions.find(
+                                (opt) =>
+                                  getOptionValue(opt) === getOptionValue(value[0])
+                              )!
+                            )
+                          )
+                          ? React.Children.toArray(
+                            getOptionLabel(
+                              allOptions.find(
+                                (opt) =>
+                                  getOptionValue(opt) ===
+                                  getOptionValue(value[0])
+                              )!
+                            )
+                          )[0]
+                          : getOptionLabel(
+                            allOptions.find(
+                              (opt) =>
+                                getOptionValue(opt) ===
+                                getOptionValue(value[0])
+                            )!
+                          )}
+                      </span>
+                    ) : (
                       "1 selected"
+                    )
                   ) : (
                     // For multi-select, show count
                     `${value.length} selected`
@@ -228,10 +269,7 @@ function GenericMultiSelect<T>({
               )}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent
-            style={{ maxHeight }}
-            className="p-0"
-          >
+          <SelectContent style={{ maxHeight }} className="p-0">
             <div className="sticky top-0 z-10 p-2 bg-background border-b">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -246,8 +284,8 @@ function GenericMultiSelect<T>({
                   <button
                     type="button"
                     onClick={() => {
-                      setSearch('');
-                      apiSetSearch('');
+                      setSearch("");
+                      apiSetSearch("");
                       searchInputRef.current?.focus();
                     }}
                     className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
@@ -263,7 +301,6 @@ function GenericMultiSelect<T>({
               className="py-1 max-h-[350px] overflow-y-auto"
               onScroll={handleScroll}
             >
-
               {isLoading && page === 0 ? (
                 <div className="flex justify-center py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -276,7 +313,9 @@ function GenericMultiSelect<T>({
                 <>
                   {allOptions.map((option) => {
                     const optionValue = getOptionValue(option);
-                    const isSelected = value.some(v => getOptionValue(v) === optionValue);
+                    const isSelected = value?.some(
+                      (v) => getOptionValue(v) === optionValue
+                    );
                     return (
                       <div
                         key={String(optionValue)}
@@ -297,7 +336,9 @@ function GenericMultiSelect<T>({
                               role="checkbox"
                               aria-checked={isSelected}
                             >
-                              {isSelected && <Check className="h-3 w-3 text-primary" />}
+                              {isSelected && (
+                                <Check className="h-3 w-3 text-primary" />
+                              )}
                             </div>
                             <div className="flex-1">
                               {getOptionLabel(option)}
@@ -305,8 +346,12 @@ function GenericMultiSelect<T>({
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 w-full">
-                            {isSelected && !multiple && <Check className="h-4 w-4 text-primary" />}
-                            <div className="flex-1">{getOptionLabel(option)}</div>
+                            {isSelected && !multiple && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                            <div className="flex-1">
+                              {getOptionLabel(option)}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -328,7 +373,9 @@ function GenericMultiSelect<T>({
       {showSelectedTags && value.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {allOptions
-            .filter((option) => getNormalizedValues().includes(getOptionValue(option)))
+            .filter((option) =>
+              getNormalizedValues().includes(getOptionValue(option))
+            )
             .map((option) => (
               <div
                 key={getOptionValue(option)}
@@ -349,6 +396,5 @@ function GenericMultiSelect<T>({
     </div>
   );
 }
-
 
 export default GenericMultiSelect;
