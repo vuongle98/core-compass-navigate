@@ -401,6 +401,6 @@ class BlogService {
 // Initialize and register with the service registry
 const apiService = ServiceRegistry.get<EnhancedApiService>('api');
 const blogService = BlogService.getInstance();
-ServiceRegistry.getInstance().register('blog', blogService);
+ServiceRegistry.register('blog', blogService);
 
 export default blogService;
