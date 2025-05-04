@@ -1,5 +1,5 @@
 
-import { LogOut, User, Search } from 'lucide-react';
+import { LogOut, User, Search, Table } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -84,6 +84,10 @@ export function UserMenu() {
           <DropdownMenuItem onClick={() => navigate('/profile')}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/table-demo')}>
+            <Table className="mr-2 h-4 w-4" />
+            <span>Table Demo</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>

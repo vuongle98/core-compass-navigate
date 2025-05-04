@@ -1,4 +1,3 @@
-
 import EnhancedApiService from './EnhancedApiService';
 import { jwtDecode } from 'jwt-decode';
 import { User } from '../types/Auth';
@@ -6,15 +5,16 @@ import LoggingService from './LoggingService';
 
 // Define the AuthResponse interface for API responses
 interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
+  token: string;
+  refresh: string;
+  type: string;
   user: User;
 }
 
 interface ApiResponse<T> {
-  data: T;
   success: boolean;
   message?: string;
+  data: T;
 }
 
 class AuthService {
@@ -33,12 +33,12 @@ class AuthService {
   /**
    * Login with username/email and password
    */
-  public async login(email: string, password: string): Promise<User> {
+  public async login(username: string, password: string): Promise<User> {
     try {
-      const response = await EnhancedApiService.post<ApiResponse<AuthResponse>>('/api/auth/login', { email, password });
+      const response = await EnhancedApiService.post<ApiResponse<AuthResponse>>('/api/auth/token', { username, password });
       
-      this.accessToken = response.data.access_token;
-      this.refreshToken = response.data.refresh_token;
+      this.accessToken = response.data.token;
+      this.refreshToken = response.data.refresh;
       this.currentUser = response.data.user;
       
       this.saveTokensToStorage();
@@ -64,8 +64,8 @@ class AuthService {
     try {
       const response = await EnhancedApiService.post<ApiResponse<AuthResponse>>('/api/auth/register', userData);
       
-      this.accessToken = response.data.access_token;
-      this.refreshToken = response.data.refresh_token;
+      this.accessToken = response.data.token;
+      this.refreshToken = response.data.refresh;
       this.currentUser = response.data.user;
       
       this.saveTokensToStorage();
@@ -93,11 +93,11 @@ class AuthService {
         refresh_token: this.refreshToken
       });
       
-      this.accessToken = response.data.access_token;
+      this.accessToken = response.data.token;
       this.currentUser = response.data.user;
       
-      if (response.data.refresh_token) {
-        this.refreshToken = response.data.refresh_token;
+      if (response.data.refresh) {
+        this.refreshToken = response.data.refresh;
       }
       
       this.saveTokensToStorage();

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +27,7 @@ import Blogs from "./pages/Blogs";
 import BlogNew from "./pages/BlogNew";
 import BlogEdit from "./pages/BlogEdit";
 import BlogDetail from "./pages/BlogDetail";
+import TableDemo from "./pages/TableDemo";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ChatButton from "./components/chat/ChatButton";
 import { useFeatureFlag } from "./hooks/use-feature-flag";
@@ -81,6 +81,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/table-demo" element={<ProtectedRoute><TableDemo /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
               <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />

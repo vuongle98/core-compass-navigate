@@ -31,8 +31,8 @@ const Login = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "test",
-      password: "test",
+      username: "admin",
+      password: "admin",
     },
   });
 
@@ -44,6 +44,8 @@ const Login = () => {
       if (success) {
         navigate("/");
       }
+    } catch (error) {
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +116,7 @@ const Login = () => {
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center text-sm text-muted-foreground">
-          For demo login, use username: test and password: test
+          For demo login, use username: admin and password: admin
         </CardFooter>
       </Card>
     </div>
