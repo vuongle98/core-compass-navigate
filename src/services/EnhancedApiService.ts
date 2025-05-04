@@ -1,7 +1,7 @@
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse, AxiosRequestHeaders } from 'axios';
 import { toast } from 'sonner';
 import { getAccessToken, removeAccessToken } from './TokenService';
-import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -70,7 +70,7 @@ class EnhancedApiService {
       // Add authentication token if available
       this.addAuthToken(config);
 
-      const response = await axios.get(url, config);
+      const response = await this.axiosInstance.get(url, config);
       return response.data;
     } catch (error) {
       this.handleApiError(error, url, 'GET');
@@ -84,7 +84,7 @@ class EnhancedApiService {
         headers: headers || {} as AxiosRequestHeaders,
       };
       this.addAuthToken(config);
-      const response = await axios.post(url, data, config);
+      const response = await this.axiosInstance.post(url, data, config);
       return response.data;
     } catch (error) {
       this.handleApiError(error, url, 'POST');
@@ -98,7 +98,7 @@ class EnhancedApiService {
         headers: headers || {} as AxiosRequestHeaders,
       };
       this.addAuthToken(config);
-      const response = await axios.put(url, data, config);
+      const response = await this.axiosInstance.put(url, data, config);
       return response.data;
     } catch (error) {
       this.handleApiError(error, url, 'PUT');
@@ -112,7 +112,7 @@ class EnhancedApiService {
         headers: headers || {} as AxiosRequestHeaders,
       };
       this.addAuthToken(config);
-      const response = await axios.delete(url, config);
+      const response = await this.axiosInstance.delete(url, config);
       return response.data;
     } catch (error) {
       this.handleApiError(error, url, 'DELETE');
