@@ -1,3 +1,5 @@
+
+// Import the Permission type from Auth.ts instead of the component file
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -22,9 +24,9 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 
-import PermissionSelect, {
-  Permission,
-} from "@/components/permission/PermissionSelect";
+// Import Permission from Auth.ts instead of the PermissionSelect component
+import { Permission } from "@/types/Auth";
+import PermissionSelect from "@/components/permission/PermissionSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
 export interface Role {

@@ -22,8 +22,9 @@ export interface PermissionData extends Permission {
   description: string;
   isActive: boolean;
   module: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  code: string; // Making this required to match Permission
 }
 
 export interface User {
@@ -36,6 +37,7 @@ export interface User {
   lastLogin?: string;
   isActive?: boolean;
   avatar?: string;
+  username?: string; // Adding username property
 }
 
 export interface UserPermissions {

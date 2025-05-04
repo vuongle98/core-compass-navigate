@@ -1,4 +1,3 @@
-
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -166,7 +165,7 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
         metaKeywords: values.metaKeywords,
         // Add author information
         authorId: user?.id ? String(user.id) : 'anonymous',
-        authorName: user?.name || user?.username || user?.email || 'Anonymous User',
+        authorName: user?.name || (user?.username ? user.username : user?.email) || 'Anonymous User',
       };
 
       if (isEditMode && post) {

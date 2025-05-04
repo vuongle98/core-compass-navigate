@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 
-interface PerformanceData {
+export interface PerformanceData {
   name: string;
   [key: string]: string | number;
 }

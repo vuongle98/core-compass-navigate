@@ -8,7 +8,11 @@ export function usePermissions(): UserPermissions {
   
   return useMemo(() => {
     // Default to guest permissions if no user or role
-    const userRoles = user?.roles || [DEFAULT_ROLES.GUEST];
+    const userRoles = user?.roles || [{
+      id: DEFAULT_ROLES.GUEST,
+      code: DEFAULT_ROLES.GUEST,
+      name: DEFAULT_ROLES.GUEST
+    }];
     
     // If user has a single role string, convert to array
     const roleArray = Array.isArray(userRoles) 
