@@ -188,7 +188,7 @@ const Roles = () => {
           title="Roles"
           description="Manage user roles and permissions"
           showAddButton={true}
-          onAddClick={handleAddClick} // Changed from onAdd to onAddClick
+          onAddClick={handleAddClick}
         >
           <DataFilters
             filters={filters}
@@ -213,7 +213,7 @@ const Roles = () => {
               title="User Roles"
               pagination={true}
               showAddButton={true}
-              onAddClick={() => setCreateOpen(true)} // Changed from onAdd to onAddClick
+              onAddClick={() => setCreateOpen(true)}
               pageIndex={page}
               pageSize={pageSize}
               onPageChange={setPage}

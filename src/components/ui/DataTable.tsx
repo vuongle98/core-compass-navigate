@@ -1,15 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+import { ResponsiveTable, TableColumn } from "./ResponsiveTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
 import { ReactNode } from "react";
@@ -38,6 +32,7 @@ interface DataTableProps<T> {
   onPageSizeChange?: (size: number) => void;
   initialPageSize?: number;
   pageSizeOptions?: number[];
+  emptyMessage?: string;
 }
 
 export function DataTable<T>({
@@ -55,6 +50,7 @@ export function DataTable<T>({
   onPageSizeChange,
   initialPageSize,
   pageSizeOptions,
+  emptyMessage = "No data available.",
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
@@ -68,6 +64,13 @@ export function DataTable<T>({
     setSize(newSize);
     if (onPageSizeChange) onPageSizeChange(newSize);
   };
+
+  // Convert columns to ResponsiveTable format
+  const tableColumns: TableColumn<T>[] = columns.map(column => ({
+    header: column.header,
+    accessor: (column.accessorKey || column.id) as keyof T,
+    cell: column.cell
+  }));
 
   return (
     <Card className="w-full">
@@ -83,59 +86,19 @@ export function DataTable<T>({
         </CardHeader>
       )}
       <CardContent className="p-0 overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead
-                  key={column.header}
-                  className={column.sortable ? "cursor-pointer" : ""}
-                >
-                  {column.header}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              // Skeleton loading rows
-              Array.from({ length: size }).map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((column, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : data.length === 0 ? (
-              // Empty state
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center py-4"
-                >
-                  No data available.
-                </TableCell>
-              </TableRow>
-            ) : (
-              // Data rows
-              data.map((item, index) => (
-                <TableRow key={index}>
-                  {columns.map((column) => (
-                    <TableCell key={column.header || column.id}>
-                      {column.cell
-                        ? column.cell(item)
-                        : column.accessorKey
-                        ? (item[column.accessorKey as keyof T] as ReactNode)
-                        : null}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {isLoading ? (
+          <div className="space-y-2 p-4">
+            {Array.from({ length: size }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : (
+          <ResponsiveTable
+            data={data}
+            columns={tableColumns}
+            emptyMessage={emptyMessage}
+          />
+        )}
       </CardContent>
       {pagination && (
         <DataTablePagination

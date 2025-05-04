@@ -20,6 +20,7 @@ interface UseApiQueryProps<T> {
   debounceMs?: number;
   mockData?: PaginatedData<T>;
   onError?: (error: Error) => void;
+  isPaginated?: boolean;
 }
 
 export function useApiQuery<T>({
@@ -33,6 +34,7 @@ export function useApiQuery<T>({
   debounceMs = 0,
   mockData,
   onError,
+  isPaginated = true,
 }: UseApiQueryProps<T>) {
   const storageKey = persistKey || `filters-${endpoint.replace(/\//g, '-')}`;
   const [filters, setFiltersState] = useState<ApiQueryFilters>(initialFilters);
@@ -100,8 +102,22 @@ export function useApiQuery<T>({
     queryFn: async () => {
       try {
         const params = buildQueryParams(filters);
-        const response = await EnhancedApiService.getPaginated<T>(endpoint, params);
-        return response;
+        
+        if (isPaginated) {
+          const response = await EnhancedApiService.getPaginated<T>(endpoint, params);
+          return response;
+        } else {
+          // For non-paginated endpoints
+          const response = await EnhancedApiService.get<T[]>(endpoint, params);
+          // Convert to paginated format for consistency
+          return {
+            content: response,
+            totalElements: response.length,
+            totalPages: 1,
+            number: 0,
+            size: response.length
+          } as PaginatedData<T>;
+        }
       } catch (err) {
         // Handle mock data for testing or development
         if (mockData) {

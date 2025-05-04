@@ -1,3 +1,4 @@
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import TokenService, * as TokenServiceExports from './TokenService';
 import LoggingService from './LoggingService';
@@ -8,12 +9,41 @@ export interface PaginatedData<T> {
   totalPages: number;
   number: number;
   size: number;
+  pageable?: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  last?: boolean;
+  numberOfElements?: number;
+  first?: boolean;
+  empty?: boolean;
+  sort?: {
+    empty: boolean;
+    sorted: boolean;
+    unsorted: boolean;
+  };
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  error: string | null;
 }
 
 export interface PaginationOptions {
   page?: number;
   size?: number;
   sort?: string;
+  [key: string]: any; // Allow arbitrary filter parameters
 }
 
 class EnhancedApiService {
@@ -79,8 +109,8 @@ class EnhancedApiService {
     LoggingService.info('api', 'get', `GET ${url}`);
     
     try {
-      const response = await this.instance.get<T>(url, { params, headers });
-      return response.data;
+      const response = await this.instance.get<ApiResponse<T>>(url, { params, headers });
+      return response.data.data;
     } catch (error) {
       LoggingService.error('api', 'get_failed', `GET ${url} failed`, error);
       throw error;
@@ -95,8 +125,8 @@ class EnhancedApiService {
     LoggingService.info('api', 'post', `POST ${url}`);
     
     try {
-      const response = await this.instance.post<T>(url, data, { headers });
-      return response.data;
+      const response = await this.instance.post<ApiResponse<T>>(url, data, { headers });
+      return response.data.data;
     } catch (error) {
       LoggingService.error('api', 'post_failed', `POST ${url} failed`, error);
       throw error;
@@ -111,8 +141,8 @@ class EnhancedApiService {
     LoggingService.info('api', 'put', `PUT ${url}`);
     
     try {
-      const response = await this.instance.put<T>(url, data, { headers });
-      return response.data;
+      const response = await this.instance.put<ApiResponse<T>>(url, data, { headers });
+      return response.data.data;
     } catch (error) {
       LoggingService.error('api', 'put_failed', `PUT ${url} failed`, error);
       throw error;
@@ -127,8 +157,8 @@ class EnhancedApiService {
     LoggingService.info('api', 'delete', `DELETE ${url}`);
     
     try {
-      const response = await this.instance.delete<T>(url, { headers });
-      return response.data;
+      const response = await this.instance.delete<ApiResponse<T>>(url, { headers });
+      return response.data.data;
     } catch (error) {
       LoggingService.error('api', 'delete_failed', `DELETE ${url} failed`, error);
       throw error;
