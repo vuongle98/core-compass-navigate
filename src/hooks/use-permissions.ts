@@ -1,6 +1,6 @@
 
 import { useAuth } from "@/contexts/AuthContext";
-import { Permission, DEFAULT_ROLES, UserPermissions, Role } from "@/types/Auth";
+import { Permission, Role, DEFAULT_ROLES, UserPermissions } from "@/types/Auth";
 import { useMemo } from "react";
 
 export function usePermissions(): UserPermissions {

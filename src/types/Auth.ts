@@ -16,7 +16,7 @@ export interface Role {
   name: string;
   code: string;
   description?: string;
-  permissions?: Permission[];
+  permissions?: Permission[] | string[];
   permissionIds?: number[];
   createdAt?: string;
   updatedAt?: string;

@@ -6,12 +6,16 @@ import { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService'
 import { toast } from 'sonner';
 import useLocalStorage from './use-local-storage';
 
+export interface ApiQueryFilters {
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 interface UseApiQueryProps<T> {
   endpoint: string;
   queryKey: QueryKey;
   initialPage?: number;
   initialPageSize?: number;
-  initialFilters?: Record<string, any>;
+  initialFilters?: ApiQueryFilters;
   persistFilters?: boolean;
   persistKey?: string;
   debounceMs?: number;
@@ -20,10 +24,6 @@ interface UseApiQueryProps<T> {
 }
 
 interface PaginatedResponse<T> extends PaginatedData<T> {}
-
-interface FilterState {
-  [key: string]: string | number | boolean | null;
-}
 
 function useApiQuery<T>({
   endpoint,
@@ -38,13 +38,13 @@ function useApiQuery<T>({
   onError,
 }: UseApiQueryProps<T>) {
   const storageKey = persistKey || `filters-${endpoint.replace(/\//g, '-')}`;
-  const [filters, setFiltersState] = useState<FilterState>(initialFilters);
+  const [filters, setFiltersState] = useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const queryClient = useQueryClient();
   
   // Load persisted filters from localStorage if enabled
-  const [persistedFilters, setPersistedFilters] = useLocalStorage<FilterState>(
+  const [persistedFilters, setPersistedFilters] = useLocalStorage<ApiQueryFilters>(
     persistFilters ? storageKey : '',
     initialFilters
   );
@@ -54,10 +54,10 @@ function useApiQuery<T>({
     if (persistFilters && Object.keys(persistedFilters).length > 0) {
       setFiltersState(persistedFilters);
     }
-  }, [persistFilters]);
+  }, [persistFilters, persistedFilters]);
 
   // Update persisted filters when filters change
-  const setFilters = useCallback((newFilters: FilterState) => {
+  const setFilters = useCallback((newFilters: ApiQueryFilters) => {
     setFiltersState(newFilters);
     if (persistFilters) {
       setPersistedFilters(newFilters);
@@ -76,7 +76,7 @@ function useApiQuery<T>({
   }, [initialFilters, persistFilters, setPersistedFilters]);
 
   // Convert filters to query params
-  const buildQueryParams = useCallback((currentFilters: FilterState): PaginationOptions => {
+  const buildQueryParams = useCallback((currentFilters: ApiQueryFilters): PaginationOptions => {
     const params: PaginationOptions = { 
       page, 
       size: pageSize 
@@ -109,13 +109,15 @@ function useApiQuery<T>({
         throw err;
       }
     },
-    onError: (err: any) => {
-      if (onError) onError(err);
+    meta: {
+      onError: onError
     }
   });
 
   // Total items count
   const totalItems = data?.totalElements || 0;
+  const totalPages = data?.totalPages || 0;
+  const isError = !!error;
 
   // Manual refresh function
   const refresh = useCallback(() => {
@@ -125,12 +127,14 @@ function useApiQuery<T>({
   return {
     data: data?.content || [],
     isLoading,
+    isError,
     error,
     page,
     pageSize,
     setPage,
     setPageSize,
     totalItems,
+    totalPages,
     filters,
     setFilters,
     resetFilters,

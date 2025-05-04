@@ -1,8 +1,7 @@
 
 import EnhancedApiService from './EnhancedApiService';
-import ServiceRegistry from './ServiceRegistry';
 
-interface DashboardMetric {
+export interface DashboardMetric {
   id: string;
   name: string;
   value: number;
@@ -24,7 +23,7 @@ class DashboardService {
     try {
       // Using ApiResponse format for consistency
       const response = await EnhancedApiService.get<{ data: DashboardMetric[], success: boolean }>('/api/dashboard/metrics');
-      return response.data || [];
+      return response?.data || [];
     } catch (error) {
       console.error('Failed to fetch dashboard metrics:', error);
       // Return mock data for development
@@ -43,7 +42,7 @@ class DashboardService {
   public async getActivityData(): Promise<any[]> {
     try {
       const response = await EnhancedApiService.get<{ data: any[], success: boolean }>('/api/dashboard/activity');
-      return response.data || [];
+      return response?.data || [];
     } catch (error) {
       console.error('Failed to fetch activity data:', error);
       // Return mock data for development
@@ -58,6 +57,27 @@ class DashboardService {
       ];
     }
   }
+
+  /**
+   * Get performance data
+   */
+  public async getPerformanceData(): Promise<any[]> {
+    try {
+      const response = await EnhancedApiService.get<{ data: any[], success: boolean }>('/api/dashboard/performance');
+      return response?.data || [];
+    } catch (error) {
+      console.error('Failed to fetch performance data:', error);
+      // Return mock data
+      return [
+        { name: 'Jan', cpu: 30, memory: 45, network: 27 },
+        { name: 'Feb', cpu: 35, memory: 50, network: 32 },
+        { name: 'Mar', cpu: 25, memory: 35, network: 20 },
+        { name: 'Apr', cpu: 40, memory: 55, network: 45 },
+        { name: 'May', cpu: 45, memory: 60, network: 50 },
+        { name: 'Jun', cpu: 50, memory: 65, network: 55 },
+      ];
+    }
+  }
   
   /**
    * Get user activity data
@@ -65,7 +85,7 @@ class DashboardService {
   public async getUserActivity(): Promise<any[]> {
     try {
       const response = await EnhancedApiService.get<{ data: any[], success: boolean }>('/api/dashboard/user-activity');
-      return response.data || [];
+      return response?.data || [];
     } catch (error) {
       console.error('Failed to fetch user activity:', error);
       // Return mock data
@@ -85,7 +105,7 @@ class DashboardService {
   public async getSystemStatus(): Promise<SystemStatus[]> {
     try {
       const response = await EnhancedApiService.get<{ data: SystemStatus[], success: boolean }>('/api/dashboard/system-status');
-      return response.data || [];
+      return response?.data || [];
     } catch (error) {
       console.error('Failed to fetch system status:', error);
       // Return mock data

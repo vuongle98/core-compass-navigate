@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -81,16 +82,16 @@ const Files = () => {
   // Dropzone configuration
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      acceptedFiles.forEach(async (file) => {
-        const filename = file.name;
+      acceptedFiles.forEach(async (uploadedFile) => {
+        const filename = uploadedFile.name;
         const uploadDate = new Date().toISOString().split("T")[0]; // Format as YYYY-MM-DD
         const newFile: FileItem = {
           id: Date.now().toString(), // Generate a unique ID
           name: filename,
-          size: file.size / 1024, // Convert to KB
-          type: file.type.split("/")[1], // Extract file extension
+          size: uploadedFile.size / 1024, // Convert to KB
+          type: uploadedFile.type.split("/")[1], // Extract file extension
           uploadDate: uploadDate,
-          url: URL.createObjectURL(file), // Create a local URL for display
+          url: URL.createObjectURL(uploadedFile), // Create a local URL for display
         };
 
         setFiles((prevFiles) => [...prevFiles, newFile]);
@@ -100,7 +101,7 @@ const Files = () => {
           // Simulate API call to upload file
           // In a real app, you'd send the file to your server here
           // await apiService.uploadFile(file);
-          EnhancedApiService.logUserAction('files', 'upload', { filename, size: file.size });
+          EnhancedApiService.logUserAction('files', 'upload', { filename, size: uploadedFile.size });
         } catch (error) {
           console.error("File upload error:", error);
           toast.error(`Failed to upload ${filename}`);
@@ -228,7 +229,7 @@ const Files = () => {
       // Simulate API call to share file
       // In a real app, you'd call your API to share the file with the selected options
       // await apiService.shareFile(selectedFile.id, shareType);
-      EnhancedApiService.logUserAction('files', 'share', { id: file.id, name: file.name, shareType });
+      EnhancedApiService.logUserAction('files', 'share', { id: selectedFile.id, name: selectedFile.name, shareType });
     } catch (error) {
       console.error("File share error:", error);
       toast.error(`Failed to share ${selectedFile.name}`);
