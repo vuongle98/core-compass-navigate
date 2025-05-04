@@ -1,131 +1,112 @@
 
 /**
- * Service for logging events and errors
+ * Service for centralized application logging
  */
 class LoggingService {
-  private static instance: LoggingService;
-  private currentUser: string | null = null;
-  private activityTracking = false;
-  private config = {
+  private static userId: string | null = null;
+  private static config = {
     logLevel: 'info',
-    enableConsole: true
+    enableConsole: true,
+    enableActivityTracking: true
   };
 
-  private constructor() {
-    // Private constructor to enforce singleton
+  /**
+   * Set configuration options
+   */
+  public static configure(options: { logLevel?: string; enableConsole?: boolean; enableActivityTracking?: boolean }) {
+    this.config = {
+      ...this.config,
+      ...options
+    };
   }
 
   /**
-   * Get singleton instance
+   * Associate logs with a user
    */
-  public static getInstance(): LoggingService {
-    if (!LoggingService.instance) {
-      LoggingService.instance = new LoggingService();
+  public static setUser(user: any) {
+    if (user && user.id) {
+      this.userId = typeof user.id === 'string' ? user.id : String(user.id);
+    } else {
+      this.userId = null;
     }
-    return LoggingService.instance;
   }
 
   /**
-   * Set activity tracking
+   * Set activity tracking service
    */
-  public static setActivityTracking(enabled: boolean): void {
-    LoggingService.getInstance().activityTracking = enabled;
+  public static setActivityTracking(activityTracking: any) {
+    // This is just for circular dependency resolution
   }
 
   /**
-   * Set current user
+   * Log informational message
    */
-  public static setUser(userId: string | null): void {
-    LoggingService.getInstance().currentUser = userId;
+  public static info(category: string, action: string, message: string, data?: any) {
+    this.log('info', category, action, message, data);
   }
 
   /**
-   * Configure logging
+   * Log warning message
    */
-  public static config(options: { logLevel?: string; enableConsole?: boolean }): void {
-    const instance = LoggingService.getInstance();
-    instance.config = { ...instance.config, ...options };
+  public static warning(category: string, action: string, message: string, data?: any) {
+    this.log('warning', category, action, message, data);
   }
 
   /**
-   * Log information
+   * Log error message
    */
-  public static info(module: string, event: string, message: string): void {
-    LoggingService.getInstance().logInfo(module, event, message);
+  public static error(category: string, action: string, message: string, error?: any) {
+    this.log('error', category, action, message, error);
   }
 
   /**
-   * Log a warning
+   * Log debug message
    */
-  public static warn(module: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().logWarning(module, event, message, data);
-  }
-
-  /**
-   * Log an error
-   */
-  public static error(module: string, event: string, message: string, error?: any): void {
-    LoggingService.getInstance().logError(module, event, message, error);
-  }
-
-  /**
-   * Log a debug message
-   */
-  public static debug(module: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().logDebug(module, event, message, data);
+  public static debug(category: string, action: string, message: string, data?: any) {
+    if (this.config.logLevel === 'debug') {
+      this.log('debug', category, action, message, data);
+    }
   }
 
   /**
    * Log user action
    */
-  public static logUserAction(action: string, details?: any): void {
-    LoggingService.getInstance().trackUserAction(action, details);
+  public static logUserAction(action: string, details?: any) {
+    this.log('user', 'action', action, details);
   }
 
-  // Instance methods
-  private logInfo(module: string, event: string, message: string): void {
-    if (this.shouldLog('info')) {
-      console.info(`[${module}] ${event}: ${message}`);
+  /**
+   * Send log to appropriate destinations
+   */
+  private static log(level: string, category: string, action: string, message: string, data?: any) {
+    if (!this.config.enableConsole) return;
+
+    const logData = {
+      timestamp: new Date().toISOString(),
+      level,
+      category,
+      action,
+      userId: this.userId,
+      message,
+      data
+    };
+
+    // Log to console during development
+    if (this.config.enableConsole) {
+      switch (level) {
+        case 'error':
+          console.error(`[${category}] ${message}`, data || '');
+          break;
+        case 'warning':
+          console.warn(`[${category}] ${message}`, data || '');
+          break;
+        case 'debug':
+          console.debug(`[${category}] ${message}`, data || '');
+          break;
+        default:
+          console.log(`[${category}] ${message}`, data || '');
+      }
     }
-  }
-
-  private logWarning(module: string, event: string, message: string, data?: any): void {
-    if (this.shouldLog('warn')) {
-      console.warn(`[${module}] ${event}: ${message}`, data || '');
-    }
-  }
-
-  private logError(module: string, event: string, message: string, error?: any): void {
-    if (this.shouldLog('error')) {
-      console.error(`[${module}] ${event}: ${message}`, error || '');
-    }
-  }
-
-  private logDebug(module: string, event: string, message: string, data?: any): void {
-    if (this.shouldLog('debug')) {
-      console.debug(`[${module}] ${event}: ${message}`, data || '');
-    }
-  }
-
-  private trackUserAction(action: string, details?: any): void {
-    if (!this.activityTracking) return;
-    
-    const user = this.currentUser || 'anonymous';
-    this.logInfo('user_activity', action, `User ${user} performed ${action}`);
-    
-    if (details) {
-      this.logDebug('user_activity', `${action}_details`, '', details);
-    }
-  }
-
-  private shouldLog(level: string): boolean {
-    if (!this.config.enableConsole) return false;
-    
-    const levels = ['debug', 'info', 'warn', 'error'];
-    const configLevelIndex = levels.indexOf(this.config.logLevel);
-    const currentLevelIndex = levels.indexOf(level);
-    
-    return currentLevelIndex >= configLevelIndex;
   }
 }
 

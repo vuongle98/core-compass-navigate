@@ -1,72 +1,76 @@
 
-import { User } from "@/types/Auth";
+/**
+ * Service for tracking user activity in the application
+ */
 import LoggingService from "./LoggingService";
 
 class ActivityTracking {
-  private static instance: ActivityTracking;
-  private currentUser: User | null = null;
-  private enabled = false;
-  
-  private constructor() {
-    // Private constructor for singleton
+  private static loggingService: any = null;
+
+  /**
+   * Set the logging service instance
+   */
+  public static setLoggingService(service: any) {
+    this.loggingService = service;
   }
-  
-  public static getInstance(): ActivityTracking {
-    if (!ActivityTracking.instance) {
-      ActivityTracking.instance = new ActivityTracking();
-    }
-    return ActivityTracking.instance;
-  }
-  
-  public setUser(user: User | null): void {
-    this.currentUser = user;
-    if (user) {
-      LoggingService.setUser(user.id.toString());
-    } else {
-      LoggingService.setUser(null);
-    }
-  }
-  
-  public enable(): void {
-    this.enabled = true;
-    LoggingService.setActivityTracking(true);
-  }
-  
-  public disable(): void {
-    this.enabled = false;
-    LoggingService.setActivityTracking(false);
-  }
-  
-  public trackEvent(eventName: string, data?: any): void {
-    if (!this.enabled) return;
-    
-    const userId = this.currentUser?.id || 'anonymous';
-    const userName = this.currentUser?.username || 'unknown';
-    
-    LoggingService.info('activity', eventName, `User ${userName} (${userId}) performed ${eventName}`);
-    
-    if (data) {
-      LoggingService.debug('activity', `${eventName}_data`, '', data);
+
+  /**
+   * Track user clicks
+   */
+  public static trackClicks() {
+    try {
+      document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const tagName = target.tagName.toLowerCase();
+        const id = target.id || '';
+        const classes = Array.from(target.classList).join(' ');
+        const text = target.textContent?.trim() || '';
+
+        LoggingService.info(
+          'user_activity',
+          'click',
+          `User clicked ${tagName}${id ? '#' + id : ''}${text ? ': ' + text : ''}`,
+          { tagName, id, classes, text }
+        );
+      });
+    } catch (error) {
+      console.error('Error setting up click tracking', error);
     }
   }
-  
-  public trackPageView(path: string): void {
-    this.trackEvent('page_view', { path });
+
+  /**
+   * Track form submissions
+   */
+  public static trackFormSubmissions() {
+    try {
+      document.addEventListener('submit', (e) => {
+        const form = e.target as HTMLFormElement;
+        const id = form.id || '';
+        const action = form.action || '';
+        const method = form.method || '';
+
+        LoggingService.info(
+          'user_activity',
+          'form_submission',
+          `User submitted form${id ? ' #' + id : ''}`,
+          { id, action, method }
+        );
+      });
+    } catch (error) {
+      console.error('Error setting up form tracking', error);
+    }
   }
-  
-  public trackClick(elementId: string, elementText?: string): void {
-    this.trackEvent('click', { elementId, elementText });
-  }
-  
-  public trackFormSubmit(formId: string, formData?: Record<string, any>): void {
-    // Don't log sensitive data
-    const safeData = formData ? { ...formData } : {};
-    
-    // Remove sensitive fields
-    if (safeData.password) safeData.password = '********';
-    if (safeData.token) safeData.token = '********';
-    
-    this.trackEvent('form_submit', { formId, ...safeData });
+
+  /**
+   * Track page views
+   */
+  public static trackPageView(path: string, title?: string) {
+    LoggingService.info(
+      'user_activity',
+      'page_view',
+      `User viewed page: ${title || path}`,
+      { path, title }
+    );
   }
 }
 

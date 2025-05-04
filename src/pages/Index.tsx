@@ -41,7 +41,7 @@ const Index = () => {
     isLoading: isLoadingMetrics 
   } = useQuery({
     queryKey: ['dashboard-metrics', dateRange],
-    queryFn: () => DashboardService.getMetrics(dateRange),
+    queryFn: () => DashboardService.getMetrics(),
     meta: {
       onError: () => {
         toast({
@@ -121,11 +121,11 @@ const Index = () => {
     return linkMap[metricId] || '/';
   };
 
-  const metrics = metricsData?.data || [];
-  const userActivity = activityData?.data?.userActivity || [];
-  const fileUploads = activityData?.data?.fileUploads || [];
-  const notifications = activityData?.data?.notifications || [];
-  const systemPerformance = performanceData?.data || [];
+  const metrics = metricsData || [];
+  const userActivity = activityData?.userActivity || [];
+  const fileUploads = activityData?.fileUploads || [];
+  const notifications = activityData?.notifications || [];
+  const systemPerformance = performanceData || [];
 
   // Mock active users data
   const activeUsers = [

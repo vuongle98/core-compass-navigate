@@ -38,7 +38,9 @@ class ServiceRegistry {
     
     // Setup user ID in LoggingService
     const currentUser = AuthService.getCurrentUser();
-    LoggingService.setUser(currentUser);
+    if (currentUser && currentUser.id) {
+      LoggingService.setUser(currentUser);
+    }
     
     // Now we can safely setup activity tracking
     if (LoggingService.config?.enableActivityTracking) {
