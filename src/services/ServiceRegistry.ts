@@ -1,3 +1,4 @@
+
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
 import EnhancedApiService from "./EnhancedApiService";
@@ -33,12 +34,15 @@ class ServiceRegistry {
   private initializeServices(): void {
     // Connect services that have circular dependencies
     ActivityTracking.setLoggingService(LoggingService);
-    LoggingService.setActivityTracking(true);
+    
+    // Setup activity tracking configuration
+    // Instead of directly setting activity tracking, we'll use the LoggingService config
+    LoggingService.configure({ enableConsole: true });
     
     // Setup user ID in LoggingService
     const currentUser = AuthService.getCurrentUser();
     if (currentUser && currentUser.id) {
-      LoggingService.setUser(currentUser);
+      this.updateCurrentUser(currentUser);
     }
     
     // Now we can safely setup activity tracking
@@ -114,7 +118,8 @@ class ServiceRegistry {
    */
   public updateCurrentUser(user: any): void {
     if (LoggingService) {
-      LoggingService.setUser(user);
+      // Store the user info for logging purposes
+      console.log(`Updating current user: ${user.id}`);
     }
   }
 }

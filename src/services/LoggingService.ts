@@ -6,6 +6,8 @@ class LoggingService {
     enableConsole: true,
   };
 
+  private static currentUser: any = null;
+
   static configure(options: { logLevel?: string; enableConsole?: boolean }) {
     LoggingService.config = {
       ...LoggingService.config,
@@ -19,14 +21,14 @@ class LoggingService {
     }
   }
 
-  static error(message: string | Error, context?: string, description?: string, data?: any) {
+  static error(message: string | Error, contextOrData?: any, description?: string, data?: any) {
     if (LoggingService.config.enableConsole) {
-      if (typeof message === 'string' && context && description) {
+      if (typeof message === 'string' && contextOrData && description) {
         // Handle the case where error is called with (module, action, description, data)
-        console.error(`[ERROR] ${context}:${message} - ${description}`, data || '');
+        console.error(`[ERROR] ${contextOrData}:${message} - ${description}`, data || '');
       } else {
         // Handle the standard case
-        console.error(`[ERROR] ${message}`, context || '');
+        console.error(`[ERROR] ${message}`, contextOrData || '');
       }
     }
   }
@@ -61,6 +63,11 @@ class LoggingService {
     }
   }
 
+  static warning(module: string, action?: string, description?: string, data?: any) {
+    // Alias for warn to support both naming conventions
+    return this.warn(module, action, description, data);
+  }
+
   static debug(module: string, action?: string, description?: string, data?: any) {
     if (LoggingService.config.logLevel === 'debug' && LoggingService.config.enableConsole) {
       if (action && description) {
@@ -80,23 +87,39 @@ class LoggingService {
   static logUserAction(
     module: string,
     action: string,
-    description: string,
+    description: string | Record<string, any>,
     metadata?: Record<string, any>
   ) {
     const logData = {
       module,
       action,
-      description,
+      description: typeof description === 'string' ? description : JSON.stringify(description),
       timestamp: new Date().toISOString(),
       metadata
     };
     
     if (LoggingService.config.enableConsole) {
-      console.log(`[USER ACTION] ${module}:${action} - ${description}`, metadata || '');
+      if (typeof description === 'string') {
+        console.log(`[USER ACTION] ${module}:${action} - ${description}`, metadata || '');
+      } else {
+        console.log(`[USER ACTION] ${module}:${action}`, description, metadata || '');
+      }
     }
     
     // In a real app, this would likely send the data to a server
     return logData;
+  }
+
+  // Add methods required by ServiceRegistry
+  static setActivityTracking(enabled: boolean) {
+    // Implementation to enable/disable activity tracking
+    LoggingService.config.enableConsole = enabled;
+    console.log(`[LOG] Activity tracking ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  static setUser(user: any) {
+    LoggingService.currentUser = user;
+    console.log(`[LOG] User set`, user?.id || 'anonymous');
   }
 
   static getConfig() {

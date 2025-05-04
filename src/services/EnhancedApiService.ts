@@ -1,4 +1,3 @@
-
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import TokenService, * as TokenServiceExports from './TokenService';
 import LoggingService from './LoggingService';
@@ -156,10 +155,10 @@ class EnhancedApiService {
   }
 
   /**
-   * Log user action
+   * Log user actions
    */
-  public static logUserAction(action: string, details?: any): void {
-    LoggingService.logUserAction(action, details);
+  static logUserAction(module: string, action: string, description: string | Record<string, any>, metadata?: Record<string, any>) {
+    return LoggingService.logUserAction(module, action, description, metadata);
   }
 }
 

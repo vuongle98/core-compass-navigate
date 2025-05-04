@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -27,7 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import LoggingService from "@/services/LoggingService";
 
 interface FileItem {
   id: string;
@@ -36,6 +37,11 @@ interface FileItem {
   type: string;
   uploadDate: string;
   url: string;
+}
+
+// Define a type for filter values
+interface QueryFilters {
+  [key: string]: string | number | boolean | undefined;
 }
 
 const Files = () => {
@@ -101,7 +107,7 @@ const Files = () => {
           // Simulate API call to upload file
           // In a real app, you'd send the file to your server here
           // await apiService.uploadFile(file);
-          EnhancedApiService.logUserAction('files', 'upload', { filename, size: uploadedFile.size });
+          LoggingService.logUserAction('files', 'upload', 'File uploaded successfully', { filename, size: uploadedFile.size });
         } catch (error) {
           console.error("File upload error:", error);
           toast.error(`Failed to upload ${filename}`);
@@ -168,7 +174,7 @@ const Files = () => {
       // Simulate API call to delete file
       // In a real app, you'd call your API to delete the file from the server
       // await apiService.deleteFile(file.id);
-      EnhancedApiService.logUserAction('files', 'delete', { id: file.id, name: file.name });
+      LoggingService.logUserAction('files', 'delete', 'File deleted successfully', { id: file.id, name: file.name });
     } catch (error) {
       console.error("File delete error:", error);
       toast.error(`Failed to delete ${file.name}`);
@@ -182,7 +188,7 @@ const Files = () => {
       // Simulate API call to view file
       // In a real app, you'd open the file in a new tab or display it in a viewer
       // await apiService.viewFile(file.id);
-      EnhancedApiService.logUserAction('files', 'view', { id: file.id, name: file.name });
+      LoggingService.logUserAction('files', 'view', 'File viewed', { id: file.id, name: file.name });
     } catch (error) {
       console.error("File view error:", error);
       toast.error(`Failed to view ${file.name}`);
@@ -196,7 +202,7 @@ const Files = () => {
       // Simulate API call to download file
       // In a real app, you'd trigger a download from your server
       // const blob = await apiService.downloadFile(file.id);
-      EnhancedApiService.logUserAction('files', 'download', { id: file.id, name: file.name });
+      LoggingService.logUserAction('files', 'download', 'File downloaded', { id: file.id, name: file.name });
 
       // Create a temporary URL for the blob and trigger the download
       // const url = window.URL.createObjectURL(new Blob([blob.data]));
@@ -229,7 +235,7 @@ const Files = () => {
       // Simulate API call to share file
       // In a real app, you'd call your API to share the file with the selected options
       // await apiService.shareFile(selectedFile.id, shareType);
-      EnhancedApiService.logUserAction('files', 'share', { id: selectedFile.id, name: selectedFile.name, shareType });
+      LoggingService.logUserAction('files', 'share', 'File shared', { id: selectedFile.id, name: selectedFile.name, shareType });
     } catch (error) {
       console.error("File share error:", error);
       toast.error(`Failed to share ${selectedFile.name}`);
@@ -292,7 +298,7 @@ const Files = () => {
             options={filterOptions}
             onChange={(newFilters) => {
               setSearchTerm(newFilters.search as string);
-              const updateSearchParams = (filters: ApiQueryFilters) => {
+              const updateSearchParams = (filters: QueryFilters) => {
                 const params = new URLSearchParams();
                 Object.entries(filters).forEach(([key, value]) => {
                   if (value !== undefined) {

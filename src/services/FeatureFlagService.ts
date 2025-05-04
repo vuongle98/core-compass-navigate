@@ -1,143 +1,115 @@
 
-import { DEFAULT_ROLES } from '@/types/Auth';
-import { FeatureFlag } from '@/types/FeatureFlag';
 import LoggingService from './LoggingService';
+import { FeatureFlag, FeatureFlagConfig } from '@/types/FeatureFlag';
 
 class FeatureFlagService {
-  private static features: FeatureFlag[] = [
-    {
-      id: "new-dashboard",
-      key: "new-dashboard",
-      name: "New Dashboard UI",
-      description: "Enable the new dashboard UI",
+  private static flags: Map<string, FeatureFlag> = new Map();
+  private static instance: FeatureFlagService;
+  
+  private constructor() {
+    // Private constructor to enforce singleton
+    this.initializeDefaults();
+  }
+  
+  static getInstance() {
+    if (!FeatureFlagService.instance) {
+      FeatureFlagService.instance = new FeatureFlagService();
+    }
+    return FeatureFlagService.instance;
+  }
+  
+  private initializeDefaults() {
+    // Set up default feature flags
+    this.registerFeatureFlag({
+      key: 'darkMode',
       enabled: true,
-      environments: ["development", "staging"],
-      roles: ["ADMIN", "EDITOR"]
-    },
-    {
-      id: "advanced-analytics",
-      key: "advanced-analytics",
-      name: "Advanced Analytics",
-      description: "Enable advanced analytics features",
+      description: 'Enable dark mode UI',
+      group: 'ui'
+    });
+    
+    this.registerFeatureFlag({
+      key: 'analytics',
       enabled: false,
-      environments: ["development"],
-      roles: ["ADMIN"]
-    },
-    {
-      id: "beta-features",
-      key: "beta-features",
-      name: "Beta Features",
-      description: "Enable experimental beta features",
-      enabled: true,
-      environments: ["development"],
-      roles: ["ADMIN", "MODERATOR"]
-    }
-  ];
-
-  /**
-   * Check if a feature is enabled
-   */
-  public static isFeatureEnabled(
-    featureKey: string,
-    environment: string,
-    userRoles: string[]
-  ): boolean {
+      description: 'Enable analytics tracking',
+      group: 'tracking'
+    });
+    
+    this.registerFeatureFlag({
+      key: 'betaFeatures',
+      enabled: false,
+      description: 'Enable beta features',
+      group: 'experimental'
+    });
+    
+    this.registerFeatureFlag({
+      key: 'newDashboard',
+      enabled: false,
+      description: 'Enable new dashboard UI',
+      group: 'ui'
+    });
+    
+    LoggingService.info('feature_flags', 'initialized', 'Feature flags initialized with defaults');
+  }
+  
+  registerFeatureFlag(config: FeatureFlagConfig) {
     try {
-      // Find the feature by key
-      const feature = this.features.find(f => f.key === featureKey || f.id === featureKey);
+      const newFlag: FeatureFlag = {
+        ...config,
+        lastUpdated: new Date().toISOString()
+      };
       
-      // If feature doesn't exist, it's disabled
-      if (!feature) {
-        LoggingService.warning('feature_flags', 'feature_not_found', `Feature not found: ${featureKey}`);
+      FeatureFlagService.flags.set(config.key, newFlag);
+      LoggingService.debug('feature_flags', 'registered', `Feature flag registered: ${config.key}`);
+    } catch (error) {
+      LoggingService.warn('feature_flags', 'register_failed', `Failed to register feature flag: ${config.key}`);
+    }
+  }
+  
+  isEnabled(key: string): boolean {
+    try {
+      const flag = FeatureFlagService.flags.get(key);
+      if (!flag) {
+        LoggingService.warn('feature_flags', 'not_found', `Feature flag not found: ${key}`);
         return false;
       }
       
-      // If feature is not enabled globally, it's disabled
-      if (!feature.enabled) {
-        return false;
-      }
-      
-      // Check environment
-      if (feature.environments && feature.environments.length > 0) {
-        const envMatch = feature.environments.some(env => 
-          env.toLowerCase() === environment.toLowerCase() || env === '*' || env === 'all'
-        );
-        
-        if (!envMatch) {
-          return false;
-        }
-      }
-      
-      // Check user roles
-      if (feature.roles && feature.roles.length > 0) {
-        // Admin always has access to all features
-        if (userRoles.some(role => role === 'ADMIN' || role === 'admin')) {
-          return true;
-        }
-        
-        // For other roles, check if there's a match
-        const roleMatch = feature.roles.some(role => 
-          userRoles.some(userRole => 
-            userRole.toUpperCase() === role.toUpperCase()
-          )
-        );
-        
-        if (!roleMatch) {
-          return false;
-        }
-      }
-      
-      // All checks passed, feature is enabled
-      return true;
+      return flag.enabled;
     } catch (error) {
-      LoggingService.error('feature_flags', 'check_failed', `Error checking feature: ${featureKey}`, error);
+      LoggingService.error('feature_flags', 'check_failed', `Error checking feature flag: ${key}`);
       return false;
     }
   }
-
-  /**
-   * Refresh feature flags from server/storage
-   */
-  public static async refreshFlags(): Promise<void> {
+  
+  setFeatureFlag(key: string, enabled: boolean) {
     try {
-      LoggingService.info('feature_flags', 'refresh', 'Refreshing feature flags');
-      // In a real app, this would fetch from an API
-      // For now, we'll just use a timeout to simulate a network request
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const flag = FeatureFlagService.flags.get(key);
+      if (!flag) {
+        LoggingService.warn('feature_flags', 'update_failed', `Feature flag not found: ${key}`);
+        return;
+      }
       
-      LoggingService.info('feature_flags', 'refresh_complete', 'Feature flags refreshed');
-      return;
+      flag.enabled = enabled;
+      flag.lastUpdated = new Date().toISOString();
+      FeatureFlagService.flags.set(key, flag);
+      LoggingService.info('feature_flags', 'updated', `Feature flag updated: ${key} = ${enabled}`);
     } catch (error) {
-      LoggingService.error('feature_flags', 'refresh_failed', 'Failed to refresh feature flags', error);
-      throw error;
+      LoggingService.error('feature_flags', 'update_failed', `Error updating feature flag: ${key}`);
     }
   }
-
-  /**
-   * Get all features
-   */
-  public static getAllFeatures(): FeatureFlag[] {
-    return [...this.features];
+  
+  getAllFlags(): FeatureFlag[] {
+    return Array.from(FeatureFlagService.flags.values());
   }
-
-  /**
-   * Update a feature flag
-   */
-  public static updateFeature(featureId: string, updatedFeature: Partial<FeatureFlag>): boolean {
-    const index = this.features.findIndex(f => f.id === featureId);
-    
-    if (index === -1) {
-      return false;
+  
+  getFlagsByGroup(group: string): FeatureFlag[] {
+    try {
+      return Array.from(FeatureFlagService.flags.values())
+        .filter(flag => flag.group === group);
+    } catch (error) {
+      LoggingService.error('feature_flags', 'get_group_failed', `Error fetching flags by group: ${group}`);
+      return [];
     }
-    
-    this.features[index] = {
-      ...this.features[index],
-      ...updatedFeature,
-      updatedAt: new Date().toISOString()
-    };
-    
-    return true;
   }
 }
 
-export default FeatureFlagService;
+export default FeatureFlagService.getInstance();

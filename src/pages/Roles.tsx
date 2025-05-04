@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -19,11 +20,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LoggingService from "@/services/LoggingService";
 
-interface Role {
+export interface Role {
   id: number;
   name: string;
   description: string;
-  permissions: string[];
+  permissions: number[]; // Changed from string[] to number[]
   createdAt: string;
 }
 
@@ -85,21 +86,21 @@ const Roles = () => {
           id: 1,
           name: "Admin",
           description: "Administrator role with full access",
-          permissions: ["1", "2", "3", "4", "5", "6", "7", "8"],
+          permissions: [1, 2, 3, 4, 5, 6, 7, 8], // Changed from strings to numbers
           createdAt: "2023-04-01",
         },
         {
           id: 2,
           name: "Editor",
           description: "Editor role with access to create and update content",
-          permissions: ["1", "3", "5", "7"],
+          permissions: [1, 3, 5, 7], // Changed from strings to numbers
           createdAt: "2023-04-05",
         },
         {
           id: 3,
           name: "Viewer",
           description: "Viewer role with read-only access",
-          permissions: ["1", "5"],
+          permissions: [1, 5], // Changed from strings to numbers
           createdAt: "2023-04-10",
         },
       ],
@@ -113,14 +114,14 @@ const Roles = () => {
   const viewDetails = (role: Role) => {
     setSelectedRole(role);
     setDetailsOpen(true);
-    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(p.id)));
+    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(Number(p.id))));
     LoggingService.info("roles", "view_details", `Viewed details for role ID ${role.id}`);
   };
 
   const editRole = (role: Role) => {
     setSelectedRole(role);
     setEditOpen(true);
-    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(p.id)));
+    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(Number(p.id))));
     LoggingService.info("roles", "edit_role", `Opened edit dialog for role ID ${role.id}`);
   };
 
@@ -177,6 +178,8 @@ const Roles = () => {
     },
   ];
 
+  const handleAddClick = () => setCreateOpen(true);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -185,7 +188,7 @@ const Roles = () => {
           title="Roles"
           description="Manage user roles and permissions"
           showAddButton={true}
-          onAdd={() => setCreateOpen(true)}
+          onAddClick={handleAddClick} // Changed from onAdd to onAddClick
         >
           <DataFilters
             filters={filters}
@@ -210,7 +213,7 @@ const Roles = () => {
               title="User Roles"
               pagination={true}
               showAddButton={true}
-              onAdd={() => setCreateOpen(true)}
+              onAddClick={() => setCreateOpen(true)} // Changed from onAdd to onAddClick
               pageIndex={page}
               pageSize={pageSize}
               onPageChange={setPage}

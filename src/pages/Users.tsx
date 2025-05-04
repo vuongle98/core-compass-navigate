@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -12,9 +13,17 @@ import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { Role } from "./Roles";
 import { Permission } from "@/types/Auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// Define Role interface here to avoid circular imports
+interface Role {
+  id: number;
+  code?: string;
+  name: string;
+  description: string;
+  userCount?: number;
+}
 
 export interface UserProfile {
   id: number;

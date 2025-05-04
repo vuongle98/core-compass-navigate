@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { User } from "@/types/Auth";
 import { toast } from "@/components/ui/use-toast";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
@@ -13,8 +12,18 @@ import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import LoggingService from "@/services/LoggingService";
 import useApiQuery from "@/hooks/use-api-query";
-import { useDebounce } from "@/hooks/use-debounce";
-import useDetailView from "@/hooks/use-detail-view";
+import useDebounce from "@/hooks/use-debounce";
+import { useDetailView } from "@/hooks/use-detail-view";
+
+// Define User interface compatible with the data structure
+interface User {
+  id: number;
+  username: string;
+  email?: string;
+  name: string;
+  role: string;
+  roles?: Array<{ id: number; name: string; description: string }>;
+}
 
 interface Token {
   id: number;
@@ -27,7 +36,7 @@ interface Token {
 
 const Tokens = () => {
   // Mock data
-  const [tokens, setTokens] = useState([
+  const [tokens, setTokens] = useState<Token[]>([
     {
       id: 1,
       token: "Mobile API Token",
@@ -39,6 +48,7 @@ const Tokens = () => {
         username: "johndoe",
         name: "John Doe",
         role: "admin",
+        roles: [{ id: 1, name: "admin", description: "Administrator" }],
       },
     },
     {
@@ -53,6 +63,7 @@ const Tokens = () => {
         email: "",
         name: "John Doe",
         role: "admin",
+        roles: [{ id: 1, name: "admin", description: "Administrator" }],
       },
     },
     {
@@ -67,6 +78,7 @@ const Tokens = () => {
         email: "",
         name: "John Doe",
         role: "admin",
+        roles: [{ id: 1, name: "admin", description: "Administrator" }],
       },
     },
   ]);
