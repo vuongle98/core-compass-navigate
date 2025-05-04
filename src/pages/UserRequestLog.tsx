@@ -50,7 +50,7 @@ const mockRequests: UserRequest[] = [
   },
   {
     id: 3,
-    endpoint: "/api/roles",
+    endpoint: "/api/role",
     method: "GET",
     user: "admin@example.com",
     timestamp: "2023-04-09 09:15:22",

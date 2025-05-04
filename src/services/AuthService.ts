@@ -7,7 +7,6 @@ import LoggingService from './LoggingService';
 interface AuthResponse {
   token: string;
   refresh: string;
-  type: string;
   user: User;
 }
 
@@ -85,12 +84,12 @@ class AuthService {
   public async refreshAuth(): Promise<boolean> {
     try {
       if (!this.refreshToken) {
-        LoggingService.warn('auth', 'refresh_token_missing', 'No refresh token available');
+        LoggingService.warn('auth', 'refresh_missing', 'No refresh token available');
         return false;
       }
       
       const response = await EnhancedApiService.post<ApiResponse<AuthResponse>>('/api/auth/refresh', {
-        refresh_token: this.refreshToken
+        refresh: this.refreshToken
       });
       
       this.accessToken = response.data.token;
@@ -121,8 +120,8 @@ class AuthService {
     this.currentUser = null;
     
     // Clear from storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh');
     localStorage.removeItem('user');
     
     LoggingService.info('auth', 'logout', 'User logged out');
@@ -229,8 +228,8 @@ class AuthService {
    */
   private loadTokensFromStorage(): void {
     try {
-      this.accessToken = localStorage.getItem('access_token');
-      this.refreshToken = localStorage.getItem('refresh_token');
+      this.accessToken = localStorage.getItem('token');
+      this.refreshToken = localStorage.getItem('refresh');
       
       const userJson = localStorage.getItem('user');
       if (userJson) {
@@ -252,11 +251,11 @@ class AuthService {
   private saveTokensToStorage(): void {
     try {
       if (this.accessToken) {
-        localStorage.setItem('access_token', this.accessToken);
+        localStorage.setItem('token', this.accessToken);
       }
       
       if (this.refreshToken) {
-        localStorage.setItem('refresh_token', this.refreshToken);
+        localStorage.setItem('refresh', this.refreshToken);
       }
       
       if (this.currentUser) {

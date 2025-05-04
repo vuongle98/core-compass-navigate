@@ -2,7 +2,7 @@
 /**
  * Service for handling authentication tokens
  */
-const TOKEN_KEY = 'auth_token';
+const TOKEN_KEY = 'token';
 
 /**
  * Get the access token from local storage

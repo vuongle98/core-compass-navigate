@@ -76,7 +76,7 @@ const Roles = () => {
     setPageSize,
     totalItems
   } = useApiQuery<Role>({
-    endpoint: "/api/roles",
+    endpoint: "/api/role",
     queryKey: ["roles"],
     initialPageSize: 10,
     persistFilters: true,

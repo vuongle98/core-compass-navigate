@@ -43,7 +43,7 @@ export function UserRoleAssignment({
       setError(null);
 
       try {
-        const response = await EnhancedApiService.get<Role[]>("/api/roles");
+        const response = await EnhancedApiService.get<Role[]>("/api/role");
         setRoles(response);
       } catch (err) {
         console.error("Error loading roles:", err);
