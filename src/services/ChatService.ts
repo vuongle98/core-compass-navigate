@@ -1,6 +1,5 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import ServiceRegistry from './ServiceRegistry';
 import { EventEmitter } from '@/lib/EventEmitter';
 
 interface Chat {
@@ -356,8 +355,14 @@ class ChatService extends EventEmitter {
 // Create singleton instance
 const chatService = ChatService.getInstance();
 
-// Access through ServiceRegistry
-ServiceRegistry.register('chat', chatService);
+// Register with ServiceRegistry (import after creating the instance to avoid circular dependency)
+// Using dynamic import to prevent circular dependency
+setTimeout(() => {
+  import('./ServiceRegistry').then((ServiceRegistryModule) => {
+    const ServiceRegistry = ServiceRegistryModule.default;
+    ServiceRegistry.register('chat', chatService);
+  });
+}, 0);
 
 export default chatService;
 export type { Chat, Message };

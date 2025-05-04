@@ -1,7 +1,6 @@
 
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
-import ChatService from "./ChatService";
 import EnhancedApiService from "./EnhancedApiService";
 import ActivityTracking from "./ActivityTracking";
 
@@ -20,7 +19,6 @@ class ServiceRegistry {
     this.register('auth', AuthService);
     this.register('api', EnhancedApiService);
     this.register('activity', ActivityTracking);
-    this.register('chat', ChatService);
     
     // Initialize services and resolve circular dependencies
     this.initializeServices();
