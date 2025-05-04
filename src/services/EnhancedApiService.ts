@@ -1,19 +1,36 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import AuthService from './AuthService';
 import LoggingService from './LoggingService';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;
 }
 
-interface PaginatedResponse<T> {
+export interface PaginatedData<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
   number: number;
   size: number;
+}
+
+export interface PaginationOptions {
+  page: number;
+  pageSize: number;
+  filter?: Record<string, string | number | boolean | string[]>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
 }
 
 /**
@@ -43,14 +60,14 @@ class EnhancedApiService {
    */
   private initializeRequestInterceptor = () => {
     this.axiosInstance.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
         LoggingService.debug('api_request', 'request_intercepted', `Request to ${config.url}`, {
           method: config.method,
           headers: config.headers,
           data: config.data,
         });
         
-        return EnhancedApiService.addAuthHeader(config);
+        return this.addAuthHeader(config);
       },
       (error: AxiosError) => {
         LoggingService.error('api_request', 'request_failed', 'Request failed before sending', { error });
@@ -77,10 +94,12 @@ class EnhancedApiService {
         if (error.response?.status === 401) {
           try {
             // Attempt to refresh the token
-            await AuthService.refreshToken();
+            const refreshed = await AuthService.refreshAuth();
             
-            // Retry the original request
-            return this.axiosInstance.request(EnhancedApiService.addAuthHeader(error.config as AxiosRequestConfig));
+            if (refreshed && error.config) {
+              // Retry the original request with a new token
+              return this.axiosInstance.request(this.addAuthHeader(error.config));
+            }
           } catch (refreshError) {
             LoggingService.error('api_response', 'token_refresh_failed', 'Token refresh failed', { error: refreshError });
             // Redirect to login or handle unauthorized state
@@ -98,13 +117,12 @@ class EnhancedApiService {
   /**
    * Prepare headers with auth token if available
    */
-  private static getHeaders(contentType = 'application/json'): Record<string, string> {
+  private getHeaders(contentType = 'application/json'): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': contentType,
       'Accept': 'application/json',
     };
 
-    // Use getAccessToken instead of non-existent method
     const token = AuthService.getAccessToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -174,7 +192,7 @@ class EnhancedApiService {
    */
   public async getPaginated<T>(
     endpoint: string,
-    params: { page: number; pageSize: number; filter?: Record<string, string | number | boolean | string[]> }
+    params: PaginationOptions
   ): Promise<PaginatedResponse<T>> {
     try {
       const response = await this.axiosInstance.get<PaginatedResponse<T>>(endpoint, { params });
@@ -186,17 +204,37 @@ class EnhancedApiService {
   }
   
   /**
-   * Add authentication header to fetch options
+   * Add authentication header to request config
    */
-  private static addAuthHeader(options: AxiosRequestConfig): AxiosRequestConfig {
-    // Use getAccessToken instead of non-existent method
+  private addAuthHeader(config: InternalAxiosRequestConfig | AxiosRequestConfig): InternalAxiosRequestConfig {
     const token = AuthService.getAccessToken();
     
-    if (token && options.headers) {
-      options.headers['Authorization'] = `Bearer ${token}`;
+    if (token && config.headers) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`
+      };
     }
     
-    return options;
+    return config as InternalAxiosRequestConfig;
+  }
+  
+  /**
+   * Log user action (for analytics)
+   */
+  public logUserAction(action: string, details?: any): void {
+    try {
+      this.axiosInstance.post('/api/analytics/user-action', {
+        action,
+        timestamp: new Date().toISOString(),
+        details
+      }, { 
+        headers: this.getHeaders()
+      });
+    } catch (error) {
+      // Silent fail for analytics
+      console.error('Failed to log user action:', error);
+    }
   }
 }
 

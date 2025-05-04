@@ -1,21 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AuthService from '@/services/AuthService';
-import { toast } from 'sonner';
-import { Role } from '@/types/Auth';
-import featureFlagService from '@/services/FeatureFlagService';
 
-// Define the User interface in one place to avoid conflicts
-export interface User {
-  id: number;
-  username: string;
-  email?: string;
-  name: string;
-  role: string;
-  roles?: string[] | Role[];
-  permissions?: string[];
-  joinDate?: string;
-  lastLogin?: string;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AuthService, { User } from '@/services/AuthService';
+import { toast } from 'sonner';
+import featureFlagService from '@/services/FeatureFlagService';
 
 interface AuthContextType {
   user: User | null;
@@ -42,8 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (AuthService.isAuthenticated()) {
           // Get user info from the token or stored user data
           const currentUser = AuthService.getCurrentUser();
-          // Make sure we're setting the state with the correct User type
-          setUser(currentUser as User);
+          setUser(currentUser);
           
           // Refresh feature flags after login
           await featureFlagService.refreshFlags();
@@ -63,11 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const success = await AuthService.login(username, password);
-      if (success) {
-        const currentUser = AuthService.getCurrentUser();
-        // Make sure we're setting the state with the correct User type
-        setUser(currentUser as User);
+      // Call the login method from AuthService
+      const userData = await AuthService.login(username, password);
+      if (userData) {
+        setUser(userData);
         
         // Refresh feature flags after login
         await featureFlagService.refreshFlags();
@@ -119,7 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      await AuthService.changePassword(currentPassword, newPassword);
+      await AuthService.changePassword({ 
+        currentPassword, 
+        newPassword, 
+        confirmPassword: newPassword 
+      });
       toast.success("Password changed successfully");
       return true;
     } catch (error) {

@@ -21,7 +21,7 @@ const ChatButton = ({ className }: ChatButtonProps) => {
   const { chats } = useChat();
   
   // Calculate total unread count
-  const unreadCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
+  const unreadCount = chats.reduce((total, chat) => total + (chat.unreadCount || 0), 0);
   
   // Simulate receiving new messages with a ping pong effect
   useEffect(() => {

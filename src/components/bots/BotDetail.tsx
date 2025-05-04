@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +18,7 @@ import { BotInfo } from "./BotInfo";
 import { BotStatus, BotStatusData } from "./BotStatus";
 import { BotScheduledMessages } from "./BotScheduledMessages";
 import { Bot } from "@/pages/Bots";
-import EnhancedApiService, { ApiResponse, PaginatedData } from "@/services/EnhancedApiService";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface BotDetailProps {
   bot: Bot;
@@ -50,7 +51,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         const response = await EnhancedApiService.get<ScheduledMessage[]>(
           `/api/v1/bots/${bot.id}/scheduled-messages`
         );
-        return response.data || [];
+        return response || [];
       } catch (error) {
         console.error("Failed to fetch scheduled messages:", error);
         return [];
@@ -70,10 +71,10 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
           `/api/v1/bots/${bot.id}/refresh`,
           {}
         );
-        return response.data;
+        return response;
       } catch (error) {
         console.error("Failed to fetch refresh:", error);
-        return [];
+        return null;
       }
     }
   });
@@ -87,7 +88,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     queryFn: async () => {
       try {
         const response = await EnhancedApiService.get<BotStatusData[]>(`/api/v1/bots/${bot.id}/history`);
-        return response.data || [];
+        return response || [];
       } catch (error) {
         console.error("Failed to fetch bot status:", error);
         return [];

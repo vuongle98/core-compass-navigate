@@ -5,12 +5,6 @@ import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
 import { debounce } from "lodash";
 
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-}
-
 export interface ApiDataOptions<T> {
   endpoint: string;
   queryKey: string | string[];
@@ -53,13 +47,10 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
         { params }
       );
 
-      const response = await EnhancedApiService.get<ApiResponse<T>>(options.endpoint, params, options.mockData as ApiResponse<T>);
-      
-      // Get actual data from the ApiResponse wrapper
-      const actualData = response.data;
+      const response = await EnhancedApiService.get<T>(options.endpoint, params, options.mockData);
       
       // Apply transform function if provided
-      const transformedData = options.transform ? options.transform(actualData) : actualData;
+      const transformedData = options.transform ? options.transform(response) : response;
 
       LoggingService.info(
         "api_data",
@@ -103,15 +94,22 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     refetchInterval: options.refetchInterval,
     retry: options.retry,
     retryDelay: options.retryDelay,
+    meta: {}
   };
 
-  // Add callbacks
+  // Add callbacks to meta
   if (options.onSuccess) {
-    queryOptions.onSuccess = options.onSuccess;
+    queryOptions.meta = {
+      ...queryOptions.meta,
+      onSuccess: options.onSuccess
+    };
   }
   
   if (options.onError) {
-    queryOptions.onError = options.onError;
+    queryOptions.meta = {
+      ...queryOptions.meta,
+      onError: options.onError
+    };
   }
 
   const { data, isLoading, isError, error, refetch } = useQuery(queryOptions);

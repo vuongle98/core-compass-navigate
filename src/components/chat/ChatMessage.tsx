@@ -44,9 +44,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
     )}>
       {!isCurrentUser && (
         <Avatar className="h-8 w-8 mt-1">
-          <AvatarImage src={sender.avatar} />
+          <AvatarImage src={sender?.avatar} />
           <AvatarFallback className="bg-primary/10 text-primary text-xs">
-            {sender.name.substring(0, 2).toUpperCase()}
+            {sender?.name.substring(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
       )}
@@ -56,7 +56,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isCurrentUser }) => 
         isCurrentUser ? "items-end" : "items-start"
       )}>
         {!isCurrentUser && (
-          <span className="text-xs text-muted-foreground ml-1 mb-1">{sender.name}</span>
+          <span className="text-xs text-muted-foreground ml-1 mb-1">{sender?.name}</span>
         )}
         
         <div 

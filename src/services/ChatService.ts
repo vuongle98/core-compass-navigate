@@ -1,17 +1,22 @@
-import { EventEmitter } from 'events';
+
 import { v4 as uuidv4 } from 'uuid';
 import ServiceRegistry from './ServiceRegistry';
+import { EventEmitter } from '@/lib/EventEmitter';
 
 interface Chat {
   id: string;
   name?: string;
   type: 'private' | 'group' | 'public';
-  participants: string[];
+  participants: {
+    id: string;
+    name: string;
+    avatar?: string;
+  }[];
   createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
   latestMessage?: Message;
-  userAvatar?: string;
+  unreadCount: number;
 }
 
 interface Message {
@@ -19,10 +24,15 @@ interface Message {
   chatId: string;
   senderId: string;
   senderName: string;
+  sender: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
   text: string;
-  timestamp: Date;
+  timestamp: string;
   read: boolean;
-  type: 'text' | 'image' | 'file';
+  type: 'text' | 'image' | 'file' | 'system';
 }
 
 class ChatService extends EventEmitter {
@@ -33,7 +43,7 @@ class ChatService extends EventEmitter {
   private userId: string | null = null;
   private userName: string | null = null;
   
-  private constructor() {
+  constructor() {
     super();
     this.chats = this.getInitialChats();
   }
@@ -67,7 +77,8 @@ class ChatService extends EventEmitter {
    * Get all chats for the current user
    */
   public getChats(): Chat[] {
-    return this.chats.filter(chat => chat.participants.includes(this.userId || ''));
+    return this.chats.filter(chat => 
+      chat.participants.some(p => p.id === (this.userId || '')));
   }
 
   /**
@@ -85,12 +96,14 @@ class ChatService extends EventEmitter {
     const chat: Chat = {
       id: chatId,
       type: 'private',
-      participants: [this.userId || '', userId],
+      participants: [
+        { id: this.userId || '', name: this.userName || 'You', avatar: undefined },
+        { id: userId, name: userName, avatar: userAvatar }
+      ],
       createdBy: this.userId,
       createdAt: new Date(),
       updatedAt: new Date(),
-      name: userName,
-      userAvatar: userAvatar
+      unreadCount: 0
     };
     
     this.chats.push(chat);
@@ -105,14 +118,24 @@ class ChatService extends EventEmitter {
    */
   public createGroupChat(name: string, participantIds: string[]): Chat {
     const chatId = `group_${this.generateId()}`;
+    // Mock participants with basic info
+    const participants = [
+      { id: this.userId || '', name: this.userName || 'You' },
+      ...participantIds.map((id, index) => ({ 
+        id, 
+        name: `User ${index + 1}` 
+      }))
+    ];
+    
     const chat: Chat = {
       id: chatId,
       name,
       type: 'group',
-      participants: [this.userId || '', ...participantIds],
+      participants,
       createdBy: this.userId,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      unreadCount: 0
     };
     
     this.chats.push(chat);
@@ -131,10 +154,11 @@ class ChatService extends EventEmitter {
       id: chatId,
       name,
       type: 'public',
-      participants: [this.userId || ''],
+      participants: [{ id: this.userId || '', name: this.userName || 'You' }],
       createdBy: this.userId,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      unreadCount: 0
     };
     
     this.chats.push(chat);
@@ -153,8 +177,12 @@ class ChatService extends EventEmitter {
       chatId,
       senderId: this.userId || '',
       senderName: this.userName || 'Unknown User',
+      sender: {
+        id: this.userId || '',
+        name: this.userName || 'Unknown User'
+      },
       text,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       read: false,
       type,
     };
@@ -192,6 +220,13 @@ class ChatService extends EventEmitter {
         message.read = true;
       });
     }
+    
+    // Update unread count in chat object
+    const chat = this.getChat(chatId);
+    if (chat) {
+      chat.unreadCount = 0;
+      this.emit('chats-updated', this.getChats());
+    }
   }
   
   /**
@@ -202,6 +237,12 @@ class ChatService extends EventEmitter {
     if (chat) {
       chat.latestMessage = message;
       chat.updatedAt = new Date();
+      
+      // Increment unread count if message is from someone else
+      if (message.senderId !== this.userId) {
+        chat.unreadCount = (chat.unreadCount || 0) + 1;
+      }
+      
       this.emit('chats-updated', this.getChats());
     }
   }
@@ -229,8 +270,13 @@ class ChatService extends EventEmitter {
         chatId,
         senderId: 'assistant',
         senderName: 'AI Assistant',
+        sender: {
+          id: 'assistant',
+          name: 'AI Assistant',
+          avatar: '/assets/bot-avatar.png'
+        },
         text: responseText,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         read: false,
         type: 'text',
       };
@@ -267,35 +313,48 @@ class ChatService extends EventEmitter {
         id: 'chat1',
         name: 'General',
         type: 'public',
-        participants: ['user1', 'user2', 'user3'],
+        participants: [
+          { id: 'user1', name: 'User 1' },
+          { id: 'user2', name: 'User 2' },
+          { id: 'user3', name: 'User 3' }
+        ],
         createdBy: 'system',
         createdAt: new Date(),
         updatedAt: new Date(),
+        unreadCount: 0
       },
       {
         id: 'chat2',
         name: 'Support',
         type: 'public',
-        participants: ['user1', 'user2'],
+        participants: [
+          { id: 'user1', name: 'User 1' },
+          { id: 'user2', name: 'User 2' }
+        ],
         createdBy: 'system',
         createdAt: new Date(),
         updatedAt: new Date(),
+        unreadCount: 2
       },
       {
         id: 'chat3',
         name: 'Random',
         type: 'public',
-        participants: ['user3', 'user4'],
+        participants: [
+          { id: 'user3', name: 'User 3' },
+          { id: 'user4', name: 'User 4' }
+        ],
         createdBy: 'system',
         createdAt: new Date(),
         updatedAt: new Date(),
+        unreadCount: 0
       },
     ];
   }
 }
 
 // Create singleton instance
-const chatService = new ChatService();
+const chatService = ChatService.getInstance();
 
 // Access through ServiceRegistry
 ServiceRegistry.register('chat', chatService);

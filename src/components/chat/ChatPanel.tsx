@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useChat } from '@/hooks/use-chat';
-import { Send, Users, User, Globe, Plus, Search, Smile, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Send, Users, Globe, Plus, Search, Smile, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAnimationClass } from '@/lib/animation';
 import CreateChatDialog from './CreateChatDialog';
 import LoggingService from '@/services/LoggingService';
+import { Chat } from '@/services/ChatService';
 
 interface ChatPanelProps {
   onClose: () => void;
@@ -102,7 +103,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
     LoggingService.info('chat', 'chat_search', 'User searched for chats', { searchTerm: e.target.value });
   };
   
-  const renderChatList = (chatList: typeof chats) => {
+  const renderChatList = (chatList: Chat[]) => {
     if (chatList.length === 0) {
       return (
         <div className="p-3 text-center text-sm text-muted-foreground">
@@ -117,7 +118,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
     return chatList.map(chat => {
       // For private chats, show the other participant's name
       const chatName = chat.type === 'private' 
-        ? chat.participants[0]?.name 
+        ? chat.participants.find(p => p.id !== user?.id)?.name || 'Private Chat'
         : chat.name || 'Unnamed Chat';
         
       const unreadIndicator = chat.unreadCount > 0 
@@ -138,7 +139,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
         >
           {chat.type === 'private' && (
             <Avatar className="border border-primary/10">
-              <AvatarImage src={chat.participants[0]?.avatar} />
+              <AvatarImage src={chat.participants.find(p => p.id !== user?.id)?.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary">{chatName.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           )}
@@ -160,9 +161,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
               <span className={`font-medium truncate ${isActive ? 'text-primary' : ''}`}>{chatName}</span>
               {unreadIndicator}
             </div>
-            {chat.lastMessage && (
+            {chat.latestMessage && (
               <span className="text-xs text-muted-foreground truncate">
-                {chat.lastMessage.sender.name}: {chat.lastMessage.text}
+                {chat.latestMessage.sender.name}: {chat.latestMessage.text}
               </span>
             )}
           </div>
@@ -269,9 +270,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                       <div className="p-3 border-b flex items-center gap-2">
                         {activeChat.type === 'private' && (
                           <Avatar className="h-8 w-8 border border-primary/10">
-                            <AvatarImage src={activeChat.participants[0]?.avatar} />
+                            <AvatarImage src={activeChat.participants.find(p => p.id !== user?.id)?.avatar} />
                             <AvatarFallback className="bg-primary/10 text-xs">
-                              {activeChat.participants[0]?.name.substring(0, 2).toUpperCase()}
+                              {activeChat.participants.find(p => p.id !== user?.id)?.name.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         )}
@@ -290,7 +291,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                         
                         <span className="font-medium">
                           {activeChat.type === 'private' 
-                            ? activeChat.participants[0]?.name 
+                            ? activeChat.participants.find(p => p.id !== user?.id)?.name 
                             : activeChat.name || 'Chat'}
                         </span>
                       </div>

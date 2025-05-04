@@ -120,7 +120,7 @@ export function useChat(): UseChatReturn {
       return;
     }
     
-    chatService.sendMessage(activeChat.id, text);
+    chatService.sendMessage(activeChat.id, text, type);
     LoggingService.info('chat', 'message_sent', `Message sent to chat ${activeChat.id}`);
   };
 

@@ -1,8 +1,20 @@
 
 import EnhancedApiService from './EnhancedApiService';
 import LoggingService from './LoggingService';
-import { User } from '@/types/Auth';
 import { jwtDecode } from 'jwt-decode';
+
+// Define the User interface
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  name: string;
+  role: string;
+  roles?: string[];
+  permissions?: string[];
+  joinDate?: string;
+  lastLogin?: string;
+}
 
 interface AuthResponse {
   access_token: string;
@@ -78,7 +90,7 @@ class AuthService {
   /**
    * Refresh authentication token
    */
-  public async refreshToken(): Promise<boolean> {
+  public async refreshAuth(): Promise<boolean> {
     try {
       if (!this.refreshToken) {
         LoggingService.warn('auth', 'refresh_token_missing', 'No refresh token available');
@@ -211,6 +223,13 @@ class AuthService {
    */
   public getAccessToken(): string | null {
     return this.accessToken;
+  }
+  
+  /**
+   * Get refresh token (for internal service use)
+   */
+  public getRefreshToken(): string | null {
+    return this.refreshToken;
   }
   
   /**
