@@ -14,12 +14,23 @@ class ServiceRegistry {
   private services: Map<string, any> = new Map();
   
   private constructor() {
-    // Register core services
+    // Register core services in the correct order to avoid circular dependencies
     this.register('logging', LoggingService);
     this.register('auth', AuthService);
-    this.register('chat', chatService);
     this.register('api', EnhancedApiService);
     this.register('activity', ActivityTracking);
+    this.register('chat', chatService);
+    
+    // Connect services that have circular dependencies
+    // This is done after all services are initialized
+    ActivityTracking.setLoggingService(LoggingService);
+    LoggingService.setActivityTracking(ActivityTracking);
+    
+    // Now we can safely setup activity tracking
+    if (LoggingService.config?.enableActivityTracking) {
+      ActivityTracking.trackClicks();
+      ActivityTracking.trackFormSubmissions();
+    }
     
     LoggingService.info('service', 'registry_initialized', 'Service Registry initialized');
   }
@@ -36,7 +47,9 @@ class ServiceRegistry {
    */
   public register(name: string, service: any): void {
     this.services.set(name, service);
-    LoggingService.debug('service', 'service_registered', `Service registered: ${name}`);
+    
+    // Use console.log instead of LoggingService to avoid potential circular references
+    console.debug(`Service registered: ${name}`);
   }
   
   /**

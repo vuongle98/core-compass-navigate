@@ -1,5 +1,5 @@
 import AuthService from "./AuthService";
-import ActivityTracking from "./ActivityTracking";
+import type ActivityTracking from "./ActivityTracking";
 
 export type LogLevel = "info" | "warning" | "error" | "debug";
 
@@ -31,11 +31,13 @@ export interface LogTransport {
 /**
  * Logger service for application-wide logging
  */
-class LoggingService {
+export class LoggingService {
   private static instance: LoggingService;
   private logQueue: LogEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private transports: LogTransport[] = [];
+  private activityTracking: ActivityTracking | null = null;
+  private userId?: string;
 
   private config: LoggerConfig = {
     minLevel: "info",
@@ -58,12 +60,6 @@ class LoggingService {
     window.addEventListener("beforeunload", () => {
       this.flush(true);
     });
-    
-    // Setup activity tracking if enabled
-    if (this.config.enableActivityTracking) {
-      ActivityTracking.trackClicks();
-      ActivityTracking.trackFormSubmissions();
-    }
   }
 
   public static getInstance(): LoggingService {
@@ -71,6 +67,18 @@ class LoggingService {
       LoggingService.instance = new LoggingService();
     }
     return LoggingService.instance;
+  }
+
+  /**
+   * Set the activity tracking service - to be called after both services are initialized
+   */
+  public setActivityTracking(activityTracking: ActivityTracking): void {
+    this.activityTracking = activityTracking;
+    
+    // Setup activity tracking if enabled
+    if (this.config.enableActivityTracking && this.activityTracking) {
+      // We'll initialize activity tracking in ServiceRegistry to avoid circular dependency
+    }
   }
 
   /**
@@ -85,15 +93,9 @@ class LoggingService {
       this.setupFlushTimer();
     }
     
-    // Update activity tracking if configuration changed
-    if (prevConfig.enableActivityTracking !== this.config.enableActivityTracking) {
-      if (this.config.enableActivityTracking) {
-        ActivityTracking.trackClicks();
-        ActivityTracking.trackFormSubmissions();
-      } else {
-        ActivityTracking.stopTrackingClicks();
-        ActivityTracking.stopTrackingForms();
-      }
+    // Update activity tracking if configuration changed and activityTracking is available
+    if (prevConfig.enableActivityTracking !== this.config.enableActivityTracking && this.activityTracking) {
+      // We'll handle this in ServiceRegistry to avoid circular dependency
     }
   }
   
@@ -179,8 +181,8 @@ class LoggingService {
     });
     
     // Track API response as user activity for non-GET requests that modify data
-    if (method !== 'GET' && this.config.enableActivityTracking) {
-      ActivityTracking.logActivity('api', method.toLowerCase(), url, {
+    if (method !== 'GET' && this.activityTracking && this.config.enableActivityTracking) {
+      this.activityTracking.logActivity('api', method.toLowerCase(), url, {
         status,
         duration
       });
@@ -216,8 +218,8 @@ class LoggingService {
     });
     
     // Track API errors as user activity
-    if (this.config.enableActivityTracking) {
-      ActivityTracking.logActivity('error', 'api_error', url, {
+    if (this.activityTracking && this.config.enableActivityTracking) {
+      this.activityTracking.logActivity('error', 'api_error', url, {
         method,
         error: error instanceof Error ? error.message : String(error),
         duration
@@ -243,8 +245,8 @@ class LoggingService {
     });
     
     // Also record as user activity
-    if (this.config.enableActivityTracking) {
-      ActivityTracking.logActivity('user_action', action, module, data as Record<string, any>);
+    if (this.activityTracking && this.config.enableActivityTracking) {
+      this.activityTracking.logActivity('user_action', action, module, data as Record<string, any>);
     }
   }
 
@@ -433,15 +435,15 @@ class LoggingService {
     });
     
     // Also flush activity tracking
-    if (this.config.enableActivityTracking) {
-      ActivityTracking.flush(force);
+    if (this.config.enableActivityTracking && this.activityTracking) {
+      this.activityTracking.flush(force);
     }
   }
   
   /**
    * Initialize user ID and session for tracking
    */
-  public async initializeUser() {
+  public async initializeUser(): Promise<void> {
     try {
       const user = await AuthService.getCurrentUser();
       if (user && typeof user === 'object' && 'id' in user) {

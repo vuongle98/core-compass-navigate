@@ -1,4 +1,4 @@
-import LoggingService from './LoggingService';
+import type { LoggingService as LoggingServiceType } from './LoggingService';
 import { debounce } from 'lodash';
 
 export interface Activity {
@@ -34,6 +34,7 @@ class ActivityTracking {
     localStorage: true,
     console: import.meta.env.DEV
   };
+  private loggingService: LoggingServiceType | null = null;
 
   private constructor() {
     this.setupFlushTimer();
@@ -54,11 +55,22 @@ class ActivityTracking {
     return this.instance;
   }
 
+  /**
+   * Set the logging service - to be called after both services are initialized
+   */
+  public setLoggingService(loggingService: LoggingServiceType): void {
+    this.loggingService = loggingService;
+  }
+
   public configure(options: Partial<ActivityLoggerOptions>): void {
     this.options = { ...this.options, ...options };
     this.setupFlushTimer();
     
-    LoggingService.info('activity', 'configured', 'Activity tracking configured', { options });
+    if (this.loggingService) {
+      this.loggingService.info('activity', 'configured', 'Activity tracking configured', { options });
+    } else if (this.options.console) {
+      console.log('Activity tracking configured', options);
+    }
   }
 
   /**
@@ -219,7 +231,9 @@ class ActivityTracking {
       }
     }, this.options.flushInterval);
     
-    LoggingService.debug('activity', 'flush_timer_setup', `Activity flush timer set for ${this.options.flushInterval}ms`);
+    if (this.options.console) {
+      console.log(`Activity flush timer set for ${this.options.flushInterval}ms`);
+    }
   }
 
   /**
@@ -266,13 +280,19 @@ class ActivityTracking {
             if (!response.ok) {
               throw new Error(`HTTP error ${response.status}`);
             }
-            LoggingService.info('activity', 'activities_sent', `${activities.length} activities sent to server`);
+            if (this.loggingService) {
+              this.loggingService.info('activity', 'activities_sent', `${activities.length} activities sent to server`);
+            }
             return response.json();
           })
           .catch(error => {
             // Add activities back to the buffer for retry
             this.buffer = [...activities, ...this.buffer];
-            LoggingService.error('activity', 'send_failed', 'Failed to send activities', { error });
+            if (this.loggingService) {
+              this.loggingService.error('activity', 'send_failed', 'Failed to send activities', { error });
+            } else if (this.options.console) {
+              console.error('Failed to send activities', error);
+            }
           })
           .finally(() => {
             this.isFlushingActivity = false;
@@ -314,4 +334,5 @@ class ActivityTracking {
   }
 }
 
+// Export singleton instance
 export default ActivityTracking.getInstance();
