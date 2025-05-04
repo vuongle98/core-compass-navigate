@@ -1,9 +1,20 @@
+
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types/Auth";
+import { toast } from "@/components/ui/use-toast";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { DataTable } from "@/components/ui/DataTable";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DetailViewModal } from "@/components/ui/detail-view-modal";
+import LoggingService from "@/services/LoggingService";
+import useApiQuery from "@/hooks/use-api-query";
+import { useDebounce } from "@/hooks/use-debounce";
+import useDetailView from "@/hooks/use-detail-view";
 
 interface Token {
   id: number;
@@ -96,8 +107,10 @@ const Tokens = () => {
     persistFilters: true,
     onError: (err) => {
       console.error("Failed to fetch tokens:", err);
-      toast.error("Failed to load tokens, using cached data", {
-        description: "Could not connect to the server. Please try again later.",
+      toast({
+        title: "Error",
+        description: "Failed to load tokens, using cached data. Could not connect to the server. Please try again later.",
+        variant: "destructive",
       });
     },
     mockData: {
@@ -170,12 +183,18 @@ const Tokens = () => {
   // Handle token operations
   const handleRegenerateToken = (id: number) => {
     // Regenerate token logic would go here
-    toast.success("Token regenerated successfully");
+    toast({
+      title: "Success",
+      description: "Token regenerated successfully",
+    });
   };
 
   const handleRevokeToken = (id: number) => {
     setTokens(tokens.filter((token) => token.id !== id));
-    toast.success("Token revoked successfully");
+    toast({
+      title: "Success",
+      description: "Token revoked successfully",
+    });
   };
 
   const columns = [

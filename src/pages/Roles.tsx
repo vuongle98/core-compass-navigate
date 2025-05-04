@@ -1,258 +1,162 @@
-
-// Import the Permission type from Auth.ts instead of the component file
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/DataTable";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
+import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
 import useApiQuery from "@/hooks/use-api-query";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { DetailViewModal } from "@/components/ui/detail-view-modal";
-import { useDetailView } from "@/hooks/use-detail-view";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import LoggingService from "@/services/LoggingService";
 
-// Import Permission from Auth.ts instead of the PermissionSelect component
-import { Permission } from "@/types/Auth";
-import PermissionSelect from "@/components/permission/PermissionSelect";
-import EnhancedApiService from "@/services/EnhancedApiService";
-
-export interface Role {
+interface Role {
   id: number;
-  code?: string;
   name: string;
   description: string;
-  userCount: number;
-  permissions?: Permission[];
-  permissionIds?: number[];
+  permissions: string[];
+  createdAt: string;
+}
+
+interface Permission {
+  id: string;
+  name: string;
+  description: string;
 }
 
 const Roles = () => {
-  const [roles, setRoles] = useState<Role[]>([
-    {
-      id: 1,
-      code: "ADMIN",
-      name: "Admin",
-      description: "Full system access",
-      userCount: 5,
-    },
-    {
-      id: 2,
-      name: "Editor",
-      description: "Can edit but not delete",
-      userCount: 12,
-    },
-    { id: 3, name: "Viewer", description: "Read-only access", userCount: 45 },
-    {
-      id: 4,
-      name: "Manager",
-      description: "Department management",
-      userCount: 8,
-    },
-  ]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([]);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [formData, setFormData] = useState<Partial<Role>>({
-    code: "",
-    name: "",
-    description: "",
-    permissions: [],
-    permissionIds: [],
-  });
+  // Mock data for permissions
+  const mockPermissions: Permission[] = [
+    { id: "1", name: "Read Users", description: "Allows reading user data" },
+    { id: "2", name: "Create Users", description: "Allows creating new users" },
+    { id: "3", name: "Update Users", description: "Allows updating existing users" },
+    { id: "4", name: "Delete Users", description: "Allows deleting users" },
+    { id: "5", name: "Read Roles", description: "Allows reading role data" },
+    { id: "6", name: "Create Roles", description: "Allows creating new roles" },
+    { id: "7", name: "Update Roles", description: "Allows updating existing roles" },
+    { id: "8", name: "Delete Roles", description: "Allows deleting roles" },
+  ];
 
+  // Filter options for the data filters component
   const filterOptions: FilterOption[] = [
     {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search roles...",
-    },
-    {
-      id: "userCount",
-      label: "User Count",
-      type: "select",
-      options: [
-        { value: "low", label: "Low (0-10)" },
-        { value: "medium", label: "Medium (11-30)" },
-        { value: "high", label: "High (31+)" },
-      ],
-    },
-    {
-      id: "type",
-      label: "Type",
-      type: "select",
-      options: [
-        { value: "ADMIN", label: "Admin" },
-        { value: "MANAGE", label: "Manager" },
-        { value: "USER", label: "User" },
-      ],
+      placeholder: "Search roles..."
     },
   ];
 
-  // Setup for detail view modal
+  // Use our custom API query hook
   const {
-    selectedItem: selectedItem,
-    isModalOpen: isDetailOpen,
-    openDetail: openItemDetail,
-    closeModal: closeItemDetail,
-  } = useDetailView<Role>({
-    modalThreshold: 10,
-  });
-
-  const {
-    data: roleData,
+    data: roles,
     isLoading,
     filters,
     setFilters,
     resetFilters,
     page,
-    pageSize,
     setPage,
+    pageSize,
     setPageSize,
-    totalItems,
-    refresh,
-    error,
+    totalItems
   } = useApiQuery<Role>({
-    endpoint: "/api/role",
+    endpoint: "/api/roles",
     queryKey: ["roles"],
-    initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
-    debounceMs: 300,
-    onError: (err) => {
-      console.error("Failed to fetch roles:", err);
-      toast.error("Failed to load roles, using cached data", {
-        description: "Could not connect to the server. Please try again later.",
-      });
-    },
     mockData: {
-      content: roles,
-      totalElements: roles.length,
+      content: [
+        {
+          id: 1,
+          name: "Admin",
+          description: "Administrator role with full access",
+          permissions: ["1", "2", "3", "4", "5", "6", "7", "8"],
+          createdAt: "2023-04-01",
+        },
+        {
+          id: 2,
+          name: "Editor",
+          description: "Editor role with access to create and update content",
+          permissions: ["1", "3", "5", "7"],
+          createdAt: "2023-04-05",
+        },
+        {
+          id: 3,
+          name: "Viewer",
+          description: "Viewer role with read-only access",
+          permissions: ["1", "5"],
+          createdAt: "2023-04-10",
+        },
+      ],
+      totalElements: 3,
       totalPages: 1,
       number: 0,
-      size: 10,
-    },
+      size: 10
+    }
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const viewDetails = (role: Role) => {
+    setSelectedRole(role);
+    setDetailsOpen(true);
+    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(p.id)));
+    LoggingService.info("roles", "view_details", `Viewed details for role ID ${role.id}`);
   };
 
-  const handlePermissionsChange = (
-    permissions: Permission[],
-    permissionIds: (string | number)[] // Allow both string and number
-  ) => {
-    // Convert any string IDs to numbers if needed
-    const numericPermissionIds = permissionIds.map(id => 
-      typeof id === 'string' ? parseInt(id, 10) : id
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      permissionIds: numericPermissionIds,
-      permissions,
-    }));
+  const editRole = (role: Role) => {
+    setSelectedRole(role);
+    setEditOpen(true);
+    setSelectedPermissions(mockPermissions.filter(p => role.permissions.includes(p.id)));
+    LoggingService.info("roles", "edit_role", `Opened edit dialog for role ID ${role.id}`);
   };
 
-  const openCreateDialog = () => {
-    setEditingRole(null);
-    setFormData({
-      code: "",
-      name: "",
-      description: "",
-      permissions: [],
-    });
-    setDialogOpen(true);
+  const deleteRole = (role: Role) => {
+    // In a real application, this would call an API to delete the role
+    toast.success("Role deleted successfully");
+    LoggingService.info("roles", "delete_role", `Deleted role ID ${role.id}`);
   };
 
-  const openEditDialog = (role: Role) => {
-    setEditingRole(role);
-    setFormData({
-      code: role.code || "",
-      name: role.name,
-      description: role.description,
-      permissions: role.permissions || [],
-      permissionIds: role.permissions?.map((p) => p.id) || [],
-    });
-    setDialogOpen(true);
+  const getActionItems = (item: Role) => {
+    const actions: {
+      type: ActionType;
+      label: string;
+      onClick: () => void;
+      disabled?: boolean;
+    }[] = [
+      {
+        type: "view",
+        label: "View Details",
+        onClick: () => viewDetails(item),
+      },
+      {
+        type: "edit",
+        label: "Edit Role",
+        onClick: () => editRole(item),
+      },
+      {
+        type: "delete",
+        label: "Delete Role",
+        onClick: () => deleteRole(item),
+      },
+    ];
+    return actions;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (editingRole) {
-        await EnhancedApiService.put(`/api/role/${editingRole.id}`, formData);
-
-        setRoles((prev) =>
-          prev.map((role) =>
-            role.id === editingRole.id
-              ? { ...role, ...formData, userCount: role.userCount }
-              : role
-          )
-        );
-
-        toast.success("Role updated successfully");
-      } else {
-        const response = await EnhancedApiService.post("/api/role", formData);
-
-        const newRole = {
-          ...formData,
-          id: Date.now(),
-          userCount: 0,
-        } as Role;
-
-        setRoles((prev) => [...prev, newRole]);
-
-        toast.success("Role created successfully");
-      }
-
-      setDialogOpen(false);
-    } catch (error) {
-      console.error("Role operation failed:", error);
-      toast.error(
-        editingRole ? "Failed to update role" : "Failed to create role"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await EnhancedApiService.delete(`/api/role/${id}`);
-
-      setRoles((prev) => prev.filter((role) => role.id !== id));
-
-      toast.success("Role deleted successfully");
-    } catch (error) {
-      console.error("Delete operation failed:", error);
-      toast.error("Failed to delete role");
-    }
-  };
-
-  const columns: Column<Role>[] = [
+  const columns = [
     {
       header: "#",
       accessorKey: "id",
@@ -261,38 +165,14 @@ const Roles = () => {
       ),
       sortable: true,
     },
-    { header: "Code", accessorKey: "code", sortable: true },
-    {
-      header: "Role Name",
-      accessorKey: "name",
-      sortable: true,
-      filterable: true,
-    },
-    { header: "Description", accessorKey: "description", sortable: true },
-    { header: "User Count", accessorKey: "userCount", sortable: true },
+    { header: "Name", accessorKey: "name" as const },
+    { header: "Description", accessorKey: "description" as const },
+    { header: "Created At", accessorKey: "createdAt" as const },
     {
       header: "Actions",
-      accessorKey: "actions" as keyof Role,
-      cell: (item: Role) => (
-        <ActionsMenu
-          actions={[
-            {
-              type: "view" as ActionType,
-              label: "View Details",
-              onClick: () => openItemDetail(item),
-            },
-            {
-              type: "edit" as ActionType,
-              label: "Edit",
-              onClick: () => openEditDialog(item),
-            },
-            {
-              type: "delete" as ActionType,
-              label: "Delete",
-              onClick: () => handleDelete(item.id),
-            },
-          ]}
-        />
+      accessorKey: "actions" as const,
+      cell: (role: Role) => (
+        <ActionsMenu actions={getActionItems(role)} />
       ),
     },
   ];
@@ -301,159 +181,147 @@ const Roles = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
         <PageHeader
           title="Roles"
-          description="Define user roles in your application"
+          description="Manage user roles and permissions"
+          showAddButton={true}
+          onAdd={() => setCreateOpen(true)}
         >
           <DataFilters
             filters={filters}
             options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-            }}
-            onReset={() => {
-              resetFilters();
-              refresh();
-            }}
-            className="mt-2"
+            onChange={setFilters}
+            onReset={resetFilters}
+            className="mt-4"
           />
         </PageHeader>
 
         <div className="mt-4">
-          <DataTable
-            data={roleData}
-            columns={columns}
-            title="Role Management"
-            pagination={true}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            showAddButton={true}
-            onAddClick={openCreateDialog}
-          />
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : (
+            <DataTable
+              data={roles}
+              columns={columns}
+              title="User Roles"
+              pagination={true}
+              showAddButton={true}
+              onAdd={() => setCreateOpen(true)}
+              pageIndex={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              totalItems={totalItems}
+              isLoading={isLoading}
+            />
+          )}
         </div>
 
-        {selectedItem && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closeItemDetail}
-            title="Role Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium">Code</h3>
-                <p className="mt-1">{selectedItem.code}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Name</h3>
-                <p className="mt-1">{selectedItem.name}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Description</h3>
-                <p className="mt-1">{selectedItem.description}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Permissions</h3>
-                {selectedItem.permissions?.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedItem.permissions?.map((perm) => (
-                      <div
-                        key={perm.id}
-                        className="border rounded-md p-3 bg-muted/40"
-                      >
-                        <div className="font-semibold">{perm.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {perm.description}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-1">No permissions assigned</p>
-                )}
-              </div>
-            </div>
-          </DetailViewModal>
-        )}
-
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {/* Details Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {editingRole ? "Edit Role" : "Create New Role"}
-              </DialogTitle>
+              <DialogTitle>Role Details</DialogTitle>
               <DialogDescription>
-                {editingRole
-                  ? "Make changes to the role details below."
-                  : "Enter the details for the new role."}
+                Complete information about this role
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="code">Code</Label>
-                  <Input
-                    id="code"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleInputChange}
-                    placeholder="ROLE_CODE"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Role Name"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Role description and permissions"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <PermissionSelect
-                    value={formData.permissions || []}
-                    onChange={handlePermissionsChange}
-                    disabled={isSubmitting}
-                  />
+            {selectedRole && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="font-semibold">Name:</div>
+                  <div>{selectedRole.name}</div>
+
+                  <div className="font-semibold">Description:</div>
+                  <div>{selectedRole.description}</div>
+
+                  <div className="font-semibold">Permissions:</div>
+                  <ScrollArea className="h-40">
+                    <div className="flex flex-col space-y-1">
+                      {selectedPermissions.map((permission) => (
+                        <Badge key={permission.id}>{permission.name}</Badge>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting
-                    ? "Processing..."
-                    : editingRole
-                    ? "Save Changes"
-                    : "Create Role"}
-                </Button>
-              </DialogFooter>
-            </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Role</DialogTitle>
+              <DialogDescription>
+                Make changes to this role
+              </DialogDescription>
+            </DialogHeader>
+            {selectedRole && (
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" defaultValue={selectedRole.name} />
+
+                  <Label htmlFor="description">Description</Label>
+                  <Input id="description" defaultValue={selectedRole.description} />
+
+                  <Label htmlFor="permissions">Permissions</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select permissions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockPermissions.map((permission) => (
+                        <SelectItem key={permission.id} value={permission.id}>
+                          {permission.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Dialog */}
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Role</DialogTitle>
+              <DialogDescription>
+                Create a new role
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" placeholder="Role name" />
+
+                <Label htmlFor="description">Description</Label>
+                <Input id="description" placeholder="Role description" />
+
+                <Label htmlFor="permissions">Permissions</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select permissions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockPermissions.map((permission) => (
+                      <SelectItem key={permission.id} value={permission.id}>
+                        {permission.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </main>

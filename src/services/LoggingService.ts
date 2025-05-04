@@ -19,27 +19,60 @@ class LoggingService {
     }
   }
 
-  static error(message: string, error?: any) {
+  static error(message: string | Error, context?: string, description?: string, data?: any) {
     if (LoggingService.config.enableConsole) {
-      console.error(`[ERROR] ${message}`, error || '');
+      if (typeof message === 'string' && context && description) {
+        // Handle the case where error is called with (module, action, description, data)
+        console.error(`[ERROR] ${context}:${message} - ${description}`, data || '');
+      } else {
+        // Handle the standard case
+        console.error(`[ERROR] ${message}`, context || '');
+      }
     }
   }
 
-  static info(message: string, data?: any) {
+  static info(module: string, action?: string, description?: string, data?: any) {
     if (LoggingService.config.enableConsole) {
-      console.info(`[INFO] ${message}`, data || '');
+      if (action && description) {
+        // Handle the case with all arguments (module, action, description, data)
+        console.info(`[INFO] ${module}:${action} - ${description}`, data || '');
+      } else if (action) {
+        // Handle the case with (module, action, data)
+        console.info(`[INFO] ${module} - ${action}`, description || '');
+      } else {
+        // Handle the simple case with just module and optional data
+        console.info(`[INFO] ${module}`, action || '');
+      }
     }
   }
 
-  static warn(message: string, data?: any) {
+  static warn(module: string, action?: string, description?: string, data?: any) {
     if (LoggingService.config.enableConsole) {
-      console.warn(`[WARN] ${message}`, data || '');
+      if (action && description) {
+        // Handle the case with all arguments (module, action, description, data)
+        console.warn(`[WARN] ${module}:${action} - ${description}`, data || '');
+      } else if (action) {
+        // Handle the case with (module, action, data)
+        console.warn(`[WARN] ${module} - ${action}`, description || '');
+      } else {
+        // Handle the simple case with just module and optional data
+        console.warn(`[WARN] ${module}`, action || '');
+      }
     }
   }
 
-  static debug(message: string, data?: any) {
+  static debug(module: string, action?: string, description?: string, data?: any) {
     if (LoggingService.config.logLevel === 'debug' && LoggingService.config.enableConsole) {
-      console.debug(`[DEBUG] ${message}`, data || '');
+      if (action && description) {
+        // Handle the case with all arguments (module, action, description, data)
+        console.debug(`[DEBUG] ${module}:${action} - ${description}`, data || '');
+      } else if (action) {
+        // Handle the case with (module, action, data)
+        console.debug(`[DEBUG] ${module} - ${action}`, description || '');
+      } else {
+        // Handle the simple case with just module and optional data
+        console.debug(`[DEBUG] ${module}`, action || '');
+      }
     }
   }
 

@@ -11,8 +11,8 @@ export interface DashboardMetric {
 export interface ActivityData {
   date: string;
   count: number;
-  name: string;  // Added for compatibility
-  value: number; // Added for compatibility
+  name: string;  // For compatibility with charts
+  value: number; // For compatibility with charts
 }
 
 export interface PerformanceData {
@@ -20,8 +20,8 @@ export interface PerformanceData {
   cpu: number;
   memory: number;
   responseTime: number;
-  name: string;  // Added for compatibility
-  [key: string]: string | number; // Index signature for compatibility with PerformanceGraph
+  name: string;  // For compatibility with PerformanceGraph
+  [key: string]: string | number; // Index signature for compatibility
 }
 
 class DashboardService {

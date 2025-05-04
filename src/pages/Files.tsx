@@ -295,7 +295,7 @@ const Files = () => {
               const updateSearchParams = (filters: ApiQueryFilters) => {
                 const params = new URLSearchParams();
                 Object.entries(filters).forEach(([key, value]) => {
-                  if (value !== undefined && value !== null && value !== '') {
+                  if (value !== undefined) {
                     params.set(key, value.toString());
                   }
                 });
