@@ -4,6 +4,8 @@ import GenericMultiSelect from "@/components/common/GenericMultiSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Permission } from "@/types/Auth";
 
+export { Permission };
+
 interface PermissionSelectProps {
   value: Permission[];
   onChange: (rawValue: Permission[], value: number[]) => void;

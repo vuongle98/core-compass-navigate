@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,11 +44,7 @@ export function UserRoleAssignment({
 
       try {
         const response = await EnhancedApiService.get<Role[]>("/api/roles");
-        if (response.success) {
-          setRoles(response.data);
-        } else {
-          setError("Failed to load roles");
-        }
+        setRoles(response);
       } catch (err) {
         console.error("Error loading roles:", err);
         setError("An error occurred while loading roles");
@@ -89,14 +86,9 @@ export function UserRoleAssignment({
         }
       );
 
-      if (response.success) {
-        toast.success("Roles updated successfully");
-        if (onSuccess) {
-          onSuccess();
-        }
-      } else {
-        setError("Failed to update user roles");
-        toast.error("Failed to update roles");
+      toast.success("Roles updated successfully");
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (err) {
       console.error("Error updating roles:", err);
@@ -141,14 +133,14 @@ export function UserRoleAssignment({
         ) : (
           <div className="grid gap-4">
             {roles.map((role) => (
-              <div key={role.id} className="flex items-center space-x-2">
+              <div key={String(role.id)} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`role-${role.id}`}
-                  checked={selectedRoles.includes(role.id)}
-                  onCheckedChange={() => toggleRole(role.id)}
+                  id={`role-${String(role.id)}`}
+                  checked={selectedRoles.includes(String(role.id))}
+                  onCheckedChange={() => toggleRole(String(role.id))}
                 />
                 <label
-                  htmlFor={`role-${role.id}`}
+                  htmlFor={`role-${String(role.id)}`}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   <div>{role.name}</div>
