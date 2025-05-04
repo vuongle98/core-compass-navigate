@@ -83,8 +83,12 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
           BlogService.getCategories(),
           BlogService.getTags()
         ]);
-        setCategories(categoriesRes.data);
-        setTags(tagsRes.data);
+        if (categoriesRes.success) {
+          setCategories(categoriesRes.data);
+        }
+        if (tagsRes.success) {
+          setTags(tagsRes.data);
+        }
       } catch (error) {
         toast({
           title: "Error",
@@ -150,8 +154,8 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
         ...values,
         publishDate: values.publishDate.toISOString(),
         coverImage: coverImageUrl,
-        // Add required fields for API
-        authorId: user?.id || 'anonymous',
+        // Convert to string to fix type issue
+        authorId: user?.id ? String(user.id) : 'anonymous',
         authorName: user?.name || user?.email || 'Anonymous User',
       };
 
@@ -190,12 +194,14 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
   const handleFileUpload = async (file: File) => {
     try {
       const response = await BlogService.uploadImage(file);
-      setCoverImageUrl(response.data.url);
-      form.setValue('coverImage', response.data.url);
-      toast({
-        title: "Image uploaded",
-        description: "Cover image has been uploaded successfully.",
-      });
+      if (response.success && response.data && response.data.url) {
+        setCoverImageUrl(response.data.url);
+        form.setValue('coverImage', response.data.url);
+        toast({
+          title: "Image uploaded",
+          description: "Cover image has been uploaded successfully.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Upload failed",

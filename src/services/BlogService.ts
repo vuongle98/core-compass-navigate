@@ -46,10 +46,14 @@ class BlogService {
     
     try {
       // Convert BlogSearchParams to Record<string, string | number | boolean | string[]>
-      const filterParams = params ? Object.entries(params).reduce((acc, [key, value]) => {
-        acc[key] = value;
-        return acc;
-      }, {} as Record<string, string | number | boolean | string[]>) : undefined;
+      const filterParams: Record<string, string | number | boolean | string[]> = {};
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            filterParams[key] = value;
+          }
+        });
+      }
       
       const result = await EnhancedApiService.getPaginated<BlogPost>(
         this.baseEndpoint,
@@ -332,11 +336,13 @@ class BlogService {
       const formData = new FormData();
       formData.append('file', file);
       
-      const result = await EnhancedApiService.post<{ url: string }>(`${this.baseEndpoint}/upload`, formData, {
+      const options = {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      });
+      };
+      
+      const result = await EnhancedApiService.post<{ url: string }>(`${this.baseEndpoint}/upload`, formData, options);
       
       return {
         success: true,

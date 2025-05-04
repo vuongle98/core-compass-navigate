@@ -1,4 +1,3 @@
-
 import AuthService from "./AuthService";
 import ActivityTracking from "./ActivityTracking";
 
@@ -383,7 +382,7 @@ class LoggingService {
   /**
    * Send logs to API endpoint
    */
-  private sendLogsToApi(): void {
+  private async sendLogsToApi(): void {
     if (this.logQueue.length === 0 || !this.config.apiEndpoint) {
       return;
     }
@@ -398,18 +397,26 @@ class LoggingService {
     }
 
     // In production, send to API
-    fetch(this.config.apiEndpoint || "/api/logs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${AuthService.getAccessToken() || ""}`,
-      },
-      body: JSON.stringify({ logs }),
-    }).catch((err) => {
-      console.error("Failed to send logs:", err);
-      // Re-queue failed logs
+    try {
+      const token = AuthService.getAccessToken();
+      if (token) {
+        fetch(this.config.apiEndpoint || "/api/logs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ logs }),
+        }).catch((err) => {
+          console.error("Failed to send logs:", err);
+          // Re-queue failed logs
+          this.logQueue = [...logs, ...this.logQueue];
+        });
+      }
+    } catch (error) {
+      console.error("Failed to send logs:", error);
       this.logQueue = [...logs, ...this.logQueue];
-    });
+    }
   }
 
   /**
@@ -428,6 +435,20 @@ class LoggingService {
     // Also flush activity tracking
     if (this.config.enableActivityTracking) {
       ActivityTracking.flush(force);
+    }
+  }
+  
+  /**
+   * Initialize user ID and session for tracking
+   */
+  public async initializeUser() {
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (user && typeof user === 'object' && 'id' in user) {
+        this.userId = String(user.id);
+      }
+    } catch (error) {
+      // Ignore errors, continue with unknown user
     }
   }
 }

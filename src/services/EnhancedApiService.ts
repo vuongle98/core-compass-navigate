@@ -1,35 +1,14 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError, AxiosResponseHeaders, RawAxiosResponseHeaders } from "axios";
-import LoggingService from "./LoggingService";
-import AuthService from "./AuthService";
-import { AxiosHeaders } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import AuthService from './AuthService';
+import LoggingService from './LoggingService';
 
-// Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
-const API_TIMEOUT = 30000; // 30 seconds
-const MAX_RETRIES = 3;
-const MAX_RETRY_ATTEMPTS_TOTAL = 5; // Add a global limit to prevent infinite retries
-
-// Add custom metadata property to AxiosRequestConfig
-declare module "axios" {
-  export interface InternalAxiosRequestConfig {
-    metadata?: {
-      startTime?: number;
-      retryCount?: number;
-      [key: string]: string | number | undefined; // Specify a more specific type
-    };
-  }
-}
-
-// Type definitions for API responses
-export interface ApiResponse<T> {
+interface ApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;
-  error?: string;
-  headers?: RawAxiosResponseHeaders | AxiosResponseHeaders;
 }
 
-export interface PaginatedData<T> {
+interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -37,370 +16,192 @@ export interface PaginatedData<T> {
   size: number;
 }
 
-export interface PaginationOptions {
-  page?: number;
-  pageSize?: number;
-  sort?: string | string[];
-  filter?: Record<string, string | number | boolean | string[]>;
-  search?: string;
-}
-
-interface UserActionData {
-  [key: string]: unknown;
-}
-
 /**
- * Enhanced API Service with logging, retry logic, and better error handling
+ * Enhanced API Service with built-in authentication, logging, and error handling
  */
 class EnhancedApiService {
-  private static instance: EnhancedApiService;
-  private apiClient = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: API_TIMEOUT,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  private retryAttemptsTotal = 0; // Track total retry attempts across all requests
-
-  private constructor() {
-    this.setupInterceptors();
-  }
-
-  public static getInstance(): EnhancedApiService {
-    if (!EnhancedApiService.instance) {
-      EnhancedApiService.instance = new EnhancedApiService();
-    }
-    return EnhancedApiService.instance;
-  }
-
-  /**
-   * Set up request and response interceptors
-   */
-  private setupInterceptors(): void {
-    // Add request interceptor for auth token
-    this.apiClient.interceptors.request.use(
-      (config) => {
-        const token = AuthService.getAccessToken();
-        const isAuthEndpoint = config.url?.includes("/api/auth");
-
-        if (token && !isAuthEndpoint) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Log the request
-        const startTime = LoggingService.logApiRequest(
-          config.url || "",
-          config.method?.toUpperCase() || "GET",
-          config.data
-        );
-
-        // Store start time for calculating duration
-        config.metadata = { startTime };
-
-        return config;
+  private readonly axiosInstance: AxiosInstance;
+  private readonly baseURL: string;
+  
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+    this.axiosInstance = axios.create({
+      baseURL: this.baseURL,
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      (error) => {
-        LoggingService.logApiError(
-          error.config?.url || "unknown",
-          error.config?.method?.toUpperCase() || "UNKNOWN",
-          error,
-          Date.now()
-        );
+    });
+    
+    this.initializeRequestInterceptor();
+    this.initializeResponseInterceptor();
+  }
+  
+  /**
+   * Initialize request interceptor to add authentication token
+   */
+  private initializeRequestInterceptor = () => {
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        LoggingService.debug('api_request', 'request_intercepted', `Request to ${config.url}`, {
+          method: config.method,
+          headers: config.headers,
+          data: config.data,
+        });
+        
+        return EnhancedApiService.addAuthHeader(config);
+      },
+      (error: AxiosError) => {
+        LoggingService.error('api_request', 'request_failed', 'Request failed before sending', { error });
         return Promise.reject(error);
       }
     );
-
-    // Add response interceptor for error handling and logging
-    this.apiClient.interceptors.response.use(
-      (response) => {
-        const { config } = response;
-        const startTime = config?.metadata?.startTime || Date.now();
-
-        // Log successful response
-        LoggingService.logApiResponse(
-          config.url || "",
-          config.method?.toUpperCase() || "GET",
-          response.status,
-          response.data,
-          startTime
-        );
-
+  };
+  
+  /**
+   * Initialize response interceptor to handle errors and log responses
+   */
+  private initializeResponseInterceptor = () => {
+    this.axiosInstance.interceptors.response.use(
+      (response: AxiosResponse) => {
+        LoggingService.debug('api_response', 'response_received', `Response from ${response.config.url}`, {
+          status: response.status,
+          data: response.data,
+        });
         return response;
       },
       async (error: AxiosError) => {
-        const { config, response } = error;
-        if (!config) return Promise.reject(error);
-
-        const startTime = config?.metadata?.startTime || Date.now();
-        const retryCount = config?.metadata?.retryCount || 0;
-
-        // Log the error
-        LoggingService.logApiError(
-          config.url || "unknown",
-          config.method?.toUpperCase() || "UNKNOWN",
-          error,
-          startTime
-        );
-
-        // Handle auth errors
-        if (response?.status === 401) {
-          // Try to refresh token if not already a refresh request
-          if (!config.url?.includes("/auth/refresh")) {
-            try {
-              await AuthService.refreshToken();
-              // Retry with new token
-              const token = AuthService.getAccessToken();
-              if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-                return this.apiClient(config);
-              }
-            } catch (refreshError) {
-              // If refresh fails, redirect to login
-              AuthService.logout();
-              window.location.href = "/login";
-              return Promise.reject(error);
-            }
-          } else {
-            // If refresh token request failed, logout
+        LoggingService.error('api_response', 'response_error', 'Response error', { error });
+        
+        if (error.response?.status === 401) {
+          try {
+            // Attempt to refresh the token
+            await AuthService.refreshToken();
+            
+            // Retry the original request
+            return this.axiosInstance.request(EnhancedApiService.addAuthHeader(error.config as AxiosRequestConfig));
+          } catch (refreshError) {
+            LoggingService.error('api_response', 'token_refresh_failed', 'Token refresh failed', { error: refreshError });
+            // Redirect to login or handle unauthorized state
             AuthService.logout();
-            window.location.href = "/login";
+            window.location.href = '/login';
             return Promise.reject(error);
           }
         }
-
-        // Auto retry on network errors or 5xx server errors
-        if (
-          (error.code === "ECONNABORTED" ||
-            error.code === "ERR_NETWORK" ||
-            (response && response.status >= 500)) &&
-          retryCount < MAX_RETRIES &&
-          this.retryAttemptsTotal < MAX_RETRY_ATTEMPTS_TOTAL
-        ) {
-          // Exponential backoff
-          const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
-          LoggingService.debug(
-            "api",
-            "retry_attempt",
-            `Retrying request to ${config.url} (${
-              retryCount + 1
-            }/${MAX_RETRIES}) after ${delay}ms`
-          );
-
-          this.retryAttemptsTotal++;
-
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              // Update retry count
-              const newConfig = { ...config };
-              if (!newConfig.metadata) {
-                newConfig.metadata = {};
-              }
-              newConfig.metadata.retryCount = retryCount + 1;
-              resolve(this.apiClient(newConfig));
-            }, delay);
-          });
-        }
-
-        // Reset total retries after reaching the limit
-        if (this.retryAttemptsTotal >= MAX_RETRY_ATTEMPTS_TOTAL) {
-          LoggingService.warn(
-            "api",
-            "retry_limit_reached",
-            `Maximum total retry attempts (${MAX_RETRY_ATTEMPTS_TOTAL}) reached, stopping retries`
-          );
-          // Reset after a while to allow future requests to retry
-          setTimeout(() => {
-            this.retryAttemptsTotal = 0;
-          }, 60000); // Reset after 1 minute
-        }
-
+        
         return Promise.reject(error);
       }
     );
-  }
-
+  };
+  
   /**
-   * Generic request function with fallback to mock data
+   * Prepare headers with auth token if available
    */
-  public async request<T>(
-    url: string,
-    options: AxiosRequestConfig = {},
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
+  private static getHeaders(contentType = 'application/json'): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Accept': 'application/json',
+    };
+
+    // Use getAccessToken instead of non-existent method
+    const token = AuthService.getAccessToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+  
+  /**
+   * GET request
+   */
+  public async get<T>(endpoint: string, params: any = {}, mockData?: T): Promise<T> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.apiClient(
-        url,
-        options
-      );
+      const response = await this.axiosInstance.get<T>(endpoint, { params });
       return response.data;
     } catch (error) {
-      // If mock data provided and we're in development, return it
-      if (
-        mockData !== undefined &&
-        (import.meta.env.DEV || import.meta.env.VITE_USE_MOCK_DATA === "true")
-      ) {
-        LoggingService.info(
-          "api",
-          "using_mock_data",
-          `Using mock data for ${url}`
-        );
-        console.log(mockData);
-        return {
-          data: mockData,
-          success: true,
-          message: "Using mock data",
-        };
+      LoggingService.error('api_request', 'get_failed', `GET request to ${endpoint} failed`, { error, params });
+      if (mockData !== undefined) {
+        LoggingService.info('api_request', 'using_mock_data', `Using mock data for ${endpoint}`);
+        return mockData;
       }
       throw error;
     }
   }
-
+  
   /**
-   * Build query string from pagination options
+   * POST request
    */
-  private buildQueryParams(options?: PaginationOptions): string {
-    if (!options) return "";
-
-    const params = new URLSearchParams();
-
-    // Add pagination
-    if (options.page !== undefined) {
-      params.append("page", options.page.toString());
+  public async post<T>(endpoint: string, data: any = {}, options: any = {}): Promise<T> {
+    try {
+      const response = await this.axiosInstance.post<T>(endpoint, data, options);
+      return response.data;
+    } catch (error) {
+      LoggingService.error('api_request', 'post_failed', `POST request to ${endpoint} failed`, { error, data });
+      throw error;
     }
-
-    if (options.pageSize !== undefined) {
-      params.append("size", options.pageSize.toString());
-    }
-
-    // Add sorting
-    if (options.sort) {
-      if (Array.isArray(options.sort)) {
-        options.sort.forEach((sort) => params.append("sort", sort));
-      } else {
-        params.append("sort", options.sort);
-      }
-    }
-
-    // Add search
-    if (options.search) {
-      params.append("search", options.search);
-    }
-
-    // Add filters
-    if (options.filter && Object.keys(options.filter).length > 0) {
-      Object.entries(options.filter).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
-          if (Array.isArray(value)) {
-            value.forEach((v) => params.append(key, v.toString()));
-          } else {
-            params.append(key, value.toString());
-          }
-        }
-      });
-    }
-
-    const queryString = params.toString();
-    return queryString ? `?${queryString}` : "";
   }
-
+  
   /**
-   * HTTP method wrappers
+   * PUT request
    */
-  public async get<T>(
-    url: string,
-    params?: Record<string, string | number | boolean | string[]>, // Specify a more specific type
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { method: "GET", params }, mockData);
-  }
-
-  public async post<T>(
-    url: string,
-    data: unknown,
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
-    // Determine if the data is FormData (for file upload)
-    let options: AxiosRequestConfig = { method: "POST", data };
-    if (typeof FormData !== "undefined" && data instanceof FormData) {
-      options.headers = { 'Content-Type': 'multipart/form-data' };
+  public async put<T>(endpoint: string, data: any = {}, options: any = {}): Promise<T> {
+    try {
+      const response = await this.axiosInstance.put<T>(endpoint, data, options);
+      return response.data;
+    } catch (error) {
+      LoggingService.error('api_request', 'put_failed', `PUT request to ${endpoint} failed`, { error, data });
+      throw error;
     }
-    return this.request<T>(url, options, mockData);
   }
-
-  public async put<T>(
-    url: string,
-    data: unknown,
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { method: "PUT", data }, mockData);
-  }
-
-  public async patch<T>(
-    url: string,
-    data: unknown,
-    mockData?: T
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { method: "PATCH", data }, mockData);
-  }
-
-  public async delete<T>(url: string, mockData?: T): Promise<ApiResponse<T>> {
-    return this.request<T>(url, { method: "DELETE" }, mockData);
-  }
-
+  
   /**
-   * Get paginated data with automatic query param building
+   * DELETE request
+   */
+  public async delete<T>(endpoint: string, options: any = {}): Promise<T> {
+    try {
+      const response = await this.axiosInstance.delete<T>(endpoint, options);
+      return response.data;
+    } catch (error) {
+      LoggingService.error('api_request', 'delete_failed', `DELETE request to ${endpoint} failed`, { error });
+      throw error;
+    }
+  }
+  
+  /**
+   * GET request with pagination support
    */
   public async getPaginated<T>(
     endpoint: string,
-    options: PaginationOptions = {},
-    mockData?: PaginatedData<T>
-  ): Promise<ApiResponse<PaginatedData<T>>> {
-    const queryString = this.buildQueryParams(options);
-    return this.request<PaginatedData<T>>(
-      `${endpoint}${queryString}`,
-      { method: "GET" },
-      mockData || {
-        content: [] as T[],
-        totalElements: 0,
-        totalPages: 0,
-        number: options.page || 0,
-        size: options.pageSize || 10,
-      }
-    );
-  }
-
-  /**
-   * Log a user action
-   */
-  public logUserAction(
-    module: string,
-    action: string,
-    message: string,
-    data?: Record<string, string | number | boolean | object> // Specify a more specific type
-  ): void {
-    LoggingService.logUserAction(module, action, message, data);
-  }
-
-  public logUserAction2(action: string, data: UserActionData = {}) {
-    // Add timestamp and user info
-    const eventData = {
-      ...data,
-      timestamp: new Date().toISOString(),
-      userId: localStorage.getItem("userId") || `user-${Date.now()}`,
-    };
-
-    // Log to console in development
-    console.info("USER_ACTION:", action, eventData);
-
-    // In a real app, send to analytics service or API
-    if (import.meta.env.PROD) {
-      this.post("/api/analytics/events", {
-        action,
-        data: eventData,
-      }).catch((err) => console.error("Failed to log user action:", err));
+    params: { page: number; pageSize: number; filter?: Record<string, string | number | boolean | string[]> }
+  ): Promise<PaginatedResponse<T>> {
+    try {
+      const response = await this.axiosInstance.get<PaginatedResponse<T>>(endpoint, { params });
+      return response.data;
+    } catch (error) {
+      LoggingService.error('api_request', 'get_paginated_failed', `GET request to ${endpoint} failed`, { error, params });
+      throw error;
     }
+  }
+  
+  /**
+   * Add authentication header to fetch options
+   */
+  private static addAuthHeader(options: AxiosRequestConfig): AxiosRequestConfig {
+    // Use getAccessToken instead of non-existent method
+    const token = AuthService.getAccessToken();
+    
+    if (token && options.headers) {
+      options.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return options;
   }
 }
 
-export default EnhancedApiService.getInstance();
+// Use environment variable for base URL
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const apiService = new EnhancedApiService(baseURL);
+
+export default apiService;

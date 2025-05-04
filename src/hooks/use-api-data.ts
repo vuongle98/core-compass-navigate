@@ -5,6 +5,12 @@ import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
 import { debounce } from "lodash";
 
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+}
+
 export interface ApiDataOptions<T> {
   endpoint: string;
   queryKey: string | string[];
@@ -38,7 +44,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     options.params || {}
   );
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<T> => {
     try {
       LoggingService.info(
         "api_data",
@@ -95,7 +101,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     retryDelay: options.retryDelay,
   };
 
-  // Add callbacks in a type-compatible way
+  // Add callbacks via meta
   if (options.onSuccess || options.onError) {
     queryOptions.meta = {};
     

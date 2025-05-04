@@ -78,7 +78,9 @@ const BlogDetail = () => {
 
       try {
         const response = await BlogService.getComments(id);
-        setComments(response.data.content);
+        if (response.success && Array.isArray(response.data)) {
+          setComments(response.data);
+        }
       } catch (error) {
         toast({
           title: "Error",
@@ -102,7 +104,7 @@ const BlogDetail = () => {
     try {
       const newComment = {
         postId: id,
-        authorId: user.id,
+        authorId: user.id ? String(user.id) : 'anonymous',
         authorName: user.name || user.email,
         authorEmail: user.email,
         content: values.content,
@@ -112,7 +114,9 @@ const BlogDetail = () => {
       await BlogService.addComment(id, newComment);
       
       const response = await BlogService.getComments(id);
-      setComments(response.data.content);
+      if (response.success && Array.isArray(response.data)) {
+        setComments(response.data);
+      }
       
       form.reset();
       
@@ -198,8 +202,8 @@ const BlogDetail = () => {
         
         <div className="flex justify-between items-center mb-4">
           <PageHeader
-            title={post.title}
-            description={`Published on ${format(new Date(post.publishDate), "MMMM dd, yyyy")}`}
+            title={post?.title || ""}
+            description={`Published on ${post ? format(new Date(post.publishDate), "MMMM dd, yyyy") : ''}`}
             showAddButton={false}
           />
           
@@ -207,7 +211,7 @@ const BlogDetail = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleEdit}
+              onClick={() => navigate(`/blogs/${id}/edit`)}
             >
               <Pencil className="mr-1 h-4 w-4" />
               Edit
@@ -215,7 +219,25 @@ const BlogDetail = () => {
             <Button 
               variant="destructive" 
               size="sm" 
-              onClick={handleDelete}
+              onClick={() => {
+                if (id) {
+                  BlogService.deletePost(id)
+                    .then(() => {
+                      toast({
+                        title: "Post deleted",
+                        description: "The blog post has been deleted successfully."
+                      });
+                      navigate("/blogs");
+                    })
+                    .catch(() => {
+                      toast({
+                        title: "Error",
+                        description: "Failed to delete post. Please try again.",
+                        variant: "destructive"
+                      });
+                    });
+                }
+              }}
             >
               <Trash2 className="mr-1 h-4 w-4" />
               Delete

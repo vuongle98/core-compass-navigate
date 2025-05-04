@@ -35,13 +35,13 @@ export function useChat(): UseChatReturn {
       LoggingService.info('chat', 'initialized', 'Chat hook initialized');
     }
 
-    // Event listeners
-    chatService.on('connected', handleConnected);
-    chatService.on('disconnected', handleDisconnected);
-    chatService.on('message', handleNewMessage);
-    chatService.on('chats-updated', handleChatsUpdated);
-    chatService.on('chat-created', handleChatCreated);
-    chatService.on('error', handleError);
+    // Since ChatService extends EventEmitter, we can use addListener instead of on
+    chatService.addListener('connected', handleConnected);
+    chatService.addListener('disconnected', handleDisconnected);
+    chatService.addListener('message', handleNewMessage);
+    chatService.addListener('chats-updated', handleChatsUpdated);
+    chatService.addListener('chat-created', handleChatCreated);
+    chatService.addListener('error', handleError);
 
     return () => {
       // Clean up event listeners

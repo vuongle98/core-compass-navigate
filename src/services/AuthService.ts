@@ -119,6 +119,45 @@ class AuthService {
       throw error;
     }
   }
+
+  /**
+   * Update the current user's profile
+   */
+  public async updateCurrentUser(userData: any) {
+    try {
+      return await EnhancedApiService.put("/api/auth/me", userData);
+    } catch (error) {
+      LoggingService.error("auth", "update_user_failed", "Failed to update user", { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Reset user password with email
+   */
+  public async resetPassword(email: string) {
+    try {
+      return await EnhancedApiService.post("/api/auth/reset-password", { email });
+    } catch (error) {
+      LoggingService.error("auth", "reset_password_failed", "Failed to reset password", { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Change user password
+   */
+  public async changePassword(oldPassword: string, newPassword: string) {
+    try {
+      return await EnhancedApiService.post("/api/auth/change-password", {
+        oldPassword,
+        newPassword
+      });
+    } catch (error) {
+      LoggingService.error("auth", "change_password_failed", "Failed to change password", { error });
+      throw error;
+    }
+  }
   
   /**
    * Check if the user is authenticated
@@ -140,6 +179,13 @@ class AuthService {
    */
   public getRefreshToken(): string | null {
     return localStorage.getItem(AuthService.REFRESH_TOKEN_KEY);
+  }
+
+  /**
+   * Get access token for API requests
+   */
+  public getAccessToken(): string | null {
+    return this.getAuthToken();
   }
   
   /**
