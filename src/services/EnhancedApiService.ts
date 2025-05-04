@@ -11,6 +11,23 @@ interface ApiException {
   details?: any;
 }
 
+export interface PaginatedData<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PaginationOptions {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  search?: string;
+  [key: string]: any;
+}
+
 class EnhancedApiService {
   private static axiosInstance: AxiosInstance;
 
@@ -77,6 +94,27 @@ class EnhancedApiService {
       throw error;
     }
   }
+  
+  static async getPaginated<T>(
+    url: string, 
+    options?: PaginationOptions, 
+    headers?: AxiosRequestHeaders
+  ): Promise<PaginatedData<T>> {
+    try {
+      const config: AxiosRequestConfig = {
+        params: options,
+        headers: headers || {} as AxiosRequestHeaders
+      };
+      
+      this.addAuthToken(config);
+
+      const response = await this.axiosInstance.get(url, config);
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error, url, 'GET');
+      throw error;
+    }
+  }
 
   static async post<T>(url: string, data: any, headers?: AxiosRequestHeaders): Promise<T> {
     try {
@@ -126,6 +164,19 @@ class EnhancedApiService {
 
   static removeHeader(header: string): void {
     delete EnhancedApiService.axiosInstance.defaults.headers.common[header];
+  }
+  
+  // Add logUserAction method for Files.tsx
+  static async logUserAction(action: string, details?: any): Promise<void> {
+    try {
+      await this.post('/api/logs/user-action', {
+        action,
+        timestamp: new Date().toISOString(),
+        details
+      });
+    } catch (error) {
+      console.error('Failed to log user action:', error);
+    }
   }
 }
 

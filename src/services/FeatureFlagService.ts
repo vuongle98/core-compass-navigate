@@ -1,5 +1,6 @@
+
 import axios from 'axios';
-import { FeatureFlag } from '@/types/FeatureFlag';
+import { FeatureFlag, FeatureFlagResponse } from '@/types/FeatureFlag';
 
 class FeatureFlagService {
   private static instance: FeatureFlagService;
@@ -29,8 +30,11 @@ class FeatureFlagService {
 
   async getAllFlags(): Promise<FeatureFlag[]> {
     try {
-      const response = await axios.get('/api/feature-flags');
-      return response.data; // Assume the API returns the array directly
+      const response = await axios.get<FeatureFlagResponse>('/api/feature-flags');
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching feature flags:', error);
       return [];
@@ -48,11 +52,14 @@ class FeatureFlagService {
 
   async createFlag(flag: Omit<FeatureFlag, 'id'>): Promise<FeatureFlag | null> {
     try {
-      const response = await axios.post('/api/feature-flags', flag);
-      const newFlag: FeatureFlag = response.data;
-      this.flags.push(newFlag);
-      this.notifyListeners();
-      return newFlag;
+      const response = await axios.post<{ success: boolean, data: FeatureFlag }>('/api/feature-flags', flag);
+      if (response.data && response.data.success) {
+        const newFlag: FeatureFlag = response.data.data;
+        this.flags.push(newFlag);
+        this.notifyListeners();
+        return newFlag;
+      }
+      return null;
     } catch (error) {
       console.error('Error creating feature flag:', error);
       return null;
@@ -62,7 +69,15 @@ class FeatureFlagService {
   async updateFlag(id: string, updates: Partial<FeatureFlag>): Promise<boolean> {
     try {
       const response = await axios.put(`/api/feature-flags/${id}`, updates);
-      return true; // Success is determined by the request not throwing an error
+      if (response.status >= 200 && response.status < 300) {
+        // Update local cache if the API call was successful
+        this.flags = this.flags.map(flag =>
+          flag.id === id ? { ...flag, ...updates } : flag
+        );
+        this.notifyListeners();
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Error updating feature flag:', error);
       return false;
@@ -108,6 +123,19 @@ class FeatureFlagService {
       }
     } catch (error) {
       console.error('Error setting flag state:', error);
+      return false;
+    }
+  }
+
+  // Add the refreshFlags method
+  async refreshFlags(): Promise<boolean> {
+    try {
+      const flags = await this.getAllFlags();
+      this.flags = flags;
+      this.notifyListeners();
+      return true;
+    } catch (error) {
+      console.error('Error refreshing feature flags:', error);
       return false;
     }
   }
