@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -197,10 +196,14 @@ const Blogs = () => {
         <PageHeader
           title="Blogs"
           description="Manage blog posts"
-          showAddButton={true}
-          addButtonText="Add New"
-          onAddClick={handleAddBlog}
         >
+          <Button 
+            onClick={handleAddBlog} 
+            className="mt-4"
+          >
+            Add New
+          </Button>
+          
           <DataFilters
             filters={filters}
             options={filterOptions}

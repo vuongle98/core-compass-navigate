@@ -158,11 +158,16 @@ const Roles = () => {
 
   const handlePermissionsChange = (
     permissions: Permission[],
-    permissionIds: number[]
+    permissionIds: (string | number)[] // Allow both string and number
   ) => {
+    // Convert any string IDs to numbers if needed
+    const numericPermissionIds = permissionIds.map(id => 
+      typeof id === 'string' ? parseInt(id, 10) : id
+    );
+
     setFormData((prev) => ({
       ...prev,
-      permissionIds,
+      permissionIds: numericPermissionIds,
       permissions,
     }));
   };

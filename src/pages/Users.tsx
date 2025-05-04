@@ -13,7 +13,7 @@ import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Role } from "./Roles";
-import { Permission } from "@/components/permission/PermissionSelect";
+import { Permission } from "@/types/Auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export interface UserProfile {

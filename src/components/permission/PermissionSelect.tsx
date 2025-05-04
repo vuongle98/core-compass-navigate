@@ -4,7 +4,8 @@ import GenericMultiSelect from "@/components/common/GenericMultiSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Permission } from "@/types/Auth";
 
-export { Permission };
+// Do not re-export the type - just use it
+// export type { Permission }; - This was causing the error
 
 interface PermissionSelectProps {
   value: Permission[];

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -22,8 +21,8 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Permission } from "@/types/Auth";
 
-interface PermissionData extends Permission {
-  id: string;
+interface PermissionData {
+  id: string | number; // Match the type in Permission
   name: string;
   description: string;
   module: string;
@@ -208,13 +207,17 @@ const Permissions = () => {
   };
 
   const handleEditPermission = (permission: Permission) => {
-    setEditingPermission(permission);
+    const typedPermission = permission as unknown as PermissionData;
+    setEditingPermission(typedPermission);
     setIsDialogOpen(true);
   };
 
-  const handleDeletePermission = (id: string) => {
+  const handleDeletePermission = (id: string | number) => {
+    // Convert id to string for consistency if needed
+    const idString = id.toString();
+    
     // In a real app, call API to delete
-    setPermissions(permissions.filter((p) => p.id !== id));
+    setPermissions(permissions.filter((p) => p.id.toString() !== idString));
     toast.success("Permission deleted successfully");
   };
 
