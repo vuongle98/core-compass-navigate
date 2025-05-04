@@ -25,6 +25,7 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   showAddButton?: boolean;
   onAddClick?: () => void;
+  addButtonText?: string;
   totalItems?: number;
   pageIndex?: number;
   pageSize?: number;
@@ -33,6 +34,7 @@ interface DataTableProps<T> {
   initialPageSize?: number;
   pageSizeOptions?: number[];
   emptyMessage?: string;
+  headerActions?: ReactNode;
 }
 
 export function DataTable<T>({
@@ -43,6 +45,7 @@ export function DataTable<T>({
   isLoading = false,
   showAddButton = false,
   onAddClick,
+  addButtonText = "Add New",
   totalItems = 0,
   pageIndex = 0,
   pageSize = 10,
@@ -51,6 +54,7 @@ export function DataTable<T>({
   initialPageSize,
   pageSizeOptions,
   emptyMessage = "No data available.",
+  headerActions,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
@@ -73,22 +77,25 @@ export function DataTable<T>({
   }));
 
   return (
-    <Card className="w-full">
-      {title && (
+    <Card className="w-full shadow-sm border">
+      {(title || showAddButton || headerActions) && (
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>{title}</CardTitle>
-          {showAddButton && (
-            <Button onClick={onAddClick}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New
-            </Button>
-          )}
+          {title && <CardTitle>{title}</CardTitle>}
+          <div className="flex items-center space-x-2">
+            {headerActions}
+            {showAddButton && (
+              <Button onClick={onAddClick} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                {addButtonText}
+              </Button>
+            )}
+          </div>
         </CardHeader>
       )}
-      <CardContent className="p-0 overflow-x-auto">
+      <CardContent className="p-0">
         {isLoading ? (
           <div className="space-y-2 p-4">
-            {Array.from({ length: size }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
@@ -100,7 +107,7 @@ export function DataTable<T>({
           />
         )}
       </CardContent>
-      {pagination && (
+      {pagination && totalItems > 0 && (
         <DataTablePagination
           pageIndex={page}
           pageSize={size}
