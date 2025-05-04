@@ -1,16 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { toast } from "sonner";
-import { useDetailView } from "@/hooks/use-detail-view";
-import { DetailViewModal } from "@/components/ui/detail-view-modal";
-import useApiQuery from "@/hooks/use-api-query";
-import useDebounce from "@/hooks/use-debounce";
-import { User } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { User } from "@/types/Auth";
 
 interface Token {
   id: number;

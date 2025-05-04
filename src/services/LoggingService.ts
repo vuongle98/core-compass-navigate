@@ -1,120 +1,73 @@
 
-/**
- * Service for centralized application logging
- */
+// Add or update the LoggingService to support the required methods
 class LoggingService {
-  private static userId: string | null = null;
   private static config = {
     logLevel: 'info',
     enableConsole: true,
-    enableActivityTracking: true
   };
 
-  /**
-   * Set configuration options
-   */
-  public static configure(options: { logLevel?: string; enableConsole?: boolean; enableActivityTracking?: boolean }) {
-    this.config = {
-      ...this.config,
-      ...options
+  static configure(options: { logLevel?: string; enableConsole?: boolean }) {
+    LoggingService.config = {
+      ...LoggingService.config,
+      ...options,
     };
   }
 
-  /**
-   * Associate logs with a user
-   */
-  public static setUser(user: any) {
-    if (user && user.id) {
-      this.userId = typeof user.id === 'string' ? user.id : String(user.id);
-    } else {
-      this.userId = null;
+  static log(message: string, data?: any) {
+    if (LoggingService.config.enableConsole) {
+      console.log(`[LOG] ${message}`, data || '');
     }
   }
 
-  /**
-   * Set activity tracking service
-   */
-  public static setActivityTracking(activityTracking: boolean) {
-    // This is for circular dependency resolution
-    this.config.enableActivityTracking = activityTracking;
-  }
-
-  /**
-   * Log informational message
-   */
-  public static info(category: string, action: string, message: string, data?: any) {
-    this.log('info', category, action, message, data);
-  }
-
-  /**
-   * Log warning message
-   */
-  public static warning(category: string, action: string, message: string, data?: any) {
-    this.log('warning', category, action, message, data);
-  }
-
-  /**
-   * Log warning message (alias for warning)
-   */
-  public static warn(category: string, action: string, message: string, data?: any) {
-    this.log('warning', category, action, message, data);
-  }
-
-  /**
-   * Log error message
-   */
-  public static error(category: string, action: string, message: string, error?: any) {
-    this.log('error', category, action, message, error);
-  }
-
-  /**
-   * Log debug message
-   */
-  public static debug(category: string, action: string, message: string, data?: any) {
-    if (this.config.logLevel === 'debug') {
-      this.log('debug', category, action, message, data);
+  static error(message: string, error?: any) {
+    if (LoggingService.config.enableConsole) {
+      console.error(`[ERROR] ${message}`, error || '');
     }
   }
 
-  /**
-   * Log user action
-   */
-  public static logUserAction(action: string, details?: any) {
-    this.log('user', 'action', action, details);
+  static info(message: string, data?: any) {
+    if (LoggingService.config.enableConsole) {
+      console.info(`[INFO] ${message}`, data || '');
+    }
   }
 
-  /**
-   * Send log to appropriate destinations
-   */
-  private static log(level: string, category: string, action: string, message: string, data?: any) {
-    if (!this.config.enableConsole) return;
+  static warn(message: string, data?: any) {
+    if (LoggingService.config.enableConsole) {
+      console.warn(`[WARN] ${message}`, data || '');
+    }
+  }
 
+  static debug(message: string, data?: any) {
+    if (LoggingService.config.logLevel === 'debug' && LoggingService.config.enableConsole) {
+      console.debug(`[DEBUG] ${message}`, data || '');
+    }
+  }
+
+  // Add logUserAction with proper signature to match calls in AuditLog.tsx
+  static logUserAction(
+    module: string,
+    action: string,
+    description: string,
+    metadata?: Record<string, any>
+  ) {
     const logData = {
-      timestamp: new Date().toISOString(),
-      level,
-      category,
+      module,
       action,
-      userId: this.userId,
-      message,
-      data
+      description,
+      timestamp: new Date().toISOString(),
+      metadata
     };
-
-    // Log to console during development
-    if (this.config.enableConsole) {
-      switch (level) {
-        case 'error':
-          console.error(`[${category}] ${message}`, data || '');
-          break;
-        case 'warning':
-          console.warn(`[${category}] ${message}`, data || '');
-          break;
-        case 'debug':
-          console.debug(`[${category}] ${message}`, data || '');
-          break;
-        default:
-          console.log(`[${category}] ${message}`, data || '');
-      }
+    
+    if (LoggingService.config.enableConsole) {
+      console.log(`[USER ACTION] ${module}:${action} - ${description}`, metadata || '');
     }
+    
+    // In a real app, this would likely send the data to a server
+    return logData;
+  }
+
+  static getConfig() {
+    return { ...LoggingService.config };
   }
 }
 

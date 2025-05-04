@@ -21,6 +21,7 @@ export interface PerformanceData {
   memory: number;
   responseTime: number;
   name: string;  // Added for compatibility
+  [key: string]: string | number; // Index signature for compatibility with PerformanceGraph
 }
 
 class DashboardService {

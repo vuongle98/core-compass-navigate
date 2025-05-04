@@ -1,82 +1,172 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { toast } from "sonner";
-import { useDetailView } from "@/hooks/use-detail-view";
-import { DetailViewModal } from "@/components/ui/detail-view-modal";
-import useApiQuery from "@/hooks/use-api-query";
-import useDebounce from "@/hooks/use-debounce";
+import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
-import { Permission } from "@/types/Auth";
-
-interface PermissionData {
-  id: string | number; // Match the type in Permission
-  name: string;
-  description: string;
-  module: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const permissionSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string().min(5, "Description must be at least 5 characters"),
-  module: z.string().min(1, "Module is required"),
-  isActive: z.boolean().default(true),
-});
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import useApiQuery from "@/hooks/use-api-query";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { DetailViewModal } from "@/components/ui/detail-view-modal";
+import { useDetailView } from "@/hooks/use-detail-view";
+import { Permission, PermissionData } from "@/types/Auth";
+import EnhancedApiService from "@/services/EnhancedApiService";
 
 const Permissions = () => {
-  // Mock data
   const [permissions, setPermissions] = useState<PermissionData[]>([
     {
       id: "1",
-      name: "user:read",
-      description: "Can view user information",
-      module: "User Management",
+      code: "user:read",
+      name: "Read Users",
+      description: "View user information",
+      module: "Users",
       isActive: true,
-      createdAt: "2023-01-01T00:00:00Z",
-      updatedAt: "2023-01-01T00:00:00Z",
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
     },
     {
       id: "2",
-      name: "user:write",
-      description: "Can create and update users",
-      module: "User Management",
+      code: "user:write",
+      name: "Write Users",
+      description: "Create and update user information",
+      module: "Users",
       isActive: true,
-      createdAt: "2023-01-01T00:00:00Z",
-      updatedAt: "2023-01-01T00:00:00Z",
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
     },
     {
       id: "3",
-      name: "role:assign",
-      description: "Can assign roles to users",
-      module: "Role Management",
+      code: "user:delete",
+      name: "Delete Users",
+      description: "Delete user accounts",
+      module: "Users",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "4",
+      code: "role:read",
+      name: "Read Roles",
+      description: "View role information",
+      module: "Roles",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "5",
+      code: "role:write",
+      name: "Write Roles",
+      description: "Create and update roles",
+      module: "Roles",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "6",
+      code: "role:delete",
+      name: "Delete Roles",
+      description: "Delete roles",
+      module: "Roles",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "7",
+      code: "permission:read",
+      name: "Read Permissions",
+      description: "View permission information",
+      module: "Permissions",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "8",
+      code: "permission:write",
+      name: "Write Permissions",
+      description: "Create and update permissions",
+      module: "Permissions",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "9",
+      code: "permission:delete",
+      name: "Delete Permissions",
+      description: "Delete permissions",
+      module: "Permissions",
       isActive: false,
-      createdAt: "2023-01-01T00:00:00Z",
-      updatedAt: "2023-01-01T00:00:00Z",
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "10",
+      code: "feature:flags",
+      name: "Feature Flags",
+      description: "Manage feature flags",
+      module: "System",
+      isActive: true,
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
     },
   ]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPermission, setEditingPermission] = useState<PermissionData | null>(null);
-  const formRef = useRef(null);
+  const [formData, setFormData] = useState<Partial<PermissionData>>({
+    code: "",
+    name: "",
+    description: "",
+    module: "",
+    isActive: true,
+  });
 
-  // Debounce the search term to avoid too many API calls
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const filterOptions: FilterOption[] = [
+    {
+      id: "search",
+      label: "Search",
+      type: "search",
+      placeholder: "Search permissions...",
+    },
+    {
+      id: "module",
+      label: "Module",
+      type: "select",
+      options: [
+        { value: "Users", label: "Users" },
+        { value: "Roles", label: "Roles" },
+        { value: "Permissions", label: "Permissions" },
+        { value: "System", label: "System" },
+      ],
+    },
+    {
+      id: "isActive",
+      label: "Status",
+      type: "select",
+      options: [
+        { value: "true", label: "Active" },
+        { value: "false", label: "Inactive" },
+      ],
+    },
+  ];
 
   // Setup for detail view modal
   const {
@@ -85,39 +175,11 @@ const Permissions = () => {
     openDetail: openPermissionDetail,
     closeModal: closePermissionDetail,
   } = useDetailView<PermissionData>({
-    modalThreshold: 15
+    modalThreshold: 10,
   });
-
-  const form = useForm({
-    resolver: zodResolver(permissionSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      module: "",
-      isActive: true,
-    },
-  });
-
-  useEffect(() => {
-    if (editingPermission) {
-      form.reset({
-        name: editingPermission.name,
-        description: editingPermission.description,
-        module: editingPermission.module,
-        isActive: editingPermission.isActive,
-      });
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        module: "",
-        isActive: true,
-      });
-    }
-  }, [editingPermission, form]);
 
   const {
-    data: permissionsData,
+    data: permissionData,
     isLoading,
     filters,
     setFilters,
@@ -130,11 +192,12 @@ const Permissions = () => {
     refresh,
     error,
   } = useApiQuery<PermissionData>({
-    endpoint: "/api/permissions",
-    queryKey: ["permissions", debouncedSearchTerm],
+    endpoint: "/api/permission",
+    queryKey: ["permissions"],
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
+    debounceMs: 300,
     onError: (err) => {
       console.error("Failed to fetch permissions:", err);
       toast.error("Failed to load permissions, using cached data", {
@@ -150,142 +213,164 @@ const Permissions = () => {
     },
   });
 
-  // Filter options
-  const filterOptions: FilterOption[] = [
-    {
-      id: "search",
-      label: "Search",
-      type: "search",
-      placeholder: "Search permissions...",
-    },
-    {
-      id: "module",
-      label: "Module",
-      type: "select",
-      options: [
-        { value: "User Management", label: "User Management" },
-        { value: "Role Management", label: "Role Management" },
-        { value: "Content Management", label: "Content Management" },
-      ],
-    },
-    {
-      id: "isActive",
-      label: "Status",
-      type: "select",
-      options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Inactive" },
-      ],
-    },
-  ];
-
-  // Actions for permissions
-  const getActionItems = (permission: Permission) => {
-    return [
-      {
-        type: "view" as ActionType,
-        label: "View Permission",
-        onClick: () => openPermissionDetail(permission),
-      },
-      {
-        type: "edit" as ActionType,
-        label: "Edit Permission",
-        onClick: () => handleEditPermission(permission),
-      },
-      {
-        type: "delete" as ActionType,
-        label: "Delete Permission",
-        onClick: () => handleDeletePermission(permission.id),
-      },
-    ];
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Handle permission operations
-  const handleAddPermission = () => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
+
+  const openCreateDialog = () => {
     setEditingPermission(null);
-    setIsDialogOpen(true);
+    setFormData({
+      code: "",
+      name: "",
+      description: "",
+      module: "Users",
+      isActive: true,
+    });
+    setDialogOpen(true);
   };
 
-  const handleEditPermission = (permission: Permission) => {
-    const typedPermission = permission as unknown as PermissionData;
-    setEditingPermission(typedPermission);
-    setIsDialogOpen(true);
+  const openEditDialog = (permission: PermissionData) => {
+    setEditingPermission(permission);
+    setFormData({
+      code: permission.code,
+      name: permission.name,
+      description: permission.description,
+      module: permission.module,
+      isActive: permission.isActive,
+    });
+    setDialogOpen(true);
   };
 
-  const handleDeletePermission = (id: string | number) => {
-    // Convert id to string for consistency if needed
-    const idString = id.toString();
-    
-    // In a real app, call API to delete
-    setPermissions(permissions.filter((p) => p.id.toString() !== idString));
-    toast.success("Permission deleted successfully");
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const handleSubmit = (values: z.infer<typeof permissionSchema>) => {
-    if (editingPermission) {
-      // Update existing permission
-      const updatedPermissions = permissions.map((p) =>
-        p.id === editingPermission.id
-          ? { 
-              ...p, 
-              ...values, 
-              updatedAt: new Date().toISOString()
-            }
-          : p
+    try {
+      if (editingPermission) {
+        await EnhancedApiService.put(`/api/permission/${editingPermission.id}`, formData);
+
+        setPermissions((prev) =>
+          prev.map((permission) =>
+            permission.id === editingPermission.id
+              ? { ...permission, ...formData }
+              : permission
+          )
+        );
+
+        toast.success("Permission updated successfully");
+      } else {
+        const response = await EnhancedApiService.post("/api/permission", formData);
+
+        const newPermission: PermissionData = {
+          id: Date.now().toString(),
+          code: formData.code || "",
+          name: formData.name || "",
+          description: formData.description || "",
+          module: formData.module || "",
+          isActive: formData.isActive || false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        setPermissions((prev) => [...prev, newPermission]);
+
+        toast.success("Permission created successfully");
+      }
+
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Permission operation failed:", error);
+      toast.error(
+        editingPermission ? "Failed to update permission" : "Failed to create permission"
       );
-      setPermissions(updatedPermissions);
-      toast.success("Permission updated successfully");
-    } else {
-      // Create new permission
-      const newPermission: PermissionData = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: values.name,
-        description: values.description,
-        module: values.module,
-        isActive: values.isActive,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setPermissions([...permissions, newPermission]);
-      toast.success("Permission created successfully");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsDialogOpen(false);
   };
 
-  const columns = [
+  const handleDelete = async (id: string) => {
+    try {
+      await EnhancedApiService.delete(`/api/permission/${id}`);
+
+      setPermissions((prev) => prev.filter((permission) => permission.id !== id));
+
+      toast.success("Permission deleted successfully");
+    } catch (error) {
+      console.error("Delete operation failed:", error);
+      toast.error("Failed to delete permission");
+    }
+  };
+
+  const columns: Column<PermissionData>[] = [
+    {
+      header: "#",
+      accessorKey: "id",
+      cell: (item: PermissionData) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
+      sortable: true,
+    },
     {
       header: "Name",
       accessorKey: "name",
+      cell: (item: PermissionData) => <span className="font-medium">{item.name}</span>,
       sortable: true,
     },
-    {
-      header: "Description",
-      accessorKey: "description",
-      sortable: true,
-    },
-    {
-      header: "Module",
-      accessorKey: "module",
-      sortable: true,
-    },
+    { header: "Code", accessorKey: "code", sortable: true },
+    { header: "Module", accessorKey: "module", sortable: true },
     {
       header: "Status",
       accessorKey: "isActive",
-      sortable: true,
-      cell: (permission: Permission) => (
-        <Badge
-          variant={permission.isActive ? "default" : "secondary"}
-          className={permission.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+      cell: (item: PermissionData) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            item.isActive
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
         >
-          {permission.isActive ? "Active" : "Inactive"}
-        </Badge>
+          {item.isActive ? "Active" : "Inactive"}
+        </span>
       ),
+      sortable: true,
     },
     {
       header: "Actions",
-      accessorKey: "actions",
-      cell: (permission: Permission) => (
-        <ActionsMenu actions={getActionItems(permission)} />
+      accessorKey: "actions" as keyof PermissionData,
+      cell: (item: PermissionData) => (
+        <ActionsMenu
+          actions={[
+            {
+              type: "view" as ActionType,
+              label: "View Details",
+              onClick: () => openPermissionDetail(item),
+            },
+            {
+              type: "edit" as ActionType,
+              label: "Edit",
+              onClick: () => openEditDialog(item),
+            },
+            {
+              type: "delete" as ActionType,
+              label: "Delete",
+              onClick: () => handleDelete(item.id),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -294,38 +379,19 @@ const Permissions = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs
-          items={[
-            { label: "Home", path: "/" },
-            { label: "Settings", path: "/settings" },
-            { label: "Permissions", path: "/permissions" },
-          ]}
-        />
-
+        <Breadcrumbs />
         <PageHeader
           title="Permissions"
           description="Manage system permissions"
         >
-          <Button 
-            onClick={handleAddPermission} 
-            className="mt-2"
-          >
-            Add Permission
-          </Button>
-          
           <DataFilters
             filters={filters}
             options={filterOptions}
             onChange={(newFilters) => {
               setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
             }}
             onReset={() => {
               resetFilters();
-              setSearchTerm("");
               refresh();
             }}
             className="mt-2"
@@ -334,22 +400,21 @@ const Permissions = () => {
 
         <div className="mt-4">
           <DataTable
-            data={permissionsData}
+            data={permissionData}
             columns={columns}
-            title="Permissions"
+            title="Permission Management"
             pagination={true}
-            showAddButton={true}
-            onAddClick={handleAddPermission}
             isLoading={isLoading}
             pageIndex={page}
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
             totalItems={totalItems}
+            showAddButton={true}
+            onAddClick={openCreateDialog}
           />
         </div>
 
-        {/* Permission Detail Modal */}
         {selectedPermission && (
           <DetailViewModal
             isOpen={isDetailOpen}
@@ -364,6 +429,10 @@ const Permissions = () => {
                 <p className="mt-1">{selectedPermission.name}</p>
               </div>
               <div>
+                <h3 className="text-sm font-medium">Code</h3>
+                <p className="mt-1">{selectedPermission.code}</p>
+              </div>
+              <div>
                 <h3 className="text-sm font-medium">Description</h3>
                 <p className="mt-1">{selectedPermission.description}</p>
               </div>
@@ -374,120 +443,113 @@ const Permissions = () => {
               <div>
                 <h3 className="text-sm font-medium">Status</h3>
                 <p className="mt-1">
-                  <Badge
-                    variant={selectedPermission.isActive ? "default" : "secondary"}
-                    className={selectedPermission.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                  >
-                    {selectedPermission.isActive ? "Active" : "Inactive"}
-                  </Badge>
+                  {selectedPermission.isActive ? "Active" : "Inactive"}
                 </p>
               </div>
               <div>
                 <h3 className="text-sm font-medium">Created At</h3>
-                <p className="mt-1">
-                  {new Date(selectedPermission.createdAt).toLocaleString()}
-                </p>
+                <p className="mt-1">{selectedPermission.createdAt}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium">Updated At</h3>
-                <p className="mt-1">
-                  {new Date(selectedPermission.updatedAt).toLocaleString()}
-                </p>
+                <p className="mt-1">{selectedPermission.updatedAt}</p>
               </div>
             </div>
           </DetailViewModal>
         )}
 
-        {/* Add/Edit Permission Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingPermission ? "Edit Permission" : "Add Permission"}
+                {editingPermission ? "Edit Permission" : "Create New Permission"}
               </DialogTitle>
+              <DialogDescription>
+                {editingPermission
+                  ? "Make changes to the permission details below."
+                  : "Enter the details for the new permission."}
+              </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-              <form
-                ref={formRef}
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., user:read" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., Can view user information"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="module"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Module</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., User Management"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Active</FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="code">Code</Label>
+                  <Input
+                    id="code"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    placeholder="permission:action"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Permission Name"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Permission description"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="module">Module</Label>
+                  <select
+                    id="module"
+                    name="module"
+                    value={formData.module}
+                    onChange={handleInputChange as any}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingPermission ? "Update" : "Create"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                    <option value="Users">Users</option>
+                    <option value="Roles">Roles</option>
+                    <option value="Permissions">Permissions</option>
+                    <option value="System">System</option>
+                  </select>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleCheckboxChange}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label htmlFor="isActive">Active</Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting
+                    ? "Processing..."
+                    : editingPermission
+                    ? "Save Changes"
+                    : "Create Permission"}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </main>

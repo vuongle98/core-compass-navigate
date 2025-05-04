@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -27,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
 interface FileItem {
@@ -46,6 +45,7 @@ const Files = () => {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [shareType, setShareType] = useState("public");
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Mock data
   useEffect(() => {
@@ -292,7 +292,16 @@ const Files = () => {
             options={filterOptions}
             onChange={(newFilters) => {
               setSearchTerm(newFilters.search as string);
-              setSearchParams(newFilters);
+              const updateSearchParams = (filters: ApiQueryFilters) => {
+                const params = new URLSearchParams();
+                Object.entries(filters).forEach(([key, value]) => {
+                  if (value !== undefined && value !== null && value !== '') {
+                    params.set(key, value.toString());
+                  }
+                });
+                setSearchParams(params);
+              };
+              updateSearchParams(newFilters);
             }}
             onReset={() => {
               setSearchTerm("");

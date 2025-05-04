@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Calendar, CalendarCell, CalendarGrid, CalendarHeadCell, CalendarHeader, CalendarItem } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import useApiQuery from "@/hooks/use-api-query";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { Skeleton } from "@/components/ui/skeleton";
+import LoggingService from "@/services/LoggingService";
 
 interface UserRequest {
   id: number;
@@ -126,7 +129,7 @@ const UserRequestLog = () => {
     totalItems
   } = useApiQuery<UserRequest>({
     endpoint: "/api/logs/requests",
-    queryKey: "user-requests",
+    queryKey: ["user-requests"], // Fix: Changed string to array for QueryKey
     initialPageSize: 10,
     persistFilters: true,
     mockData: {
@@ -142,7 +145,7 @@ const UserRequestLog = () => {
     setSelectedLog(log);
     setDetailsOpen(true);
     
-    // Log user action
+    // Log user action with corrected parameter order
     LoggingService.logUserAction(
       "user_requests", 
       "view_details", 
@@ -167,7 +170,7 @@ const UserRequestLog = () => {
 
     toast.success("Log entry exported");
     
-    // Log user action
+    // Log user action with corrected parameter order
     LoggingService.logUserAction(
       "user_requests", 
       "export_log", 
@@ -200,7 +203,7 @@ const UserRequestLog = () => {
           navigator.clipboard.writeText(item.id.toString());
           toast.success("Log ID copied to clipboard");
           
-          // Log user action
+          // Log user action with corrected parameter order
           LoggingService.logUserAction(
             "user_requests", 
             "copy_id", 
