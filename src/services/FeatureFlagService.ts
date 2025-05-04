@@ -47,6 +47,13 @@ class FeatureFlagService {
       description: 'Enable new dashboard UI',
       group: 'ui'
     });
+
+    this.registerFeatureFlag({
+      key: 'chat_system',
+      enabled: true,
+      description: 'Enable chat system',
+      group: 'feature'
+    });
     
     LoggingService.info('feature_flags', 'initialized', 'Feature flags initialized with defaults');
   }
@@ -108,6 +115,59 @@ class FeatureFlagService {
     } catch (error) {
       LoggingService.error('feature_flags', 'get_group_failed', `Error fetching flags by group: ${group}`);
       return [];
+    }
+  }
+
+  // Add the missing isFeatureEnabled method required by the hook
+  isFeatureEnabled(featureName: string, environment?: string, userRoles?: string[]): boolean {
+    try {
+      const flag = FeatureFlagService.flags.get(featureName);
+      if (!flag) {
+        LoggingService.warn('feature_flags', 'not_found', `Feature flag not found: ${featureName}`);
+        return false;
+      }
+
+      // If flag is not enabled at all, return false
+      if (!flag.enabled) return false;
+
+      // Check environment restrictions
+      if (flag.environments && flag.environments.length > 0) {
+        if (!environment || !flag.environments.includes(environment)) {
+          return false;
+        }
+      }
+
+      // Check role restrictions
+      if (flag.roles && flag.roles.length > 0 && userRoles) {
+        // Check if user has any of the required roles
+        const hasRequiredRole = userRoles.some(role => 
+          flag.roles?.includes(role)
+        );
+        
+        if (!hasRequiredRole) return false;
+      }
+
+      return true;
+    } catch (error) {
+      LoggingService.error('feature_flags', 'check_failed', `Error checking feature flag: ${featureName}`);
+      return false;
+    }
+  }
+
+  // Add the refreshFlags method required by AuthContext
+  async refreshFlags(): Promise<void> {
+    try {
+      LoggingService.info('feature_flags', 'refresh', 'Refreshing feature flags');
+      
+      // In a real implementation, this would fetch flags from an API
+      // For now, we'll just log the action and resolve immediately
+      
+      // Simulate a network request
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      LoggingService.info('feature_flags', 'refresh_success', 'Feature flags refreshed successfully');
+    } catch (error) {
+      LoggingService.error('feature_flags', 'refresh_failed', 'Failed to refresh feature flags', error);
     }
   }
 }
