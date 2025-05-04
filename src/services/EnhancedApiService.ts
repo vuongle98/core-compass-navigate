@@ -1,8 +1,15 @@
-
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import LoggingService from './LoggingService';
 import AuthService from './AuthService';
 import ServiceRegistry from './ServiceRegistry';
+
+// Define custom type for request config with meta information
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  meta?: {
+    startTime: number;
+    [key: string]: any;
+  };
+}
 
 export interface ApiResponse<T> {
   data: T;
@@ -48,10 +55,11 @@ class EnhancedApiService {
   private setupInterceptors(): void {
     // Request interceptor
     this.axiosInstance.interceptors.request.use(
-      async (config: InternalAxiosRequestConfig) => {
+      (config: InternalAxiosRequestConfig) => {
         // Start timing for performance logging
         const startTime = Date.now();
-        config.meta = { ...config.meta, startTime };
+        const customConfig = config as CustomAxiosRequestConfig;
+        customConfig.meta = { startTime };
         
         // Add auth token if available
         const token = AuthService.getAccessToken();
@@ -68,7 +76,7 @@ class EnhancedApiService {
           startTime
         );
         
-        return config;
+        return customConfig;
       },
       (error) => {
         LoggingService.error(
@@ -85,7 +93,8 @@ class EnhancedApiService {
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
         // Get timing info
-        const startTime = response.config.meta?.startTime || Date.now() - 100;
+        const customConfig = response.config as CustomAxiosRequestConfig;
+        const startTime = customConfig.meta?.startTime || Date.now() - 100;
         
         // Log the response
         LoggingService.logApiResponse(
@@ -99,7 +108,7 @@ class EnhancedApiService {
         return response;
       },
       async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const originalRequest = error.config as CustomAxiosRequestConfig & { _retry?: boolean };
         const startTime = originalRequest?.meta?.startTime || Date.now() - 100;
         
         // Log the error

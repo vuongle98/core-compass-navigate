@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import featureFlagService from '@/services/FeatureFlagService';
+import { Role } from '@/types/Auth';
 
 // Hook to check if a feature is enabled for the current user
 export function useFeatureFlag(featureName: string): boolean {
@@ -18,7 +19,10 @@ export function useFeatureFlag(featureName: string): boolean {
     
     // Get user roles
     const userRoles = user ? (Array.isArray(user.roles)
-      ? user.roles.map(role => typeof role === 'string' ? role : role.code)
+      ? user.roles.map(role => {
+          if (typeof role === 'string') return role;
+          return (role as Role).code || '';
+        })
       : [user.role]) : [];
 
     // Determine environment

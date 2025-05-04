@@ -1,121 +1,100 @@
 
-import { DateRange } from 'react-day-picker';
-import EnhancedApiService, { ApiResponse } from './EnhancedApiService';
-import LoggingService from './LoggingService';
+import EnhancedApiService from './EnhancedApiService';
+import ServiceRegistry from './ServiceRegistry';
 
-export interface DashboardMetric {
+interface DashboardMetric {
   id: string;
   name: string;
   value: number;
   change: number;
-  icon?: string;
 }
 
-export interface DashboardData {
-  metrics: DashboardMetric[];
-  userActivity: { name: string; value: number }[];
-  fileUploads: { name: string; value: number }[];
-  notifications: { name: string; value: number }[];
-  performance: { name: string; cpu: number; memory: number; responseTime: number }[];
+interface SystemStatus {
+  name: string;
+  cpu: number;
+  memory: number;
+  responseTime: number;
 }
 
 class DashboardService {
+  /**
+   * Get dashboard metrics
+   */
+  public async getMetrics(): Promise<DashboardMetric[]> {
+    try {
+      // Using ApiResponse format for consistency
+      const response = await EnhancedApiService.get<{ data: DashboardMetric[], success: boolean }>('/api/dashboard/metrics');
+      return response.data || [];
+    } catch (error) {
+      console.error('Failed to fetch dashboard metrics:', error);
+      // Return mock data for development
+      return [
+        { id: 'users', name: 'Active Users', value: 2456, change: 12.5 },
+        { id: 'revenue', name: 'Revenue', value: 8790, change: -2.7 },
+        { id: 'conversion', name: 'Conversion Rate', value: 4.5, change: 1.2 },
+        { id: 'sessions', name: 'Sessions', value: 12503, change: 8.1 }
+      ];
+    }
+  }
   
-  async getMetrics(dateRange: DateRange): Promise<ApiResponse<DashboardMetric[]>> {
+  /**
+   * Get activity data for dashboard chart
+   */
+  public async getActivityData(): Promise<any[]> {
     try {
-      return await EnhancedApiService.post<DashboardMetric[]>(
-        '/api/report/metrics',
-        {
-          ...dateRange
-        },
-        // Fallback mock data
-        [
-          { id: 'users', name: 'Total Users', value: 2458, change: 12.5 },
-          { id: 'roles', name: 'Roles', value: 14, change: 0 },
-          { id: 'permissions', name: 'Permissions', value: 42, change: 4.2 },
-          { id: 'files', name: 'Files', value: 321, change: -2.3 },
-          { id: 'notifications', name: 'Notifications', value: 68, change: 8.1 },
-          { id: 'configs', name: 'Config Params', value: 35, change: 1.5 },
-          { id: 'flags', name: 'Feature Flags', value: 24, change: 5.2 }
-        ]
-      );
+      const response = await EnhancedApiService.get<{ data: any[], success: boolean }>('/api/dashboard/activity');
+      return response.data || [];
     } catch (error) {
-      LoggingService.error(
-        "dashboard", 
-        "fetch_metrics_failed", 
-        "Failed to fetch dashboard metrics", 
-        { error }
-      );
-      throw error;
+      console.error('Failed to fetch activity data:', error);
+      // Return mock data for development
+      return [
+        { date: '2023-01-01', users: 120, sessions: 250, pageViews: 1200 },
+        { date: '2023-01-02', users: 132, sessions: 280, pageViews: 1350 },
+        { date: '2023-01-03', users: 141, sessions: 300, pageViews: 1450 },
+        { date: '2023-01-04', users: 135, sessions: 270, pageViews: 1320 },
+        { date: '2023-01-05', users: 152, sessions: 310, pageViews: 1500 },
+        { date: '2023-01-06', users: 165, sessions: 340, pageViews: 1650 },
+        { date: '2023-01-07', users: 172, sessions: 350, pageViews: 1700 },
+      ];
     }
   }
-
-  async getActivityData(): Promise<ApiResponse<{
-    userActivity: { name: string; value: number }[];
-    fileUploads: { name: string; value: number }[];
-    notifications: { name: string; value: number }[];
-  }>> {
+  
+  /**
+   * Get user activity data
+   */
+  public async getUserActivity(): Promise<any[]> {
     try {
-      return await EnhancedApiService.get(
-        '/api/dashboard/activity',
-        {},
-        // Fallback mock data
-        {
-          userActivity: [
-            { name: 'Mon', value: 124 }, { name: 'Tue', value: 158 },
-            { name: 'Wed', value: 187 }, { name: 'Thu', value: 145 },
-            { name: 'Fri', value: 260 }, { name: 'Sat', value: 112 },
-            { name: 'Sun', value: 97 }
-          ],
-          fileUploads: [
-            { name: 'Mon', value: 12 }, { name: 'Tue', value: 15 },
-            { name: 'Wed', value: 8 }, { name: 'Thu', value: 22 },
-            { name: 'Fri', value: 16 }, { name: 'Sat', value: 5 },
-            { name: 'Sun', value: 3 }
-          ],
-          notifications: [
-            { name: 'Mon', value: 100 }, { name: 'Tue', value: 221 },
-            { name: 'Wed', value: 124 }, { name: 'Thu', value: 993 },
-            { name: 'Fri', value: 102 }, { name: 'Sat', value: 912 },
-            { name: 'Sun', value: 783 }
-          ]
-        }
-      );
+      const response = await EnhancedApiService.get<{ data: any[], success: boolean }>('/api/dashboard/user-activity');
+      return response.data || [];
     } catch (error) {
-      LoggingService.error(
-        "dashboard", 
-        "fetch_activity_failed", 
-        "Failed to fetch dashboard activity data", 
-        { error }
-      );
-      throw error;
+      console.error('Failed to fetch user activity:', error);
+      // Return mock data
+      return [
+        { username: 'alice', lastAction: 'Login', timestamp: '2023-01-07T12:34:56Z' },
+        { username: 'bob', lastAction: 'Updated profile', timestamp: '2023-01-07T11:22:33Z' },
+        { username: 'charlie', lastAction: 'Created post', timestamp: '2023-01-07T10:45:12Z' },
+        { username: 'dave', lastAction: 'Commented', timestamp: '2023-01-07T09:15:00Z' },
+        { username: 'eve', lastAction: 'Login', timestamp: '2023-01-07T08:30:45Z' },
+      ];
     }
   }
-
-  async getPerformanceData(): Promise<ApiResponse<{ name: string; cpu: number; memory: number; responseTime: number }[]>> {
+  
+  /**
+   * Get system status
+   */
+  public async getSystemStatus(): Promise<SystemStatus[]> {
     try {
-      return await EnhancedApiService.get(
-        '/api/dashboard/performance',
-        {},
-        // Fallback mock data
-        [
-          { name: '00:00', cpu: 42, memory: 65, responseTime: 120 },
-          { name: '04:00', cpu: 28, memory: 59, responseTime: 100 },
-          { name: '08:00', cpu: 55, memory: 70, responseTime: 150 },
-          { name: '12:00', cpu: 90, memory: 85, responseTime: 200 },
-          { name: '16:00', cpu: 85, memory: 82, responseTime: 180 },
-          { name: '20:00', cpu: 70, memory: 75, responseTime: 160 },
-          { name: '24:00', cpu: 45, memory: 68, responseTime: 130 }
-        ]
-      );
+      const response = await EnhancedApiService.get<{ data: SystemStatus[], success: boolean }>('/api/dashboard/system-status');
+      return response.data || [];
     } catch (error) {
-      LoggingService.error(
-        "dashboard", 
-        "fetch_performance_failed", 
-        "Failed to fetch performance data", 
-        { error }
-      );
-      throw error;
+      console.error('Failed to fetch system status:', error);
+      // Return mock data
+      return [
+        { name: 'API Server', cpu: 45, memory: 62, responseTime: 120 },
+        { name: 'Database', cpu: 38, memory: 75, responseTime: 85 },
+        { name: 'Auth Service', cpu: 12, memory: 40, responseTime: 65 },
+        { name: 'Storage', cpu: 22, memory: 55, responseTime: 30 },
+      ];
     }
   }
 }

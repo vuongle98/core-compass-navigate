@@ -1,14 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import GenericMultiSelect from "@/components/common/GenericMultiSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
-
-export interface Permission {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  module: string;
-}
+import { Permission } from "@/types/Auth";
 
 interface PermissionSelectProps {
   value: Permission[];
@@ -37,12 +31,11 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     if (value && value.length > 0 && !initialLoaded) {
       const fetchInitialPermissions = async () => {
         try {
-
           if (typeof value[0] === 'number') {
             // For each permission ID, fetch the corresponding permission object
             const promises = value.map(id => EnhancedApiService.get<Permission>(`/api/permission/${id}`));
             const responses = await Promise.all(promises);
-            const permissions = responses.map(response => response.data) as Permission[];
+            const permissions = responses.map(response => response) as Permission[];
             setInitialPermissions(permissions);
           } else if (typeof value[0] === 'object') {
             setInitialPermissions(value as Permission[]);
@@ -85,7 +78,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   // Handle form field transformation
   const handlePermissionChange = (newValues: Permission[]) => {
     // Convert to numbers if they're not already
-    const numericValues = newValues.map(v => v.id);
+    const numericValues = newValues.map(v => typeof v.id === 'string' ? parseInt(v.id, 10) : v.id as number);
     onChange(newValues, numericValues);
   };
 

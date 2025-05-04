@@ -1,332 +1,138 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import EnhancedApiService, {
-  PaginationOptions,
-  PaginatedData,
-} from "@/services/EnhancedApiService";
-import LoggingService from "@/services/LoggingService";
-import { debounce } from "lodash";
 
-export interface ApiQueryFilters {
-  search?: string;
-  [key: string]: string | number | boolean | undefined;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient, QueryKey } from '@tanstack/react-query';
+import EnhancedApiService from '@/services/EnhancedApiService';
+import { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService';
+import { toast } from 'sonner';
+import useLocalStorage from './use-local-storage';
 
-export interface ApiQueryOptions<T> {
+interface UseApiQueryProps<T> {
   endpoint: string;
-  queryKey: string | string[];
-  initialFilters?: ApiQueryFilters;
-  initialSort?: string | string[];
+  queryKey: QueryKey;
   initialPage?: number;
   initialPageSize?: number;
-  mockData?: PaginatedData<T>;
+  initialFilters?: Record<string, any>;
   persistFilters?: boolean;
+  persistKey?: string;
   debounceMs?: number;
-  onError?: (error: unknown) => void;
+  mockData?: PaginatedData<T>;
+  onError?: (error: Error) => void;
 }
 
-export interface ApiQueryResult<T> {
-  data: T[];
-  isLoading: boolean;
-  isError: boolean;
-  error: unknown;
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-  filters: ApiQueryFilters;
-  sort: string | string[] | undefined;
-  setPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-  setFilters: (filters: ApiQueryFilters) => void;
-  setSort: (sort: string | string[]) => void;
-  setSearch: (search: string) => void;
-  resetFilters: () => void;
-  refresh: () => void;
+interface PaginatedResponse<T> extends PaginatedData<T> {}
+
+interface FilterState {
+  [key: string]: string | number | boolean | null;
 }
 
-/**
- * Hook for API data fetching with filter, pagination and sorting support
- */
-export function useApiQuery<T>(options: ApiQueryOptions<T>): ApiQueryResult<T> {
-  // URL search params for persisting filters
-  const [searchParams, setSearchParams] = useSearchParams();
+function useApiQuery<T>({
+  endpoint,
+  queryKey,
+  initialPage = 0,
+  initialPageSize = 10,
+  initialFilters = {},
+  persistFilters = false,
+  persistKey,
+  debounceMs = 0,
+  mockData,
+  onError,
+}: UseApiQueryProps<T>) {
+  const storageKey = persistKey || `filters-${endpoint.replace(/\//g, '-')}`;
+  const [filters, setFiltersState] = useState<FilterState>(initialFilters);
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const queryClient = useQueryClient();
+  
+  // Load persisted filters from localStorage if enabled
+  const [persistedFilters, setPersistedFilters] = useLocalStorage<FilterState>(
+    persistFilters ? storageKey : '',
+    initialFilters
+  );
 
-  // Get initial values, either from URL params (if persistFilters) or from options
-  const getInitialValue = <V,>(
-    key: string,
-    defaultValue: V,
-    parser?: (value: string) => V
-  ): V => {
-    if (options.persistFilters && searchParams.has(key)) {
-      const value = searchParams.get(key);
-      if (value !== null && parser) {
-        return parser(value);
-      }
-      return value as unknown as V;
+  // Initialize filters from persisted if available
+  useEffect(() => {
+    if (persistFilters && Object.keys(persistedFilters).length > 0) {
+      setFiltersState(persistedFilters);
     }
-    return defaultValue;
-  };
+  }, [persistFilters]);
 
-  // State for pagination, filters, and sorting
-  const [page, setPageInternal] = useState(
-    getInitialValue("page", options.initialPage || 0, Number)
-  );
-  const [pageSize, setPageSizeInternal] = useState(
-    getInitialValue("pageSize", options.initialPageSize || 10, Number)
-  );
-  const [filters, setFiltersInternal] = useState<ApiQueryFilters>(
-    options.persistFilters
-      ? Object.fromEntries(
-          Array.from(searchParams.entries()).filter(
-            ([key]) => !["page", "pageSize", "sort", "search"].includes(key)
-          )
-        )
-      : options.initialFilters || {}
-  );
-  const [sort, setSortInternal] = useState<string | string[] | undefined>(
-    getInitialValue("sort", options.initialSort, (val) =>
-      val.includes(",") ? val.split(",") : val
-    )
-  );
+  // Update persisted filters when filters change
+  const setFilters = useCallback((newFilters: FilterState) => {
+    setFiltersState(newFilters);
+    if (persistFilters) {
+      setPersistedFilters(newFilters);
+    }
+    // Reset to first page when filters change
+    setPage(0);
+  }, [persistFilters, setPersistedFilters]);
 
-  // Build query key
-  const queryKey = useMemo(() => {
-    const baseKey = Array.isArray(options.queryKey)
-      ? options.queryKey
-      : [options.queryKey];
-    return [...baseKey, page, pageSize, sort, filters];
-  }, [options.queryKey, page, pageSize, sort, filters]);
+  // Reset filters to initial state
+  const resetFilters = useCallback(() => {
+    setFiltersState(initialFilters);
+    if (persistFilters) {
+      setPersistedFilters(initialFilters);
+    }
+    setPage(0);
+  }, [initialFilters, persistFilters, setPersistedFilters]);
 
-  // Create query function
-  const fetchData = useCallback(async () => {
-    const paginationOptions: PaginationOptions = {
-      page,
-      pageSize,
-      sort,
-      search: filters.search,
-      filter: { ...filters },
+  // Convert filters to query params
+  const buildQueryParams = useCallback((currentFilters: FilterState): PaginationOptions => {
+    const params: PaginationOptions = { 
+      page, 
+      size: pageSize 
     };
-
-    // Remove search from filters as it's passed separately
-    if (paginationOptions.filter?.search) {
-      delete paginationOptions.filter.search;
-    }
-
-    LoggingService.debug(
-      "api_query",
-      "fetch_data",
-      `Fetching ${options.endpoint} with options`,
-      { paginationOptions }
-    );
-
-    try {
-      const response = await EnhancedApiService.getPaginated<T>(
-        options.endpoint,
-        paginationOptions,
-        options?.mockData
-      );
-      return response.data;
-    } catch (error) {
-      // Log the error
-      LoggingService.error(
-        "api_query",
-        "fetch_failed",
-        `Failed to fetch data from ${options.endpoint}`,
-        { error, paginationOptions }
-      );
-
-      // If mock data is provided, use it as fallback
-      console.log("mockData", options.mockData);
-      if (options.mockData) {
-        LoggingService.info(
-          "api_query",
-          "using_mock_data",
-          `Falling back to mock data for ${options.endpoint}`
-        );
-        // Return the mock data with the appropriate pagination
-        const mockItems = options.mockData.content || [];
-        const startIndex = page * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedItems = mockItems.slice(startIndex, endIndex);
-
-        return {
-          content: paginatedItems,
-          totalElements: mockItems.length,
-          totalPages: Math.ceil(mockItems.length / pageSize),
-          number: page,
-          size: pageSize,
-        };
+    
+    // Add valid filter values to query params
+    Object.entries(currentFilters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params[key] = value;
       }
+    });
+    
+    return params;
+  }, [page, pageSize]);
 
-      // If no mock data, re-throw the error
-      throw error;
-    }
-  }, [options.endpoint, options.mockData, page, pageSize, sort, filters]);
-
-  // Setup the query
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey,
-    queryFn: fetchData,
-    retry: 1,
-    retryDelay: 200,
-    meta: {
-      onError: options.onError,
+  // API query with pagination and filters
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: [...queryKey, page, pageSize, filters],
+    queryFn: async () => {
+      try {
+        const params = buildQueryParams(filters);
+        const response = await EnhancedApiService.getPaginated<T>(endpoint, params);
+        return response;
+      } catch (err) {
+        // Handle mock data for testing or development
+        if (mockData) {
+          console.warn('Using mock data for', endpoint);
+          return mockData;
+        }
+        throw err;
+      }
     },
+    onError: (err: any) => {
+      if (onError) onError(err);
+    }
   });
 
-  // Update URL params if persistFilters is enabled
-  useEffect(() => {
-    if (options.persistFilters) {
-      const newParams = new URLSearchParams();
+  // Total items count
+  const totalItems = data?.totalElements || 0;
 
-      // Add pagination
-      newParams.set("page", page.toString());
-      newParams.set("pageSize", pageSize.toString());
-
-      // Add sort
-      if (sort) {
-        if (Array.isArray(sort)) {
-          newParams.set("sort", sort.join(","));
-        } else {
-          newParams.set("sort", sort);
-        }
-      }
-
-      // Add filters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") {
-          newParams.set(key, value.toString());
-        }
-      });
-
-      setSearchParams(newParams);
-    }
-  }, [options.persistFilters, page, pageSize, sort, filters, setSearchParams]);
-
-  // Debounced search handler
-  const debouncedSetSearch = useMemo(
-    () =>
-      debounce((search: string) => {
-        setFiltersInternal((current) => ({ ...current, search }));
-
-        LoggingService.info(
-          "api_query",
-          "search_applied",
-          `Applied search: ${search}`,
-          { endpoint: options.endpoint, search }
-        );
-      }, options.debounceMs || 300),
-    [options.debounceMs, options.endpoint]
-  );
-
-  // Page change handler
-  const setPage = useCallback(
-    (newPage: number) => {
-      setPageInternal(newPage);
-
-      LoggingService.info(
-        "api_query",
-        "page_changed",
-        `Changed page to ${newPage}`,
-        { endpoint: options.endpoint, page: newPage }
-      );
-    },
-    [options.endpoint]
-  );
-
-  // Page size change handler
-  const setPageSize = useCallback(
-    (newSize: number) => {
-      setPageSizeInternal(newSize);
-      setPageInternal(0); // Reset to first page when changing page size
-
-      LoggingService.info(
-        "api_query",
-        "page_size_changed",
-        `Changed page size to ${newSize}`,
-        { endpoint: options.endpoint, pageSize: newSize }
-      );
-    },
-    [options.endpoint]
-  );
-
-  // Filters change handler
-  const setFilters = useCallback(
-    (newFilters: ApiQueryFilters) => {
-      setFiltersInternal(newFilters);
-      setPageInternal(0); // Reset to first page when changing filters
-
-      LoggingService.info(
-        "api_query",
-        "filters_changed",
-        `Applied new filters`,
-        { endpoint: options.endpoint, filters: newFilters }
-      );
-    },
-    [options.endpoint]
-  );
-
-  // Search change handler
-  const setSearch = useCallback(
-    (search: string) => {
-      debouncedSetSearch(search);
-    },
-    [debouncedSetSearch]
-  );
-
-  // Sort change handler
-  const setSort = useCallback(
-    (newSort: string | string[]) => {
-      setSortInternal(newSort);
-
-      LoggingService.info("api_query", "sort_changed", `Applied new sort`, {
-        endpoint: options.endpoint,
-        sort: newSort,
-      });
-    },
-    [options.endpoint]
-  );
-
-  // Reset filters handler
-  const resetFilters = useCallback(() => {
-    setFiltersInternal(options.initialFilters || {});
-    setSortInternal(options.initialSort);
-    setPageInternal(0);
-
-    LoggingService.info("api_query", "filters_reset", `Reset all filters`, {
-      endpoint: options.endpoint,
-    });
-  }, [options.endpoint, options.initialFilters, options.initialSort]);
-
+  // Manual refresh function
   const refresh = useCallback(() => {
     refetch();
-
-    LoggingService.info(
-      "api_query",
-      "data_refreshed",
-      `Manually refreshed data`,
-      { endpoint: options.endpoint }
-    );
-  }, [refetch, options.endpoint]);
+  }, [refetch]);
 
   return {
     data: data?.content || [],
     isLoading,
-    isError,
     error,
     page,
     pageSize,
-    totalItems: data?.totalElements || 0,
-    totalPages: data?.totalPages || 0,
-    filters,
-    sort,
     setPage,
     setPageSize,
+    totalItems,
+    filters,
     setFilters,
-    setSearch,
-    setSort,
     resetFilters,
     refresh,
   };

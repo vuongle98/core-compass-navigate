@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -19,8 +20,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
+import { Permission } from "@/types/Auth";
 
-interface Permission {
+interface PermissionData extends Permission {
   id: string;
   name: string;
   description: string;
@@ -39,7 +41,7 @@ const permissionSchema = z.object({
 
 const Permissions = () => {
   // Mock data
-  const [permissions, setPermissions] = useState<Permission[]>([
+  const [permissions, setPermissions] = useState<PermissionData[]>([
     {
       id: "1",
       name: "user:read",
@@ -71,7 +73,7 @@ const Permissions = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [editingPermission, setEditingPermission] = useState<PermissionData | null>(null);
   const formRef = useRef(null);
 
   // Debounce the search term to avoid too many API calls
@@ -83,7 +85,7 @@ const Permissions = () => {
     isModalOpen: isDetailOpen,
     openDetail: openPermissionDetail,
     closeModal: closePermissionDetail,
-  } = useDetailView<Permission>({
+  } = useDetailView<PermissionData>({
     modalThreshold: 15
   });
 
@@ -128,7 +130,7 @@ const Permissions = () => {
     totalItems,
     refresh,
     error,
-  } = useApiQuery<Permission>({
+  } = useApiQuery<PermissionData>({
     endpoint: "/api/permissions",
     queryKey: ["permissions", debouncedSearchTerm],
     initialPage: 0,
@@ -221,16 +223,23 @@ const Permissions = () => {
       // Update existing permission
       const updatedPermissions = permissions.map((p) =>
         p.id === editingPermission.id
-          ? { ...p, ...values, updatedAt: new Date().toISOString() }
+          ? { 
+              ...p, 
+              ...values, 
+              updatedAt: new Date().toISOString()
+            }
           : p
       );
       setPermissions(updatedPermissions);
       toast.success("Permission updated successfully");
     } else {
       // Create new permission
-      const newPermission: Permission = {
+      const newPermission: PermissionData = {
         id: Math.random().toString(36).substring(2, 9),
-        ...values,
+        name: values.name,
+        description: values.description,
+        module: values.module,
+        isActive: values.isActive,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -293,10 +302,14 @@ const Permissions = () => {
         <PageHeader
           title="Permissions"
           description="Manage system permissions"
-          showAddButton={true}
-          onAddClick={handleAddPermission}
-          addButtonLabel="Add Permission"
         >
+          <Button 
+            onClick={handleAddPermission} 
+            className="mt-2"
+          >
+            Add Permission
+          </Button>
+          
           <DataFilters
             filters={filters}
             options={filterOptions}

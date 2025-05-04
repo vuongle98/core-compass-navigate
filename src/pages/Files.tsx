@@ -1,519 +1,343 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { toast } from "sonner";
+import { useDropzone } from "react-dropzone";
+import { File as LucideFile, Download, Eye, Trash2, Share2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
-  DialogHeader,
   DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Eye,
-  Download,
-  Trash,
-  Info,
-  Upload,
-  Clock,
-  FileText,
-  FileImage,
-  FileAudio,
-  FileVideo,
-  File as FileIcon,
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { useSearchParams } from "react-router-dom";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { toast } from "sonner";
-import useApiQuery from "@/hooks/use-api-query";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import useDebounce from "@/hooks/use-debounce";
-import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 
 interface FileItem {
-  id: number;
+  id: string;
   name: string;
-  extension: string;
   size: number;
-  uploadedBy?: string;
-  uploadedAt?: string;
-  path: string;
-  contentType?: string;
+  type: string;
+  uploadDate: string;
+  url: string;
 }
 
-const FileTypeIcon = ({ extension }: { extension: string }) => {
-  switch (extension?.toLowerCase()) {
-    case "jpg":
-    case "jpeg":
-    case "png":
-    case "gif":
-      return <FileImage className="h-4 w-4" />;
-    case "mp3":
-    case "wav":
-    case "ogg":
-      return <FileAudio className="h-4 w-4" />;
-    case "mp4":
-    case "webm":
-    case "mov":
-      return <FileVideo className="h-4 w-4" />;
-    case "pdf":
-      return <FileText className="h-4 w-4" />;
-    default:
-      return <FileIcon className="h-4 w-4" />;
-  }
-};
-
 const Files = () => {
-  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  const [draggedFile, setDraggedFile] = useState<number | null>(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [isUploading, setIsUploading] = useState(false);
-
-  const mockFiles: FileItem[] = [
-    {
-      id: 1,
-      name: "annual-report.pdf",
-      extension: "PDF",
-      size: 2400000,
-      uploadedBy: "Alice Smith",
-      uploadedAt: "2023-04-10",
-      path: null,
-    },
-    {
-      id: 2,
-      name: "user-avatar.png",
-      extension: "PNG",
-      size: 156000,
-      uploadedBy: "Bob Johnson",
-      uploadedAt: "2023-04-09",
-      path: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=500",
-    },
-    {
-      id: 3,
-      name: "data-export.csv",
-      extension: "CSV",
-      size: 1200000,
-      uploadedBy: "Carol Davis",
-      uploadedAt: "2023-04-08",
-      path: null,
-    },
-    {
-      id: 4,
-      name: "product-photo.jpg",
-      extension: "JPG",
-      size: 1800000,
-      uploadedBy: "Dave Wilson",
-      uploadedAt: "2023-04-07",
-      path: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=500",
-    },
-    {
-      id: 5,
-      name: "marketing-banner.png",
-      extension: "PNG",
-      size: 2100000,
-      uploadedBy: "Eve Brown",
-      uploadedAt: "2023-04-06",
-      path: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=500",
-    },
-  ];
-
+  const [files, setFiles] = useState<FileItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [shareType, setShareType] = useState("public");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Debounce the search term to avoid too many API calls
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  // Mock data
+  useEffect(() => {
+    // Simulate fetching files from an API
+    const mockFiles: FileItem[] = [
+      {
+        id: "1",
+        name: "Document.pdf",
+        size: 2.5,
+        type: "pdf",
+        uploadDate: "2023-01-01",
+        url: "/files/Document.pdf",
+      },
+      {
+        id: "2",
+        name: "Image.jpg",
+        size: 1.2,
+        type: "jpg",
+        uploadDate: "2023-02-15",
+        url: "/files/Image.jpg",
+      },
+      {
+        id: "3",
+        name: "Presentation.pptx",
+        size: 3.8,
+        type: "pptx",
+        uploadDate: "2023-03-20",
+        url: "/files/Presentation.pptx",
+      },
+    ];
+    setFiles(mockFiles);
+  }, []);
 
-  const {
-    data: fileData,
-    isLoading,
-    filters,
-    setFilters,
-    resetFilters,
-    page,
-    pageSize,
-    setPage,
-    setPageSize,
-    totalItems,
-    refresh,
-    error,
-  } = useApiQuery<FileItem>({
-    endpoint: "/api/file",
-    queryKey: ["files", debouncedSearchTerm],
-    initialPage: 0,
-    initialPageSize: 10,
-    persistFilters: true,
-    onError: (err) => {
-      console.error("Failed to fetch files:", err);
-      toast.error("Failed to load files, using cached data", {
-        description: "Could not connect to the server. Please try again later.",
+  // Dropzone configuration
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      acceptedFiles.forEach(async (file) => {
+        const filename = file.name;
+        const uploadDate = new Date().toISOString().split("T")[0]; // Format as YYYY-MM-DD
+        const newFile: FileItem = {
+          id: Date.now().toString(), // Generate a unique ID
+          name: filename,
+          size: file.size / 1024, // Convert to KB
+          type: file.type.split("/")[1], // Extract file extension
+          uploadDate: uploadDate,
+          url: URL.createObjectURL(file), // Create a local URL for display
+        };
+
+        setFiles((prevFiles) => [...prevFiles, newFile]);
+        toast.success(`${filename} uploaded successfully`);
+
+        try {
+          // Simulate API call to upload file
+          // In a real app, you'd send the file to your server here
+          // await apiService.uploadFile(file);
+          EnhancedApiService.logUserAction('files', 'upload', { filename, size: file.size });
+        } catch (error) {
+          console.error("File upload error:", error);
+          toast.error(`Failed to upload ${filename}`);
+        }
       });
     },
-    mockData: {
-      content: mockFiles,
-      totalElements: mockFiles.length,
-      totalPages: 1,
-      number: 0,
-      size: 10,
-    },
-  });
+    [setFiles]
+  );
 
+  const { getRootProps, getInputProps } = useDropzone({ onDrop });
+
+  // Filter options
   const filterOptions: FilterOption[] = [
     {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search roles...",
-    },
-    {
-      id: "size",
-      label: "File size",
-      type: "select",
-      options: [
-        { value: "large", label: "Large (> 50MB)" },
-        { value: "medium", label: "Medium (> 10MB)" },
-        { value: "small", label: "Small (< 10MB)" },
-      ],
+      placeholder: "Search files...",
     },
     {
       id: "type",
-      label: "File type",
+      label: "Type",
       type: "select",
       options: [
-        { value: "image", label: "Image" },
         { value: "pdf", label: "PDF" },
-        { value: "zip", label: "Zip" },
-        { value: "other", label: "Others" },
+        { value: "jpg", label: "JPG" },
+        { value: "pptx", label: "PPTX" },
       ],
     },
   ];
 
-  const handleDragStart = (fileId: number) => {
-    setDraggedFile(fileId);
-    EnhancedApiService.logUserAction2("file_drag_started", { fileId });
+  // Actions for files
+  const getActionItems = (file: FileItem) => {
+    return [
+      {
+        type: "view" as ActionType,
+        label: "View File",
+        onClick: () => handleViewFile(file),
+      },
+      {
+        type: "download" as ActionType,
+        label: "Download File",
+        onClick: () => handleDownloadFile(file),
+      },
+      {
+        type: "share" as ActionType,
+        label: "Share File",
+        onClick: () => handleShareFile(file),
+      },
+      {
+        type: "delete" as ActionType,
+        label: "Delete File",
+        onClick: () => handleDeleteFile(file),
+      },
+    ];
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDraggingOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-
-    // Handle file drops
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files);
-    }
-    // Handle reordering (if draggedFile is set)
-    else if (draggedFile !== null) {
-      EnhancedApiService.logUserAction2("file_reordered", {
-        fileId: draggedFile,
-      });
-      toast.success("File order updated");
-    }
-
-    setDraggedFile(null);
-  };
-
-  const handleFileUpload = async (fileList: FileList) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    const uploadedFiles: FileItem[] = [];
+  // Handle file operations
+  const handleDeleteFile = async (file: FileItem) => {
+    setFiles(files.filter((f) => f.id !== file.id));
+    toast.success(`${file.name} deleted successfully`);
 
     try {
-      for (let i = 0; i < fileList.length; i++) {
-        const file = fileList[i];
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Optionally, you can track progress using XMLHttpRequest for more accuracy
-        // Here, we use fetch and simulate progress
-        const { data, success } = await EnhancedApiService.post<FileItem>('/api/file', formData);
-
-        if (!success) {
-          throw new Error(`Failed to upload file: ${file.name}`);
-        }
-
-        // Simulate progress for each file
-        setUploadProgress(Math.round(((i + 1) / fileList.length) * 100));
-
-        uploadedFiles.push({
-          id: data.id,
-          name: data.name,
-          extension: data.extension,
-          size: data.size,
-          uploadedBy: "Current User",
-          uploadedAt: new Date().toLocaleDateString(),
-          path: data.path,
-        });
-      }
-      toast.success(`${fileList.length} file(s) uploaded successfully`);
-      EnhancedApiService.logUserAction2("files_uploaded", {
-        count: fileList.length,
-      });
-    } catch (error: any) {
-      toast.error(error.message || 'File upload failed');
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(100);
-      // Optionally update your file list state here with uploadedFiles
+      // Simulate API call to delete file
+      // In a real app, you'd call your API to delete the file from the server
+      // await apiService.deleteFile(file.id);
+      EnhancedApiService.logUserAction('files', 'delete', { id: file.id, name: file.name });
+    } catch (error) {
+      console.error("File delete error:", error);
+      toast.error(`Failed to delete ${file.name}`);
     }
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files);
-      refresh();
+  const handleViewFile = async (file: FileItem) => {
+    toast.info(`Viewing ${file.name}`);
+
+    try {
+      // Simulate API call to view file
+      // In a real app, you'd open the file in a new tab or display it in a viewer
+      // await apiService.viewFile(file.id);
+      EnhancedApiService.logUserAction('files', 'view', { id: file.id, name: file.name });
+    } catch (error) {
+      console.error("File view error:", error);
+      toast.error(`Failed to view ${file.name}`);
     }
   };
 
-  const handleDownloadFile = (fileInfo: FileItem) => {
-    toast.success("File downloaded successfully");
-    EnhancedApiService.logUserAction2("file_downloaded", { fileId: fileInfo.id });
+  const handleDownloadFile = async (file: FileItem) => {
+    toast.success(`Downloading ${file.name}`);
 
-    EnhancedApiService.get<Blob>(`/api/file/${fileInfo.id}/download`, { responseType: "blob" })
-      .then((response) => {
-        const file = new Blob([response.data], { type: fileInfo.contentType });
-        const url = window.URL.createObjectURL(file);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileInfo.name;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      })
-      .catch((error) => {
-        toast.error("Failed to download file");
-        console.error("Failed to download file:", error);
-      });
+    try {
+      // Simulate API call to download file
+      // In a real app, you'd trigger a download from your server
+      // const blob = await apiService.downloadFile(file.id);
+      EnhancedApiService.logUserAction('files', 'download', { id: file.id, name: file.name });
+
+      // Create a temporary URL for the blob and trigger the download
+      // const url = window.URL.createObjectURL(new Blob([blob.data]));
+      // const link = document.createElement('a');
+      // link.href = url;
+      // link.setAttribute('download', file.name);
+      // document.body.appendChild(link);
+      // link.click();
+      // link.parentNode?.removeChild(link);
+
+      // If needed, handle blob.data here
+    } catch (error) {
+      console.error("File download error:", error);
+      toast.error(`Failed to download ${file.name}`);
+    }
   };
 
-  const handleViewFile = (fileInfo: FileItem) => {
-    toast.success("File previewed successfully");
-
-    return <div className="space-y-2">
-      <h4 className="text-sm font-semibold">{fileInfo.name}</h4>
-      <div className="text-sm">
-        <p>
-          <span className="font-medium">Type:</span> {fileInfo.contentType}
-        </p>
-        <p>
-          <span className="font-medium">Size:</span> {calculateFileSize(fileInfo.size)}
-        </p>
-        <p>
-          <span className="font-medium">Uploaded by:</span>{" "}
-          {fileInfo.uploadedBy}
-        </p>
-        <p>
-          <span className="font-medium">Date:</span>{" "}
-          {fileInfo.uploadedAt}
-        </p>
-        <p>
-          <span className="font-medium">ID:</span> {fileInfo.id}
-        </p>
-      </div>
-    </div>
+  const handleShareFile = async (file: FileItem) => {
+    setSelectedFile(file);
+    setIsShareDialogOpen(true);
   };
 
-  const handleDeleteFile = (id: number) => {
-    toast.success("File deleted successfully");
-    EnhancedApiService.logUserAction2("file_deleted", { fileId: id });
-  };
+  const handleShareConfirm = async () => {
+    if (!selectedFile) return;
 
-  const calculateFileSize = (size: number) => {
-    if (size < 1024) return `${size} bytes`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    toast.success(`Sharing ${selectedFile.name} as ${shareType}`);
+    setIsShareDialogOpen(false);
+
+    try {
+      // Simulate API call to share file
+      // In a real app, you'd call your API to share the file with the selected options
+      // await apiService.shareFile(selectedFile.id, shareType);
+      EnhancedApiService.logUserAction('files', 'share', { id: file.id, name: file.name, shareType });
+    } catch (error) {
+      console.error("File share error:", error);
+      toast.error(`Failed to share ${selectedFile.name}`);
+    }
   };
 
   const columns = [
     {
-      header: "#",
-      accessorKey: "id",
-      cell: (item: FileItem) => (
-        <span className="text-muted-foreground">{item.id}</span>
+      header: "Name",
+      accessorKey: "name",
+      cell: (file: FileItem) => (
+        <div className="flex items-center">
+          <LucideFile className="mr-2 h-4 w-4" />
+          {file.name}
+        </div>
       ),
       sortable: true,
     },
     {
-      header: "File Name",
-      accessorKey: "name" as const,
-      cell: (fileInfo: FileItem) => {
-        return (
-          <div className="flex items-center space-x-2">
-            <FileTypeIcon extension={fileInfo.extension} />
-            <span className="truncate" title={fileInfo.name}>{fileInfo.name?.length > 15 ? fileInfo.name?.slice(0, 20) + "..." : fileInfo.name}</span>
-            <span className="text-muted-foreground">({fileInfo.extension})</span>
-          </div>
-        );
-      },
+      header: "Size",
+      accessorKey: "size",
+      cell: (file: FileItem) => <span>{file.size} KB</span>,
+      sortable: true,
     },
-    { header: "Type", accessorKey: "type" as const, cell: (fileInfo: FileItem) => fileInfo.contentType },
-    { header: "Size", accessorKey: "size" as const, cell: (fileInfo: FileItem) => calculateFileSize(fileInfo.size) },
-    { header: "Uploaded By", accessorKey: "uploadedBy" as const },
-    { header: "Upload Date", accessorKey: "uploadedAt" as const },
+    {
+      header: "Type",
+      accessorKey: "type",
+      sortable: true,
+    },
+    {
+      header: "Upload Date",
+      accessorKey: "uploadDate",
+      sortable: true,
+    },
     {
       header: "Actions",
-      accessorKey: "actions" as const,
-      cell: (fileInfo: FileItem) => (
-        <ActionsMenu
-          actions={[
-            {
-              type: "view" as ActionType,
-              label: "Preview",
-              onClick: () => setPreviewFile(fileInfo),
-            },
-            {
-              type: "view" as ActionType,
-              label: "View Details",
-              onClick: () => handleViewFile(fileInfo),
-            },
-            // {
-            //   type: "edit" as ActionType,
-            //   label: "Edit",
-            //   onClick: () => openEditDialog(fileInfo),
-            // },
-            {
-              type: "delete" as ActionType,
-              label: "Delete",
-              onClick: () => handleDeleteFile(fileInfo.id),
-            },
-            {
-              type: "download" as ActionType,
-              label: "Download",
-              onClick: () => handleDownloadFile(fileInfo),
-            }
-          ]}
-        />
-      )
+      accessorKey: "actions",
+      cell: (file: FileItem) => (
+        <ActionsMenu actions={getActionItems(file)} />
+      ),
     },
   ];
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main
-        className="flex-1 overflow-y-auto p-8"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <PageHeader title="Files" description="Manage uploaded files">
+      <main className="flex-1 overflow-y-auto p-8">
+        <Breadcrumbs items={[{ label: "Files", path: "/files" }]} />
+
+        <PageHeader title="Files" description="Manage your files">
+          <div {...getRootProps()} className="mt-4">
+            <Input {...getInputProps()} id="upload" className="hidden" />
+            <Label htmlFor="upload" className="cursor-pointer">
+              <Button>Upload Files</Button>
+            </Label>
+          </div>
+
           <DataFilters
-            filters={filters}
+            filters={{ search: searchTerm }}
             options={filterOptions}
             onChange={(newFilters) => {
-              setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
+              setSearchTerm(newFilters.search as string);
+              setSearchParams(newFilters);
             }}
             onReset={() => {
-              resetFilters();
               setSearchTerm("");
-              refresh();
+              setSearchParams({});
             }}
-            className="mt-2"
+            className="mt-4"
           />
         </PageHeader>
 
-        {isDraggingOver && (
-          <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
-            <div className="bg-background p-8 rounded-lg shadow-lg text-center">
-              <Upload className="h-12 w-12 mx-auto text-primary" />
-              <p className="text-lg font-medium mt-2">Drop files to upload</p>
-            </div>
-          </div>
-        )}
-
-        {isUploading && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span>Uploading...</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <Progress value={uploadProgress} className="w-full h-2" />
-          </div>
-        )}
-
-        <div className="flex justify-end mb-4 mt-4">
-          <div className="relative">
-            <input
-              type="file"
-              id="file-upload"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={handleFileInputChange}
-              multiple
-            />
-            <Button>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Files
-            </Button>
-          </div>
-        </div>
-
         <div className="mt-4">
-          <DataTable
-            data={fileData}
-            columns={columns}
-            title="File Management"
-            pagination={true}
-            showAddButton={false}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-          />
+          <DataTable data={files} columns={columns} title="Files" />
         </div>
 
-        <Dialog
-          open={!!previewFile}
-          onOpenChange={(open) => !open && setPreviewFile(null)}
-        >
-          <DialogContent className="sm:max-w-lg">
+        {/* Share File Dialog */}
+        <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>{previewFile?.name}</DialogTitle>
+              <DialogTitle>Share File</DialogTitle>
               <DialogDescription>
-                {previewFile?.size} • Uploaded by {previewFile?.uploadedBy} on{" "}
-                {previewFile?.uploadedAt}
+                Choose how you want to share this file.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-center p-2">
-              {previewFile?.path ? (
-                <img
-                  src={previewFile.path}
-                  alt={previewFile.name}
-                  className="max-h-[70vh] object-contain rounded-md"
-                />
-              ) : (
-                <div className="text-center p-8 text-muted-foreground">
-                  No preview available
-                </div>
-              )}
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="shareType" className="text-right">
+                  Share Type
+                </Label>
+                <select
+                  id="shareType"
+                  className="col-span-3 rounded-md border border-gray-200 px-2 py-1"
+                  value={shareType}
+                  onChange={(e) => setShareType(e.target.value)}
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
             </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setIsShareDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" onClick={handleShareConfirm}>
+                Share
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </main>

@@ -1,8 +1,7 @@
-
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 import { BlogPost, BlogCategory, BlogTag } from "@/types/Blog";
-import ServiceRegistry from "./ServiceRegistry";
+import ServiceRegistry from './ServiceRegistry';
 
 export interface BlogSearchParams {
   search?: string;
@@ -400,6 +399,7 @@ class BlogService {
 }
 
 // Initialize and register with the service registry
+const apiService = ServiceRegistry.get<EnhancedApiService>('api');
 const blogService = BlogService.getInstance();
 ServiceRegistry.getInstance().register('blog', blogService);
 

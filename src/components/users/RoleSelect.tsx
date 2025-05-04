@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import GenericMultiSelect from "@/components/common/GenericMultiSelect";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { Role } from "@/pages/Roles";
+import { Role } from "@/types/Auth";
 
 interface RoleSelectProps {
   value: Role[];
@@ -36,7 +37,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
               EnhancedApiService.get<Role>(`/api/role/${id}`)
             );
             const responses = await Promise.all(promises);
-            const roles = responses.map((response) => response.data) as Role[];
+            const roles = responses.map((response) => response) as Role[];
             setInitialRoles(roles);
           } else if (typeof value[0] === "object") {
             setInitialRoles(value as Role[]);
@@ -79,7 +80,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   // Handle form field transformation
   const handleRoleChange = (newValues: Role[]) => {
     // Convert to numbers if they're not already
-    const numericValues = newValues.map((v) => v.id);
+    const numericValues = newValues.map((v) => typeof v.id === 'string' ? parseInt(v.id as string, 10) : v.id);
     onChange(newValues, numericValues);
   };
 

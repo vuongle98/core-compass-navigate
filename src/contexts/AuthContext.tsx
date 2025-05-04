@@ -118,11 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      await AuthService.changePassword({ 
+      const data = { 
         currentPassword, 
         newPassword, 
         confirmPassword: newPassword 
-      });
+      };
+      
+      await AuthService.changePassword(data);
       toast.success("Password changed successfully");
       return true;
     } catch (error) {

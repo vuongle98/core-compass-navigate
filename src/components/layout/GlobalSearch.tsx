@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -19,7 +18,7 @@ type SearchResult = {
   icon?: React.ReactNode;
   url: string;
   type: string;
-  permission?: Permission;
+  permission?: string;
 };
 
 interface GlobalSearchProps {
@@ -84,15 +83,15 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         // Only do API search if query is meaningful
         if (debouncedSearchQuery.length >= 3) {
           // Search API for content
-          const response = await EnhancedApiService.post<{ results: SearchResult[] }>('/api/search', {
-            query: debouncedSearchQuery,
-            limit: 10
-          });
+          try {
+            const response = await EnhancedApiService.post<{ results: SearchResult[] }>('/api/search', {
+              query: debouncedSearchQuery,
+              limit: 10
+            });
 
-          if (response.success && response.data.results) {
             // Filter API results based on permissions
-            const apiResults = response.data.results.filter(item => {
-              return !item.permission || hasPermission(item.permission as Permission);
+            const apiResults = response.results.filter(item => {
+              return !item.permission || hasPermission(item.permission);
             });
 
             // Combine navigation items with API results, removing duplicates
@@ -104,11 +103,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
             });
 
             setResults(combined);
-          } else {
+          } catch (error) {
+            console.error('Search API error:', error);
             setResults(filteredNavItems);
           }
         } else {
-          setResults(filteredNavItems);
+          setResults(filteredNavigationItems);
         }
       } catch (error) {
         console.error('Search error:', error);
@@ -120,7 +120,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     };
 
     search();
-  }, [debouncedSearchQuery, hasPermission]);
+  }, [debouncedSearchQuery]);
 
   const handleSelect = (result: SearchResult) => {
     onOpenChange(false);

@@ -1,6 +1,6 @@
 
 import { useAuth } from "@/contexts/AuthContext";
-import { Permission, DEFAULT_ROLES, UserPermissions } from "@/types/Auth";
+import { Permission, DEFAULT_ROLES, UserPermissions, Role } from "@/types/Auth";
 import { useMemo } from "react";
 
 export function usePermissions(): UserPermissions {
@@ -18,50 +18,71 @@ export function usePermissions(): UserPermissions {
     // Map role strings to actual role objects
     const roles = roleArray.map(role => {
       // If it's already a role object with permissions
-      if (typeof role === 'object' && role.permissions) {
-        return role;
+      if (typeof role === 'object' && role !== null && 'permissions' in role) {
+        return role as Role;
       }
       
       // If it's a role code string, map to default role
-      const roleCode = typeof role === 'string' ? role : role.code;
-      return DEFAULT_ROLES[roleCode.toUpperCase()] || DEFAULT_ROLES.GUEST;
+      const roleCode = typeof role === 'string' ? role : (role as Role).code;
+      return DEFAULT_ROLES[roleCode?.toUpperCase() as keyof typeof DEFAULT_ROLES] || DEFAULT_ROLES.GUEST;
     });
     
     // Extract all permissions from all roles
     const allPermissions = roles.reduce<Permission[]>((acc, role) => {
-      // Explicitly cast to Permission[] to avoid the unknown[] type error
-      const rolePermissions = Array.isArray(role.permissions) 
-        ? (role.permissions as Permission[])
-        : [];
+      // Get permissions from the role
+      const rolePermissions: Permission[] = [];
+      
+      if (role.permissions) {
+        (role.permissions as (string | Permission)[]).forEach(perm => {
+          if (typeof perm === 'string') {
+            rolePermissions.push({ id: perm, name: perm });
+          } else {
+            rolePermissions.push(perm);
+          }
+        });
+      }
       
       return [...acc, ...rolePermissions];
     }, [] as Permission[]);
     
-    // Remove duplicates - use type assertion to ensure TypeScript knows this is Permission[]
-    const uniquePermissions = [...new Set(allPermissions)] as Permission[];
+    // Remove duplicates by ID
+    const uniquePermissions = Array.from(
+      new Map(allPermissions.map(item => [item.id, item])).values()
+    );
     
     // For development: Add all permissions if user is admin
     const isAdmin = roles.some(role => role.code === 'ADMIN');
     if (isAdmin) {
       // Make sure admin has feature flags permission
-      if (!uniquePermissions.includes('feature:flags')) {
-        uniquePermissions.push('feature:flags');
+      const hasFeatureFlags = uniquePermissions.some(p => 
+        (typeof p === 'string' && p === 'feature:flags') || 
+        (typeof p === 'object' && p.name === 'feature:flags')
+      );
+      
+      if (!hasFeatureFlags) {
+        uniquePermissions.push({ id: 'feature:flags', name: 'feature:flags' });
       }
     }
     
     return {
       roles,
       permissions: uniquePermissions,
-      hasPermission: (permission: Permission) => uniquePermissions.includes(permission),
+      hasPermission: (permission: string | Permission) => {
+        const permName = typeof permission === 'string' ? permission : permission.name;
+        return uniquePermissions.some(p => 
+          (typeof p === 'string' && p === permName) || 
+          (typeof p === 'object' && p.name === permName)
+        );
+      },
       hasRole: (roleCode: string) => roles.some(role => 
-        role.code.toUpperCase() === roleCode.toUpperCase()
+        role.code?.toUpperCase() === roleCode.toUpperCase()
       )
     };
   }, [user]);
 }
 
 // Permission guard hook for protected components
-export function useGuard(requiredPermission: Permission): { allowed: boolean } {
+export function useGuard(requiredPermission: string | Permission): { allowed: boolean } {
   const { hasPermission } = usePermissions();
   const allowed = hasPermission(requiredPermission);
   
