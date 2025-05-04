@@ -12,12 +12,12 @@ interface PermissionGuardProps {
 }
 
 export function PermissionGuard({ children, permission, fallback }: PermissionGuardProps) {
-  const { hasPermission } = usePermissions();
+  const permissions = usePermissions();
   
   // Check if user has any of the required permissions
   const hasRequiredPermission = Array.isArray(permission)
-    ? permission.some(p => hasPermission(p))
-    : hasPermission(permission);
+    ? permission.some(p => permissions.hasPermission(p))
+    : permissions.hasPermission(permission);
   
   if (hasRequiredPermission) {
     return <>{children}</>;

@@ -9,9 +9,10 @@ export interface DashboardMetric {
 }
 
 export interface ActivityData {
-  userActivity: { date: string; count: number }[];
-  fileUploads: { date: string; count: number }[];
-  notifications: { date: string; count: number }[];
+  date: string;
+  count: number;
+  name: string;  // Added for compatibility
+  value: number; // Added for compatibility
 }
 
 export interface PerformanceData {
@@ -19,6 +20,7 @@ export interface PerformanceData {
   cpu: number;
   memory: number;
   responseTime: number;
+  name: string;  // Added for compatibility
 }
 
 class DashboardService {
@@ -82,7 +84,11 @@ class DashboardService {
   /**
    * Get activity data for charts
    */
-  static async getActivityData(): Promise<ActivityData> {
+  static async getActivityData(): Promise<{ 
+    userActivity: ActivityData[], 
+    fileUploads: ActivityData[], 
+    notifications: ActivityData[] 
+  }> {
     // In a real app, this would be an API call
     const today = new Date();
     const userActivity = Array(7).fill(0).map((_, i) => {
@@ -90,7 +96,9 @@ class DashboardService {
       date.setDate(date.getDate() - (6 - i));
       return {
         date: date.toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 50) + 10
+        count: Math.floor(Math.random() * 50) + 10,
+        name: 'User Activity',
+        value: Math.floor(Math.random() * 50) + 10
       };
     });
 
@@ -99,7 +107,9 @@ class DashboardService {
       date.setDate(date.getDate() - (6 - i));
       return {
         date: date.toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 20) + 5
+        count: Math.floor(Math.random() * 20) + 5,
+        name: 'File Uploads',
+        value: Math.floor(Math.random() * 20) + 5
       };
     });
 
@@ -108,7 +118,9 @@ class DashboardService {
       date.setDate(date.getDate() - (6 - i));
       return {
         date: date.toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 30) + 15
+        count: Math.floor(Math.random() * 30) + 15,
+        name: 'Notifications',
+        value: Math.floor(Math.random() * 30) + 15
       };
     });
 
@@ -132,7 +144,8 @@ class DashboardService {
         timestamp: date.toISOString(),
         cpu: Math.floor(Math.random() * 60) + 20,
         memory: Math.floor(Math.random() * 50) + 30,
-        responseTime: Math.floor(Math.random() * 300) + 50
+        responseTime: Math.floor(Math.random() * 300) + 50,
+        name: `Performance at ${date.getHours()}:00`
       };
     });
   }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -32,7 +33,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const permissions = usePermissions();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Initial navigation items
@@ -51,7 +52,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
   // Filter navigation items based on permissions
   const filteredNavigationItems = navigationItems.filter(item => {
-    return !item.permission || hasPermission(item.permission);
+    return !item.permission || permissions.hasPermission(item.permission);
   });
 
   // Effect to handle dialog open state and focus input
@@ -91,7 +92,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
             // Filter API results based on permissions
             const apiResults = response.results.filter(item => {
-              return !item.permission || hasPermission(item.permission);
+              return !item.permission || permissions.hasPermission(item.permission);
             });
 
             // Combine navigation items with API results, removing duplicates

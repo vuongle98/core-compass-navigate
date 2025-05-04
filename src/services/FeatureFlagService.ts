@@ -48,7 +48,7 @@ class FeatureFlagService {
       
       // If feature doesn't exist, it's disabled
       if (!feature) {
-        LoggingService.warn('feature_flags', 'feature_not_found', `Feature not found: ${featureKey}`);
+        LoggingService.warning('feature_flags', 'feature_not_found', `Feature not found: ${featureKey}`);
         return false;
       }
       

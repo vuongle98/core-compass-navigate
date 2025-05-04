@@ -22,6 +22,8 @@ export interface PermissionData extends Permission {
   description: string;
   isActive: boolean;
   module: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface User {
@@ -36,6 +38,16 @@ export interface User {
   avatar?: string;
 }
 
-export type UserPermissions = Record<string, boolean>;
+export interface UserPermissions {
+  roles: Role[];
+  permissions: Permission[];
+  hasPermission: (permission: string | Permission) => boolean;
+  hasRole: (roleCode: string) => boolean;
+}
 
-export const DEFAULT_ROLES = ['user', 'admin', 'manager'];
+export const DEFAULT_ROLES = {
+  ADMIN: 'admin',
+  USER: 'user',
+  MANAGER: 'manager',
+  GUEST: 'guest'
+};

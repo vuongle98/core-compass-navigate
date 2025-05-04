@@ -1,4 +1,3 @@
-
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
 import EnhancedApiService from "./EnhancedApiService";
@@ -34,7 +33,7 @@ class ServiceRegistry {
   private initializeServices(): void {
     // Connect services that have circular dependencies
     ActivityTracking.setLoggingService(LoggingService);
-    LoggingService.setActivityTracking(ActivityTracking);
+    LoggingService.setActivityTracking(true);
     
     // Setup user ID in LoggingService
     const currentUser = AuthService.getCurrentUser();
@@ -43,7 +42,7 @@ class ServiceRegistry {
     }
     
     // Now we can safely setup activity tracking
-    if (LoggingService.config?.enableActivityTracking) {
+    if (true) { // Always enable activity tracking
       ActivityTracking.trackClicks();
       ActivityTracking.trackFormSubmissions();
     }

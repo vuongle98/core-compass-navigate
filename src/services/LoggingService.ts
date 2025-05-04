@@ -34,8 +34,9 @@ class LoggingService {
   /**
    * Set activity tracking service
    */
-  public static setActivityTracking(activityTracking: any) {
-    // This is just for circular dependency resolution
+  public static setActivityTracking(activityTracking: boolean) {
+    // This is for circular dependency resolution
+    this.config.enableActivityTracking = activityTracking;
   }
 
   /**
@@ -49,6 +50,13 @@ class LoggingService {
    * Log warning message
    */
   public static warning(category: string, action: string, message: string, data?: any) {
+    this.log('warning', category, action, message, data);
+  }
+
+  /**
+   * Log warning message (alias for warning)
+   */
+  public static warn(category: string, action: string, message: string, data?: any) {
     this.log('warning', category, action, message, data);
   }
 

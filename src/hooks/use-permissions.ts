@@ -24,7 +24,11 @@ export function usePermissions(): UserPermissions {
       
       // If it's a role code string, map to default role
       const roleCode = typeof role === 'string' ? role : (role as Role).code;
-      return DEFAULT_ROLES[roleCode?.toUpperCase() as keyof typeof DEFAULT_ROLES] || DEFAULT_ROLES.GUEST;
+      return { 
+        id: roleCode || DEFAULT_ROLES.GUEST,
+        code: roleCode || DEFAULT_ROLES.GUEST,
+        name: roleCode || DEFAULT_ROLES.GUEST
+      } as Role;
     });
     
     // Extract all permissions from all roles
@@ -38,7 +42,7 @@ export function usePermissions(): UserPermissions {
             rolePermissions.push({ 
               id: perm, 
               name: perm, 
-              code: perm // Adding required code property
+              code: perm
             });
           } else {
             rolePermissions.push(perm);
@@ -67,12 +71,12 @@ export function usePermissions(): UserPermissions {
         uniquePermissions.push({ 
           id: 'feature:flags', 
           name: 'feature:flags', 
-          code: 'feature:flags' // Adding required code property
+          code: 'feature:flags'
         });
       }
     }
-    
-    return {
+
+    const result: UserPermissions = {
       roles,
       permissions: uniquePermissions,
       hasPermission: (permission: string | Permission) => {
@@ -86,13 +90,15 @@ export function usePermissions(): UserPermissions {
         role.code?.toUpperCase() === roleCode.toUpperCase()
       )
     };
+    
+    return result;
   }, [user]);
 }
 
 // Permission guard hook for protected components
 export function useGuard(requiredPermission: string | Permission): { allowed: boolean } {
-  const { hasPermission } = usePermissions();
-  const allowed = hasPermission(requiredPermission);
+  const permissions = usePermissions();
+  const allowed = permissions.hasPermission(requiredPermission);
   
   return { allowed };
 }
