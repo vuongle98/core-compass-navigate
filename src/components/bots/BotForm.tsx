@@ -26,21 +26,21 @@ import { Bot } from "@/pages/Bots";
 // Define the form schema with conditional fields based on bot type
 const botFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  token: z.string().min(10, "Please enter a valid Telegram bot token"),
-  type: z.enum(["WEBHOOK", "LONG_POLLING"]),
-  webhookUrl: z
-    .string()
-    .url("Please enter a valid URL")
-    .optional()
-    .or(z.literal("")),
-  pollingInterval: z.number().min(5).optional(),
+  apiToken: z.string().min(10, "Please enter a valid Telegram bot token"),
+  configuration: z.object({
+    updateMethod: z.enum(["WEBHOOK", "LONG_POLLING"]),
+    webhookUrl: z
+      .string()
+      .url("Please enter a valid URL")
+      .optional()
+      .or(z.literal("")),
+    pollingInterval: z.number().min(5).optional(),
+  }),
   description: z.string().optional(),
 });
 
-type BotFormValues = z.infer<typeof botFormSchema>;
-
 interface BotFormProps {
-  initialData?: Partial<BotFormValues>;
+  initialData?: Partial<Bot>;
   onSubmit: (data: Bot) => Promise<void> | void;
   isLoading?: boolean;
 }
@@ -51,16 +51,18 @@ export function BotForm({
   isLoading = false,
 }: BotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [botType, setBotType] = useState(initialData?.type || "WEBHOOK");
+  const [botType, setBotType] = useState(initialData?.configuration?.updateMethod || "WEBHOOK");
 
   const form = useForm<Bot>({
     resolver: zodResolver(botFormSchema),
     defaultValues: {
       name: initialData?.name || "",
-      token: initialData?.token || "",
-      type: initialData?.type || "WEBHOOK",
-      webhookUrl: initialData?.webhookUrl || "",
-      pollingInterval: initialData?.pollingInterval || 30,
+      apiToken: initialData?.apiToken || "",
+      configuration: {
+        updateMethod: initialData?.configuration?.updateMethod || "WEBHOOK",
+        webhookUrl: initialData?.configuration?.webhookUrl || "",
+        pollingInterval: initialData?.configuration?.pollingInterval || 30,
+      },
       description: initialData?.description || "",
     },
   });
@@ -94,7 +96,7 @@ export function BotForm({
 
         <FormField
           control={form.control}
-          name="token"
+          name="apiToken"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bot Token</FormLabel>
@@ -114,7 +116,7 @@ export function BotForm({
 
         <FormField
           control={form.control}
-          name="type"
+          name="configuration.updateMethod"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bot Type</FormLabel>
@@ -146,7 +148,7 @@ export function BotForm({
         {botType === "WEBHOOK" && (
           <FormField
             control={form.control}
-            name="webhookUrl"
+            name="configuration.webhookUrl"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Webhook URL</FormLabel>
@@ -165,7 +167,7 @@ export function BotForm({
         {botType === "LONG_POLLING" && (
           <FormField
             control={form.control}
-            name="pollingInterval"
+            name="configuration.pollingInterval"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Polling Interval (seconds)</FormLabel>

@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bot } from "@/pages/Bots";
 
-interface BotStatusData {
-  bot_id: number;
-  is_running: boolean;
-  memory_usage?: string;
-  cpu_usage?: string;
-  uptime?: string;
+export interface BotStatusData {
+  id: number;
+  botId: number;
+  newStatus: string;
+  previousStatus: string;
+  timestamp: string;
+  notes: string;
 }
 
 interface BotStatusProps {
@@ -37,22 +38,22 @@ export function BotStatus({ botStatus, bot, isLoading }: BotStatusProps) {
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Current Status</dt>
               <dd className="mt-1">
-                <Badge variant={botStatus.is_running ? "default" : "secondary"}>
-                  {botStatus.is_running ? "Running" : "Stopped"}
+                <Badge variant={botStatus.newStatus === "RUNNING" ? "default" : "secondary"}>
+                  {botStatus.newStatus}
                 </Badge>
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Memory Usage</dt>
-              <dd className="mt-1 text-sm">{botStatus.memory_usage || "N/A"}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">Previous Status</dt>
+              <dd className="mt-1 text-sm">{botStatus.previousStatus || "N/A"}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">CPU Usage</dt>
-              <dd className="mt-1 text-sm">{botStatus.cpu_usage || "N/A"}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">Timestamp</dt>
+              <dd className="mt-1 text-sm">{botStatus.timestamp || "N/A"}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Uptime</dt>
-              <dd className="mt-1 text-sm">{botStatus.uptime || "N/A"}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">Notes</dt>
+              <dd className="mt-1 text-sm">{botStatus.notes || "N/A"}</dd>
             </div>
             {/* {bot.type === "LONG_POLLING" && bot.last_polling_time && (
               <div>

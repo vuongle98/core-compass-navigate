@@ -66,7 +66,7 @@ const BotEdit = () => {
     queryFn: async () => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        const response = await EnhancedApiService.get<Bot>(`/api/bots/${id}`);
+        const response = await EnhancedApiService.get<Bot>(`/api/v1/bots/${id}`);
         return response.data;
       } catch (error) {
         console.error(
@@ -87,7 +87,7 @@ const BotEdit = () => {
     mutationFn: async (data: Partial<Bot>) => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        return await EnhancedApiService.put(`/api/bots/${id}`, data);
+        return await EnhancedApiService.put(`/api/v1/bots/${id}`, data);
       } catch (error) {
         console.error(
           "Failed to update bot via API, simulating success:",

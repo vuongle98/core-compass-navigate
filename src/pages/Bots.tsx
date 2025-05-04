@@ -58,13 +58,13 @@ export interface Bot {
   id: number;
   name: string;
   apiToken?: string;
-  status: "RUNNING" | "STOPPED" | "ERRORED"; // STARTING, RUNNING, STOPPING, STOPPED, ERRORED
+  status: "RUNNING" | "STOPPED" | "ERRORED" | "CREATED"; // STARTING, RUNNING, STOPPING, STOPPED, ERRORED
   pollingInterval?: number;
   configuration?: BotConfiguration;
   description?: string;
   scheduled?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Column {
@@ -191,7 +191,10 @@ const Bots = () => {
   const handleCreateBot = async (
     data: Omit<Bot, "id" | "created_at" | "updated_at" | "status">
   ) => {
+
+    console.log(data)
     try {
+      await EnhancedApiService.post(`/api/v1/bots`, data);
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       toast.success("Bot created successfully");
@@ -205,7 +208,7 @@ const Bots = () => {
 
   const handleBotAction = async (botId: number, action: string) => {
     try {
-      await EnhancedApiService.post(`/api/bots/${botId}/${action}`, {}).catch(() => {
+      await EnhancedApiService.post(`/api/v1/bots/${botId}/${action}`, {}).catch(() => {
         return new Promise((resolve) => setTimeout(resolve, 500));
       });
 
@@ -523,7 +526,7 @@ const Bots = () => {
           isOpen={isModalOpen}
           onClose={closeModal}
           title={selectedBot?.name || "Bot Details"}
-          size="lg"
+          size="full"
           showCloseButton={false}
         >
           {selectedBot && <BotDetail bot={selectedBot} onRefresh={refresh} />}

@@ -61,11 +61,11 @@ export function BotInfo({ bot }: BotInfoProps) {
           </div>
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Created At</dt>
-            <dd className="mt-1 text-sm">{new Date(bot.created_at).toLocaleString()}</dd>
+            <dd className="mt-1 text-sm">{new Date(bot.createdAt).toLocaleString()}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Updated At</dt>
-            <dd className="mt-1 text-sm">{new Date(bot.updated_at).toLocaleString()}</dd>
+            <dd className="mt-1 text-sm">{new Date(bot.updatedAt).toLocaleString()}</dd>
           </div>
           {bot.scheduled && (
             <div className="col-span-2">

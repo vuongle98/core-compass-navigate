@@ -7,12 +7,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface ScheduledMessage {
   id: number;
-  bot_id: number;
-  message: string;
-  schedule_time: string;
-  status: "pending" | "sent" | "failed";
-  recipient: string;
-  created_at: string;
+  botId: number;
+  chatId: string;
+  messageText: string;
+  isRecurring: boolean;
+  recurrencePattern: string;
+  isSent: boolean;
+  scheduledTime: string;
+  sentAt: string;
+  isCancelled: boolean;
+  createdAt: string;
 }
 
 interface BotScheduledMessagesProps {
@@ -51,21 +55,31 @@ export function BotScheduledMessages({ messages, isLoading, botId }: BotSchedule
                   <TableRow key={message.id}>
                     <TableCell>{message.id}</TableCell>
                     <TableCell>
-                      <div className="max-w-xs truncate">{message.message}</div>
+                      <div className="max-w-xs truncate">{message.messageText?.length > 10 ? message.messageText.slice(0, 10) + '…' : message.messageText}</div>
                     </TableCell>
-                    <TableCell>{message.recipient}</TableCell>
-                    <TableCell>{new Date(message.schedule_time).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(message.scheduledTime).toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          message.status === "sent"
+                          message.isSent === true
                             ? "default"
-                            : message.status === "pending"
-                            ? "secondary"
-                            : "destructive"
+                            : message.isSent === false
+                              ? "secondary"
+                              : "destructive"
                         }
                       >
-                        {message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                        {message.isSent ? "Sent" : "Pending"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          message.isCancelled === true
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {message.isCancelled ? "Cancelled" : "Active"}
                       </Badge>
                     </TableCell>
                   </TableRow>
