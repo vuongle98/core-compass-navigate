@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from "react";
-import GenericMultiSelect from "@/components/common/GenericMultiSelect";
+import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Role } from "@/types/Auth";
+import useDebounce from "@/hooks/use-debounce";
 
 interface RoleSelectProps {
   value: Role[];
@@ -25,6 +26,45 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 }) => {
   const [initialRoles, setInitialRoles] = useState<Role[]>([]);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [options, setOptions] = useState<Option[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Fetch roles with search
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        setIsLoading(true);
+        const response = await EnhancedApiService.get('/api/role', {
+          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {}
+        });
+        
+        const roles = response.content || response || [];
+        
+        // Transform roles to options format
+        const roleOptions = roles.map((role: Role) => ({
+          value: role.id.toString(),
+          label: (
+            <div>
+              <div className="font-semibold">{role.name}</div>
+              <div className="text-xs text-muted-foreground">{role.description}</div>
+            </div>
+          ),
+          original: role
+        }));
+        
+        setOptions(roleOptions);
+      } catch (error) {
+        console.error("Failed to fetch roles:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, [debouncedSearchQuery]);
 
   // Fetch any initial role objects that are selected
   useEffect(() => {
@@ -55,60 +95,51 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     }
   }, [value, initialLoaded]);
 
-  // Custom transform function to include initially selected roles
-  const transformData = (data: any) => {
-    if (!data) return [];
+  // Convert current value to options format
+  const selectedOptions = value.map(role => ({
+    value: role.id.toString(),
+    label: (
+      <div>
+        <div className="font-semibold">{role.name}</div>
+        <div className="text-xs text-muted-foreground">{role.description}</div>
+      </div>
+    ),
+    original: role
+  }));
 
-    const roles = Array.isArray(data) ? data : data.content || [];
-
-    // If we have initial roles, merge them with the fetched data
-    if (initialRoles.length > 0) {
-      // Create a map of existing IDs to avoid duplicates
-      const existingIds = new Set(roles.map((p: Role) => p.id));
-
-      // Add any initial roles that aren't in the current data
-      const filteredInitialRoles = initialRoles.filter(
-        (p) => !existingIds.has(p.id)
-      );
-
-      return [...roles, ...filteredInitialRoles];
-    }
-
-    return roles;
+  // Handle selection change
+  const handleChange = (selected: Option[] | null) => {
+    if (!selected) return;
+    
+    // Convert selected options back to Role objects
+    const selectedRoles = selected.map(option => option.original as Role);
+    // Convert to numbers if they're not already
+    const numericValues = selectedRoles.map(v => typeof v.id === 'string' ? parseInt(v.id as string, 10) : v.id);
+    onChange(selectedRoles, numericValues);
   };
 
-  // Handle form field transformation
-  const handleRoleChange = (newValues: Role[]) => {
-    // Convert to numbers if they're not already
-    const numericValues = newValues.map((v) => typeof v.id === 'string' ? parseInt(v.id as string, 10) : v.id);
-    onChange(newValues, numericValues);
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   return (
     <div className="role-select-wrapper mb-4">
       <h3 className="text-base font-semibold mb-1">Roles</h3>
-      <GenericMultiSelect
-        value={value}
-        onChange={handleRoleChange}
-        endpoint="/api/role"
-        queryKey={["roles"]}
-        getOptionLabel={(role: Role) => (
-          <div>
-            <div className="font-semibold">{role.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {role.description}
-            </div>
-          </div>
-        )}
-        getOptionValue={(role: Role) => role?.id}
-        transformData={transformData}
-        label="" // Remove the internal label as we're using our own above
-        disabled={disabled || !initialLoaded}
+      <SearchableSelect
+        options={[...options, ...selectedOptions.filter(
+          selected => !options.some(option => option.value === selected.value)
+        )]}
+        value={selectedOptions}
+        onChange={handleChange}
         placeholder={initialLoaded ? "Select roles..." : "Loading roles..."}
+        searchPlaceholder="Search roles..."
+        multiple={true}
+        disabled={disabled || !initialLoaded}
         maxHeight={400}
         showSelectedTags={true}
-        multiple={true}
-        showCheckboxes={true}
+        onSearch={handleSearch}
+        isLoading={isLoading}
       />
     </div>
   );

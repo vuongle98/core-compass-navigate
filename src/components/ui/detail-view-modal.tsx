@@ -54,26 +54,34 @@ export function DetailViewModal({
       }}
     >
       <DialogContent
-        className={cn(sizeClasses[size], "max-h-[85vh] flex flex-col", className)}
+        className={cn(
+          sizeClasses[size], 
+          "max-h-[85vh] flex flex-col p-0 overflow-hidden", 
+          className
+        )}
       >
-        <div className="flex justify-between items-start">
-          <DialogHeader className="pr-8">
-            <DialogTitle>{title}</DialogTitle>
-            {description && <DialogDescription>{description}</DialogDescription>}
-          </DialogHeader>
-          {showCloseButton && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-4"
-              onClick={handleClose}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-          )}
-        </div>
-        <ScrollArea className="flex-1 mt-4">{children}</ScrollArea>
+        <DialogHeader className="p-6 bg-muted/30 border-b">
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+              {description && <DialogDescription className="mt-1">{description}</DialogDescription>}
+            </div>
+            {showCloseButton && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="h-8 w-8 rounded-full"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            )}
+          </div>
+        </DialogHeader>
+        <ScrollArea className="flex-1 p-6">
+          <div className="space-y-6">{children}</div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { ResponsiveTable, TableColumn } from "./ResponsiveTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
@@ -35,6 +35,7 @@ interface DataTableProps<T> {
   pageSizeOptions?: number[];
   emptyMessage?: string;
   headerActions?: ReactNode;
+  onSortChange?: (column: string, direction: 'asc' | 'desc' | undefined) => void;
 }
 
 export function DataTable<T>({
@@ -55,9 +56,12 @@ export function DataTable<T>({
   pageSizeOptions,
   emptyMessage = "No data available.",
   headerActions,
+  onSortChange,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
+  const [sortColumn, setSortColumn] = useState<string | undefined>();
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>();
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -69,11 +73,31 @@ export function DataTable<T>({
     if (onPageSizeChange) onPageSizeChange(newSize);
   };
 
+  const handleSort = (column: string) => {
+    let direction: 'asc' | 'desc' | undefined;
+    
+    if (sortColumn !== column) {
+      direction = 'asc';
+    } else if (sortDirection === 'asc') {
+      direction = 'desc';
+    } else {
+      direction = undefined;
+    }
+
+    setSortColumn(direction ? column : undefined);
+    setSortDirection(direction);
+    
+    if (onSortChange) {
+      onSortChange(column, direction);
+    }
+  };
+
   // Convert columns to ResponsiveTable format
   const tableColumns: TableColumn<T>[] = columns.map(column => ({
     header: column.header,
     accessor: (column.accessorKey || column.id) as keyof T,
-    cell: column.cell
+    cell: column.cell,
+    sortable: column.sortable,
   }));
 
   return (
@@ -84,7 +108,7 @@ export function DataTable<T>({
           <div className="flex items-center space-x-2">
             {headerActions}
             {showAddButton && (
-              <Button onClick={onAddClick} size="sm">
+              <Button onClick={onAddClick} size="sm" className="shrink-0">
                 <Plus className="h-4 w-4 mr-2" />
                 {addButtonText}
               </Button>

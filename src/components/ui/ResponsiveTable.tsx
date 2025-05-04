@@ -32,7 +32,7 @@ export function ResponsiveTable<T>({
     );
   }
 
-  // Mobile view - each row becomes a card
+  // Mobile view - each row becomes a card with label-value layout
   if (isMobile) {
     return (
       <div className={cn("space-y-4", className)}>
@@ -42,11 +42,11 @@ export function ResponsiveTable<T>({
             className="rounded-lg border bg-card text-card-foreground shadow-sm p-4"
           >
             {columns.map((column, colIndex) => (
-              <div key={colIndex} className="flex flex-col py-2 border-b last:border-0">
-                <div className="font-medium text-sm text-muted-foreground">
-                  {column.header}
+              <div key={colIndex} className="flex py-2 border-b last:border-0">
+                <div className="font-medium text-sm text-muted-foreground w-1/3">
+                  {column.header}:
                 </div>
-                <div className="mt-1">
+                <div className="w-2/3">
                   {column.cell
                     ? column.cell(row)
                     : row[column.accessor] != null

@@ -1,11 +1,9 @@
 
 import React, { useState, useEffect } from "react";
-import GenericMultiSelect from "@/components/common/GenericMultiSelect";
+import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Permission } from "@/types/Auth";
-
-// Do not re-export the type - just use it
-// export type { Permission }; - This was causing the error
+import useDebounce from "@/hooks/use-debounce";
 
 interface PermissionSelectProps {
   value: Permission[];
@@ -28,6 +26,45 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
 }) => {
   const [initialPermissions, setInitialPermissions] = useState<Permission[]>([]);
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const [options, setOptions] = useState<Option[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Fetch permissions with search
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        setIsLoading(true);
+        const response = await EnhancedApiService.get('/api/permission', {
+          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {}
+        });
+        
+        const permissions = response.content || response || [];
+        
+        // Transform permissions to options format
+        const permissionOptions = permissions.map((permission: Permission) => ({
+          value: permission.id.toString(),
+          label: (
+            <div>
+              <div className="font-semibold">{permission.name}</div>
+              <div className="text-xs text-muted-foreground">{permission.description}</div>
+            </div>
+          ),
+          original: permission
+        }));
+        
+        setOptions(permissionOptions);
+      } catch (error) {
+        console.error("Failed to fetch permissions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, [debouncedSearchQuery]);
 
   // Fetch any initial permission objects that are selected
   useEffect(() => {
@@ -56,58 +93,51 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     }
   }, [value, initialLoaded]);
 
-  // Custom transform function to include initially selected permissions
-  const transformData = (data: any) => {
-    if (!data) return [];
+  // Convert current value to options format
+  const selectedOptions = value.map(permission => ({
+    value: permission.id.toString(),
+    label: (
+      <div>
+        <div className="font-semibold">{permission.name}</div>
+        <div className="text-xs text-muted-foreground">{permission.description}</div>
+      </div>
+    ),
+    original: permission
+  }));
 
-    const permissions = Array.isArray(data) ? data : data.content || [];
-
-    // If we have initial permissions, merge them with the fetched data
-    if (initialPermissions.length > 0) {
-      // Create a map of existing IDs to avoid duplicates
-      const existingIds = new Set(permissions.map((p: Permission) => p.id));
-
-      // Add any initial permissions that aren't in the current data
-      const filteredInitialPermissions = initialPermissions.filter(
-        p => !existingIds.has(p.id)
-      );
-
-      return [...permissions, ...filteredInitialPermissions];
-    }
-
-    return permissions;
+  // Handle selection change
+  const handleChange = (selected: Option[] | null) => {
+    if (!selected) return;
+    
+    // Convert selected options back to Permission objects
+    const selectedPermissions = selected.map(option => option.original as Permission);
+    // Convert to numbers if they're not already
+    const numericValues = selectedPermissions.map(v => typeof v.id === 'string' ? parseInt(v.id, 10) : v.id as number);
+    onChange(selectedPermissions, numericValues);
   };
 
-  // Handle form field transformation
-  const handlePermissionChange = (newValues: Permission[]) => {
-    // Convert to numbers if they're not already
-    const numericValues = newValues.map(v => typeof v.id === 'string' ? parseInt(v.id, 10) : v.id as number);
-    onChange(newValues, numericValues);
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   return (
     <div className="permission-select-wrapper mb-4">
       <h3 className="text-base font-semibold mb-1">Permissions</h3>
-      <GenericMultiSelect
-        value={value}
-        onChange={handlePermissionChange}
-        endpoint="/api/permission"
-        queryKey={["permissions"]}
-        getOptionLabel={(permission: Permission) => (
-          <div>
-            <div className="font-semibold">{permission.name}</div>
-            <div className="text-xs text-muted-foreground">{permission.description}</div>
-          </div>
-        )}
-        getOptionValue={(permission: Permission) => permission.id}
-        transformData={transformData}
-        label="" // Remove the internal label as we're using our own above
-        disabled={disabled || !initialLoaded}
+      <SearchableSelect
+        options={[...options, ...selectedOptions.filter(
+          selected => !options.some(option => option.value === selected.value)
+        )]}
+        value={selectedOptions}
+        onChange={handleChange}
         placeholder={initialLoaded ? "Select permissions..." : "Loading permissions..."}
+        searchPlaceholder="Search permissions..."
+        multiple={true}
+        disabled={disabled || !initialLoaded}
         maxHeight={400}
         showSelectedTags={true}
-        multiple={true}
-        showCheckboxes={true}
+        onSearch={handleSearch}
+        isLoading={isLoading}
       />
     </div>
   );

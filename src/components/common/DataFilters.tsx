@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { SearchIcon, XIcon } from 'lucide-react';
 import { ApiQueryFilters } from '@/hooks/use-api-query';
+import useDebounce from '@/hooks/use-debounce';
 
 export interface FilterOption {
   id: string;
@@ -24,15 +25,21 @@ interface DataFiltersProps {
 
 export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onChange, onReset, className }) => {
   const [localFilters, setLocalFilters] = useState<ApiQueryFilters>(filters);
+  const debouncedFilters = useDebounce(localFilters, 300);
 
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
 
+  // Apply debounced filters when they change
+  useEffect(() => {
+    onChange(debouncedFilters);
+  }, [debouncedFilters, onChange]);
+
   const handleFilterChange = (id: string, value: string | number | undefined) => {
     const newFilters = { ...localFilters, [id]: value };
     setLocalFilters(newFilters);
-    onChange(newFilters);
+    // No need to call onChange here - it will be called via the debounced effect
   };
 
   const handleReset = () => {
