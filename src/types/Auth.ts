@@ -37,14 +37,14 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  name?: string; // Adding name property
+  name: string; // Adding name property as required
   roles: Role[] | string[];
   role?: string; // For backwards compatibility
   permissions?: Permission[];
   avatar?: string;
   status?: UserStatus;
   lastLogin?: string;
-  joinDate?: string; // Adding joinDate property
+  joinDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -81,7 +81,7 @@ export interface TokenResponse {
   expiresIn: number;
 }
 
-// Adding missing UserPermissions interface
+// UserPermissions interface for permissions hook
 export interface UserPermissions {
   roles: Role[];
   permissions: Permission[];
@@ -127,4 +127,5 @@ export const DEFAULT_ROLES = {
 export interface PermissionData extends Permission {
   module: string;
   isActive: boolean;
+  code: string; // Required from Permission
 }

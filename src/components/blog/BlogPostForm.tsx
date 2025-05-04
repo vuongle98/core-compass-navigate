@@ -37,7 +37,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { BlogPost, BlogCategory, BlogTag } from "@/types/Blog";
+import { BlogPost, BlogCategory, BlogTag, ImageUploadResponse } from "@/types/Blog";
 import BlogService from "@/services/BlogService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -166,7 +166,7 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
         metaKeywords: values.metaKeywords,
         // Add author information
         authorId: user?.id ? String(user.id) : 'anonymous',
-        authorName: user?.name || user?.email || 'Anonymous User',
+        authorName: user?.name || user?.username || user?.email || 'Anonymous User',
       };
 
       if (isEditMode && post) {
@@ -204,7 +204,7 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
   const handleFileUpload = async (file: File) => {
     try {
       const response = await BlogService.uploadImage(file);
-      if (response.success && response.data && response.data.url) {
+      if (response.success && response.data) {
         setCoverImageUrl(response.data.url);
         form.setValue('coverImage', response.data.url);
         toast({

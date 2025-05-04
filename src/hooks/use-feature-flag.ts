@@ -23,7 +23,7 @@ export function useFeatureFlag(featureName: string): boolean {
           if (typeof role === 'string') return role;
           return (role as Role).code || '';
         })
-      : [user.roles]) : [];
+      : [user.role || '']) : [];
 
     // Determine environment
     const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';

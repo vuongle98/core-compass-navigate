@@ -1,146 +1,142 @@
 
-import EnhancedApiService from './EnhancedApiService';
+import { DEFAULT_ROLES } from '@/types/Auth';
 import { FeatureFlag } from '@/types/FeatureFlag';
+import LoggingService from './LoggingService';
 
 class FeatureFlagService {
-  private static flagCache: Map<string, FeatureFlag> = new Map();
-  private static lastFetch: number = 0;
-  private static cacheDuration: number = 5 * 60 * 1000; // 5 minutes
+  private static features: FeatureFlag[] = [
+    {
+      id: "new-dashboard",
+      key: "new-dashboard",
+      name: "New Dashboard UI",
+      description: "Enable the new dashboard UI",
+      enabled: true,
+      environments: ["development", "staging"],
+      roles: ["ADMIN", "EDITOR"]
+    },
+    {
+      id: "advanced-analytics",
+      key: "advanced-analytics",
+      name: "Advanced Analytics",
+      description: "Enable advanced analytics features",
+      enabled: false,
+      environments: ["development"],
+      roles: ["ADMIN"]
+    },
+    {
+      id: "beta-features",
+      key: "beta-features",
+      name: "Beta Features",
+      description: "Enable experimental beta features",
+      enabled: true,
+      environments: ["development"],
+      roles: ["ADMIN", "MODERATOR"]
+    }
+  ];
 
   /**
-   * Fetches all feature flags from the API
+   * Check if a feature is enabled
    */
-  public static async getFlags(): Promise<FeatureFlag[]> {
+  public static isFeatureEnabled(
+    featureKey: string,
+    environment: string,
+    userRoles: string[]
+  ): boolean {
     try {
-      // Only fetch if cache is expired
-      const now = Date.now();
-      if (now - this.lastFetch > this.cacheDuration) {
-        const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
-        
-        // Update cache
-        this.flagCache.clear();
-        response.forEach(flag => {
-          this.flagCache.set(flag.key, flag);
-        });
-        
-        this.lastFetch = now;
-        return response;
+      // Find the feature by key
+      const feature = this.features.find(f => f.key === featureKey || f.id === featureKey);
+      
+      // If feature doesn't exist, it's disabled
+      if (!feature) {
+        LoggingService.warn('feature_flags', 'feature_not_found', `Feature not found: ${featureKey}`);
+        return false;
       }
       
-      // Return from cache
-      return Array.from(this.flagCache.values());
+      // If feature is not enabled globally, it's disabled
+      if (!feature.enabled) {
+        return false;
+      }
+      
+      // Check environment
+      if (feature.environments && feature.environments.length > 0) {
+        const envMatch = feature.environments.some(env => 
+          env.toLowerCase() === environment.toLowerCase() || env === '*' || env === 'all'
+        );
+        
+        if (!envMatch) {
+          return false;
+        }
+      }
+      
+      // Check user roles
+      if (feature.roles && feature.roles.length > 0) {
+        // Admin always has access to all features
+        if (userRoles.some(role => role === 'ADMIN' || role === 'admin')) {
+          return true;
+        }
+        
+        // For other roles, check if there's a match
+        const roleMatch = feature.roles.some(role => 
+          userRoles.some(userRole => 
+            userRole.toUpperCase() === role.toUpperCase()
+          )
+        );
+        
+        if (!roleMatch) {
+          return false;
+        }
+      }
+      
+      // All checks passed, feature is enabled
+      return true;
     } catch (error) {
-      console.error('Failed to fetch feature flags:', error);
-      return Array.from(this.flagCache.values());
+      LoggingService.error('feature_flags', 'check_failed', `Error checking feature: ${featureKey}`, error);
+      return false;
     }
   }
 
   /**
-   * Refreshes the feature flag cache
+   * Refresh feature flags from server/storage
    */
   public static async refreshFlags(): Promise<void> {
     try {
-      const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
+      LoggingService.info('feature_flags', 'refresh', 'Refreshing feature flags');
+      // In a real app, this would fetch from an API
+      // For now, we'll just use a timeout to simulate a network request
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Update cache
-      this.flagCache.clear();
-      response.forEach(flag => {
-        this.flagCache.set(flag.key, flag);
-      });
-      
-      this.lastFetch = Date.now();
+      LoggingService.info('feature_flags', 'refresh_complete', 'Feature flags refreshed');
+      return;
     } catch (error) {
-      console.error('Failed to refresh feature flags:', error);
+      LoggingService.error('feature_flags', 'refresh_failed', 'Failed to refresh feature flags', error);
+      throw error;
     }
   }
 
   /**
-   * Checks if a feature flag is enabled
-   * @param flagKey The feature flag key
-   * @param environment Current environment
-   * @param userRoles User roles to check against
-   * @returns boolean indicating if the feature is enabled
+   * Get all features
    */
-  public static isFeatureEnabled(flagKey: string, environment: string, userRoles: string[]): boolean {
-    const flag = this.flagCache.get(flagKey);
+  public static getAllFeatures(): FeatureFlag[] {
+    return [...this.features];
+  }
+
+  /**
+   * Update a feature flag
+   */
+  public static updateFeature(featureId: string, updatedFeature: Partial<FeatureFlag>): boolean {
+    const index = this.features.findIndex(f => f.id === featureId);
     
-    // If flag doesn't exist, default to disabled
-    if (!flag) {
+    if (index === -1) {
       return false;
     }
     
-    // Check if flag is globally enabled
-    if (!flag.enabled) {
-      return false;
-    }
-    
-    // Check environment restrictions
-    if (flag.environments && flag.environments.length > 0) {
-      if (!flag.environments.includes(environment)) {
-        return false;
-      }
-    }
-    
-    // Check role restrictions
-    if (flag.roles && flag.roles.length > 0) {
-      // If no user roles or no match, feature is disabled
-      if (!userRoles || userRoles.length === 0) {
-        return false;
-      }
-      
-      // Check if user has any of the required roles
-      const hasRequiredRole = userRoles.some(role => 
-        flag.roles!.includes(role)
-      );
-      
-      if (!hasRequiredRole) {
-        return false;
-      }
-    }
+    this.features[index] = {
+      ...this.features[index],
+      ...updatedFeature,
+      updatedAt: new Date().toISOString()
+    };
     
     return true;
-  }
-
-  /**
-   * Updates a feature flag
-   * @param flag The feature flag to update
-   */
-  public static async updateFlag(flag: FeatureFlag): Promise<FeatureFlag> {
-    const response = await EnhancedApiService.put<FeatureFlag>(`/api/feature-flags/${flag.id}`, flag);
-    
-    // Update cache
-    this.flagCache.set(flag.key, response);
-    
-    return response;
-  }
-
-  /**
-   * Creates a new feature flag
-   * @param flag The feature flag to create
-   */
-  public static async createFlag(flag: FeatureFlag): Promise<FeatureFlag> {
-    const response = await EnhancedApiService.post<FeatureFlag>('/api/feature-flags', flag);
-    
-    // Update cache
-    this.flagCache.set(flag.key, response);
-    
-    return response;
-  }
-
-  /**
-   * Deletes a feature flag
-   * @param id The ID of the feature flag to delete
-   */
-  public static async deleteFlag(id: string): Promise<void> {
-    await EnhancedApiService.delete(`/api/feature-flags/${id}`);
-    
-    // Remove from cache
-    for (const [key, flag] of this.flagCache.entries()) {
-      if (flag.id === id) {
-        this.flagCache.delete(key);
-        break;
-      }
-    }
   }
 }
 

@@ -1,20 +1,23 @@
 
 /**
- * Logging service for consistent application logging
+ * Service for logging events and errors
  */
 class LoggingService {
-  private static instance: LoggingService | null = null;
-  private userId?: string;
-  public config = {
-    enableActivityTracking: true,
+  private static instance: LoggingService;
+  private currentUser: string | null = null;
+  private activityTracking = false;
+  private config = {
     logLevel: 'info',
-    environment: process.env.NODE_ENV || 'development'
+    enableConsole: true
   };
-  
-  private activityTracking: any = null;
 
-  private constructor() {}
+  private constructor() {
+    // Private constructor to enforce singleton
+  }
 
+  /**
+   * Get singleton instance
+   */
   public static getInstance(): LoggingService {
     if (!LoggingService.instance) {
       LoggingService.instance = new LoggingService();
@@ -22,82 +25,107 @@ class LoggingService {
     return LoggingService.instance;
   }
 
-  public setUser(user: any): void {
-    if (user && user.id) {
-      this.userId = user.id;
-    } else {
-      this.userId = undefined;
-    }
+  /**
+   * Set activity tracking
+   */
+  public static setActivityTracking(enabled: boolean): void {
+    LoggingService.getInstance().activityTracking = enabled;
   }
-  
-  public setActivityTracking(tracking: any): void {
-    this.activityTracking = tracking;
+
+  /**
+   * Set current user
+   */
+  public static setUser(userId: string | null): void {
+    LoggingService.getInstance().currentUser = userId;
+  }
+
+  /**
+   * Configure logging
+   */
+  public static config(options: { logLevel?: string; enableConsole?: boolean }): void {
+    const instance = LoggingService.getInstance();
+    instance.config = { ...instance.config, ...options };
+  }
+
+  /**
+   * Log information
+   */
+  public static info(module: string, event: string, message: string): void {
+    LoggingService.getInstance().logInfo(module, event, message);
+  }
+
+  /**
+   * Log a warning
+   */
+  public static warn(module: string, event: string, message: string, data?: any): void {
+    LoggingService.getInstance().logWarning(module, event, message, data);
+  }
+
+  /**
+   * Log an error
+   */
+  public static error(module: string, event: string, message: string, error?: any): void {
+    LoggingService.getInstance().logError(module, event, message, error);
+  }
+
+  /**
+   * Log a debug message
+   */
+  public static debug(module: string, event: string, message: string, data?: any): void {
+    LoggingService.getInstance().logDebug(module, event, message, data);
+  }
+
+  /**
+   * Log user action
+   */
+  public static logUserAction(action: string, details?: any): void {
+    LoggingService.getInstance().trackUserAction(action, details);
   }
 
   // Instance methods
-  public info(category: string, event: string, message: string, data?: any): void {
-    console.info(`[INFO][${category}][${event}] ${message}`, data || '');
-  }
-
-  public warn(category: string, event: string, message: string, data?: any): void {
-    console.warn(`[WARN][${category}][${event}] ${message}`, data || '');
-  }
-
-  public error(category: string, event: string, message: string, data?: any): void {
-    console.error(`[ERROR][${category}][${event}] ${message}`, data || '');
-  }
-
-  public debug(category: string, event: string, message: string, data?: any): void {
-    if (import.meta.env.DEV) {
-      console.debug(`[DEBUG][${category}][${event}] ${message}`, data || '');
+  private logInfo(module: string, event: string, message: string): void {
+    if (this.shouldLog('info')) {
+      console.info(`[${module}] ${event}: ${message}`);
     }
   }
 
-  public track(eventName: string, properties?: Record<string, any>): void {
-    console.log(`[TRACK] ${eventName}`, properties);
-    // Implement actual analytics tracking here if needed
-  }
-  
-  public logUserAction(action: string, details?: any): void {
-    console.log(`[USER_ACTION] ${action}`, { userId: this.userId, ...details });
-    // Forward to API service if configured
+  private logWarning(module: string, event: string, message: string, data?: any): void {
+    if (this.shouldLog('warn')) {
+      console.warn(`[${module}] ${event}: ${message}`, data || '');
+    }
   }
 
-  // Static methods that delegate to instance methods
-  public static info(category: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().info(category, event, message, data);
+  private logError(module: string, event: string, message: string, error?: any): void {
+    if (this.shouldLog('error')) {
+      console.error(`[${module}] ${event}: ${message}`, error || '');
+    }
   }
 
-  public static warn(category: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().warn(category, event, message, data);
+  private logDebug(module: string, event: string, message: string, data?: any): void {
+    if (this.shouldLog('debug')) {
+      console.debug(`[${module}] ${event}: ${message}`, data || '');
+    }
   }
 
-  public static error(category: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().error(category, event, message, data);
+  private trackUserAction(action: string, details?: any): void {
+    if (!this.activityTracking) return;
+    
+    const user = this.currentUser || 'anonymous';
+    this.logInfo('user_activity', action, `User ${user} performed ${action}`);
+    
+    if (details) {
+      this.logDebug('user_activity', `${action}_details`, '', details);
+    }
   }
 
-  public static debug(category: string, event: string, message: string, data?: any): void {
-    LoggingService.getInstance().debug(category, event, message, data);
-  }
-
-  public static track(eventName: string, properties?: Record<string, any>): void {
-    LoggingService.getInstance().track(eventName, properties);
-  }
-  
-  public static logUserAction(action: string, details?: any): void {
-    LoggingService.getInstance().logUserAction(action, details);
-  }
-
-  public static setUser(user: any): void {
-    LoggingService.getInstance().setUser(user);
-  }
-
-  public static setActivityTracking(tracking: any): void {
-    LoggingService.getInstance().setActivityTracking(tracking);
-  }
-
-  public static get config() {
-    return LoggingService.getInstance().config;
+  private shouldLog(level: string): boolean {
+    if (!this.config.enableConsole) return false;
+    
+    const levels = ['debug', 'info', 'warn', 'error'];
+    const configLevelIndex = levels.indexOf(this.config.logLevel);
+    const currentLevelIndex = levels.indexOf(level);
+    
+    return currentLevelIndex >= configLevelIndex;
   }
 }
 

@@ -68,6 +68,20 @@ export interface BlogMedia {
   caption?: string;
 }
 
+export interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage?: string;
+  publishDate: string;
+  status: string;
+  authorName: string;
+  categoryName?: string;
+  commentCount: number;
+  viewCount: number;
+}
+
 export interface RichTextEditorProps {
   initialValue?: string;
   onChange: (content: string) => void;
@@ -77,4 +91,18 @@ export interface RichTextEditorProps {
   className?: string;
   allowImageUpload?: boolean;
   onImageUpload?: (file: File) => Promise<{ url: string }>;
+}
+
+// Type for BlogService response
+export interface BlogServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: any;
+}
+
+// Interface for image upload response
+export interface ImageUploadResponse {
+  url: string;
+  thumbnailUrl?: string;
+  id?: string;
 }
