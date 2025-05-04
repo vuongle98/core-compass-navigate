@@ -1,7 +1,8 @@
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import AuthService from './AuthService';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import LoggingService from './LoggingService';
+import AuthService from './AuthService';
+import ServiceRegistry from './ServiceRegistry';
 
 export interface ApiResponse<T> {
   data: T;
@@ -18,228 +19,221 @@ export interface PaginatedData<T> {
 }
 
 export interface PaginationOptions {
-  page: number;
-  pageSize: number;
-  filter?: Record<string, string | number | boolean | string[]>;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
+  page?: number;
+  size?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  [key: string]: any;
 }
 
 /**
- * Enhanced API Service with built-in authentication, logging, and error handling
+ * Enhanced API service with logging, authentication, and error handling
  */
 class EnhancedApiService {
-  private readonly axiosInstance: AxiosInstance;
-  private readonly baseURL: string;
+  private axiosInstance: AxiosInstance;
+  private baseURL: string = import.meta.env.VITE_API_BASE_URL || '/api';
   
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
     
-    this.initializeRequestInterceptor();
-    this.initializeResponseInterceptor();
+    this.setupInterceptors();
   }
   
-  /**
-   * Initialize request interceptor to add authentication token
-   */
-  private initializeRequestInterceptor = () => {
+  private setupInterceptors(): void {
+    // Request interceptor
     this.axiosInstance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        LoggingService.debug('api_request', 'request_intercepted', `Request to ${config.url}`, {
-          method: config.method,
-          headers: config.headers,
-          data: config.data,
-        });
+      async (config: InternalAxiosRequestConfig) => {
+        // Start timing for performance logging
+        const startTime = Date.now();
+        config.meta = { ...config.meta, startTime };
         
-        return this.addAuthHeader(config);
+        // Add auth token if available
+        const token = AuthService.getAccessToken();
+        if (token) {
+          config.headers = config.headers || {};
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // Log the request
+        LoggingService.logApiRequest(
+          config.url || '',
+          config.method?.toUpperCase() || 'UNKNOWN', 
+          config.data,
+          startTime
+        );
+        
+        return config;
       },
-      (error: AxiosError) => {
-        LoggingService.error('api_request', 'request_failed', 'Request failed before sending', { error });
+      (error) => {
+        LoggingService.error(
+          'api',
+          'request_error',
+          'Request failed',
+          { error: error.message }
+        );
         return Promise.reject(error);
       }
     );
-  };
-  
-  /**
-   * Initialize response interceptor to handle errors and log responses
-   */
-  private initializeResponseInterceptor = () => {
+    
+    // Response interceptor
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
-        LoggingService.debug('api_response', 'response_received', `Response from ${response.config.url}`, {
-          status: response.status,
-          data: response.data,
-        });
+        // Get timing info
+        const startTime = response.config.meta?.startTime || Date.now() - 100;
+        
+        // Log the response
+        LoggingService.logApiResponse(
+          response.config.url || '',
+          response.config.method?.toUpperCase() || 'UNKNOWN',
+          response.status,
+          response.data,
+          startTime
+        );
+        
         return response;
       },
       async (error: AxiosError) => {
-        LoggingService.error('api_response', 'response_error', 'Response error', { error });
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const startTime = originalRequest?.meta?.startTime || Date.now() - 100;
         
-        if (error.response?.status === 401) {
+        // Log the error
+        LoggingService.logApiError(
+          originalRequest?.url || 'unknown',
+          originalRequest?.method?.toUpperCase() || 'UNKNOWN',
+          error,
+          startTime
+        );
+        
+        // Handle 401 Unauthorized errors
+        if (error.response?.status === 401 && !originalRequest?._retry) {
+          originalRequest._retry = true;
+          
           try {
-            // Attempt to refresh the token
+            // Try to refresh the token
             const refreshed = await AuthService.refreshAuth();
             
-            if (refreshed && error.config) {
-              // Retry the original request with a new token
-              return this.axiosInstance.request(this.addAuthHeader(error.config));
+            if (refreshed) {
+              // Retry with new token
+              const token = AuthService.getAccessToken();
+              if (token && originalRequest.headers) {
+                originalRequest.headers['Authorization'] = `Bearer ${token}`;
+              }
+              return this.axiosInstance(originalRequest);
             }
           } catch (refreshError) {
-            LoggingService.error('api_response', 'token_refresh_failed', 'Token refresh failed', { error: refreshError });
-            // Redirect to login or handle unauthorized state
-            AuthService.logout();
-            window.location.href = '/login';
-            return Promise.reject(error);
+            LoggingService.error(
+              'api',
+              'token_refresh_error',
+              'Failed to refresh token',
+              { error: refreshError }
+            );
           }
         }
         
         return Promise.reject(error);
       }
     );
-  };
-  
-  /**
-   * Prepare headers with auth token if available
-   */
-  private getHeaders(contentType = 'application/json'): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': contentType,
-      'Accept': 'application/json',
-    };
-
-    const token = AuthService.getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
   }
   
   /**
-   * GET request
+   * Log user activity through the API service
    */
-  public async get<T>(endpoint: string, params: any = {}, mockData?: T): Promise<T> {
-    try {
-      const response = await this.axiosInstance.get<T>(endpoint, { params });
-      return response.data;
-    } catch (error) {
-      LoggingService.error('api_request', 'get_failed', `GET request to ${endpoint} failed`, { error, params });
-      if (mockData !== undefined) {
-        LoggingService.info('api_request', 'using_mock_data', `Using mock data for ${endpoint}`);
-        return mockData;
-      }
-      throw error;
-    }
+  public logUserAction(module: string, action: string, data?: Record<string, any>): void {
+    LoggingService.logUserAction(module, action, `User performed ${action} in ${module}`, data);
   }
   
   /**
-   * POST request
+   * Generic get request
    */
-  public async post<T>(endpoint: string, data: any = {}, options: any = {}): Promise<T> {
-    try {
-      const response = await this.axiosInstance.post<T>(endpoint, data, options);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('api_request', 'post_failed', `POST request to ${endpoint} failed`, { error, data });
-      throw error;
-    }
+  public async get<T>(url: string, params?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.get<T>(url, { 
+      params, 
+      ...config 
+    });
+    return response.data;
   }
   
   /**
-   * PUT request
+   * Generic post request
    */
-  public async put<T>(endpoint: string, data: any = {}, options: any = {}): Promise<T> {
-    try {
-      const response = await this.axiosInstance.put<T>(endpoint, data, options);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('api_request', 'put_failed', `PUT request to ${endpoint} failed`, { error, data });
-      throw error;
-    }
+  public async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.post<T>(url, data, config);
+    return response.data;
   }
   
   /**
-   * DELETE request
+   * Generic put request
    */
-  public async delete<T>(endpoint: string, options: any = {}): Promise<T> {
-    try {
-      const response = await this.axiosInstance.delete<T>(endpoint, options);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('api_request', 'delete_failed', `DELETE request to ${endpoint} failed`, { error });
-      throw error;
-    }
+  public async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.put<T>(url, data, config);
+    return response.data;
   }
   
   /**
-   * GET request with pagination support
+   * Generic delete request
+   */
+  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.delete<T>(url, config);
+    return response.data;
+  }
+  
+  /**
+   * Generic patch request
+   */
+  public async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.patch<T>(url, data, config);
+    return response.data;
+  }
+  
+  /**
+   * Handle paginated requests
    */
   public async getPaginated<T>(
-    endpoint: string,
-    params: PaginationOptions
-  ): Promise<PaginatedResponse<T>> {
-    try {
-      const response = await this.axiosInstance.get<PaginatedResponse<T>>(endpoint, { params });
-      return response.data;
-    } catch (error) {
-      LoggingService.error('api_request', 'get_paginated_failed', `GET request to ${endpoint} failed`, { error, params });
-      throw error;
-    }
+    url: string, 
+    options: PaginationOptions = { page: 0, size: 10 }
+  ): Promise<PaginatedData<T>> {
+    const params = {
+      page: options.page || 0,
+      size: options.size || 10,
+      ...options
+    };
+    
+    const response = await this.axiosInstance.get<PaginatedData<T>>(url, { params });
+    return response.data;
   }
   
   /**
-   * Add authentication header to request config
+   * Get base URL
    */
-  private addAuthHeader(config: InternalAxiosRequestConfig | AxiosRequestConfig): InternalAxiosRequestConfig {
-    const token = AuthService.getAccessToken();
-    
-    if (token && config.headers) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`
-      };
-    }
-    
-    return config as InternalAxiosRequestConfig;
+  public getBaseURL(): string {
+    return this.baseURL;
   }
   
   /**
-   * Log user action (for analytics)
+   * Get axios instance for direct use if needed
    */
-  public logUserAction(action: string, details?: any): void {
-    try {
-      this.axiosInstance.post('/api/analytics/user-action', {
-        action,
-        timestamp: new Date().toISOString(),
-        details
-      }, { 
-        headers: this.getHeaders()
-      });
-    } catch (error) {
-      // Silent fail for analytics
-      console.error('Failed to log user action:', error);
-    }
+  public getAxiosInstance(): AxiosInstance {
+    return this.axiosInstance;
+  }
+  
+  /**
+   * Format URL with path parameters
+   */
+  public formatUrl(url: string, params: Record<string, string | number>): string {
+    let formattedUrl = url;
+    Object.entries(params).forEach(([key, value]) => {
+      formattedUrl = formattedUrl.replace(`:${key}`, String(value));
+    });
+    return formattedUrl;
   }
 }
 
-// Use environment variable for base URL
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-const apiService = new EnhancedApiService(baseURL);
-
-export default apiService;
+// Create and export singleton instance
+const enhancedApiService = new EnhancedApiService();
+export default enhancedApiService;

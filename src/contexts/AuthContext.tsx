@@ -1,8 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AuthService, { User } from '@/services/AuthService';
+import AuthService from '@/services/AuthService';
 import { toast } from 'sonner';
 import featureFlagService from '@/services/FeatureFlagService';
+import { User } from '@/types/Auth';
+import ServiceRegistry from '@/services/ServiceRegistry';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const currentUser = AuthService.getCurrentUser();
           setUser(currentUser);
           
+          // Update the user in ServiceRegistry
+          ServiceRegistry.updateCurrentUser(currentUser);
+          
           // Refresh feature flags after login
           await featureFlagService.refreshFlags();
         }
@@ -54,6 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userData) {
         setUser(userData);
         
+        // Update the user in ServiceRegistry
+        ServiceRegistry.updateCurrentUser(userData);
+        
         // Refresh feature flags after login
         await featureFlagService.refreshFlags();
         
@@ -74,6 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     AuthService.logout();
     setUser(null);
+    
+    // Update the user in ServiceRegistry
+    ServiceRegistry.updateCurrentUser(null);
   };
 
   const updateUserProfile = (data: Partial<User>) => {
@@ -83,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Update stored user data in AuthService
       AuthService.updateCurrentUser(updatedUser);
+      
+      // Update the user in ServiceRegistry
+      ServiceRegistry.updateCurrentUser(updatedUser);
     }
   };
 

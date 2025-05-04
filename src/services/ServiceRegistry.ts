@@ -1,7 +1,7 @@
 
 import LoggingService from "./LoggingService";
 import AuthService from "./AuthService";
-import chatService from "./ChatService";
+import ChatService from "./ChatService";
 import EnhancedApiService from "./EnhancedApiService";
 import ActivityTracking from "./ActivityTracking";
 
@@ -12,6 +12,7 @@ import ActivityTracking from "./ActivityTracking";
 class ServiceRegistry {
   private static instance: ServiceRegistry;
   private services: Map<string, any> = new Map();
+  private initialized = false;
   
   private constructor() {
     // Register core services in the correct order to avoid circular dependencies
@@ -19,12 +20,27 @@ class ServiceRegistry {
     this.register('auth', AuthService);
     this.register('api', EnhancedApiService);
     this.register('activity', ActivityTracking);
-    this.register('chat', chatService);
+    this.register('chat', ChatService);
     
+    // Initialize services and resolve circular dependencies
+    this.initializeServices();
+    
+    console.log('Service Registry initialized');
+    this.initialized = true;
+  }
+  
+  /**
+   * Initialize services that have circular dependencies
+   * This is called after all services are registered
+   */
+  private initializeServices(): void {
     // Connect services that have circular dependencies
-    // This is done after all services are initialized
     ActivityTracking.setLoggingService(LoggingService);
     LoggingService.setActivityTracking(ActivityTracking);
+    
+    // Setup user ID in LoggingService
+    const currentUser = AuthService.getCurrentUser();
+    LoggingService.setUser(currentUser);
     
     // Now we can safely setup activity tracking
     if (LoggingService.config?.enableActivityTracking) {
@@ -32,6 +48,7 @@ class ServiceRegistry {
       ActivityTracking.trackFormSubmissions();
     }
     
+    // Now we can use LoggingService properly
     LoggingService.info('service', 'registry_initialized', 'Service Registry initialized');
   }
   
@@ -58,7 +75,11 @@ class ServiceRegistry {
   public get<T>(name: string): T {
     const service = this.services.get(name);
     if (!service) {
-      LoggingService.error('service', 'service_not_found', `Service not found: ${name}`);
+      if (this.initialized) {
+        LoggingService.error('service', 'service_not_found', `Service not found: ${name}`);
+      } else {
+        console.error(`Service not found: ${name}`);
+      }
       throw new Error(`Service not found: ${name}`);
     }
     return service as T;
@@ -87,6 +108,15 @@ class ServiceRegistry {
       services[name] = service;
     });
     return services;
+  }
+
+  /**
+   * Update the current user in LoggingService when authentication changes
+   */
+  public updateCurrentUser(user: any): void {
+    if (LoggingService) {
+      LoggingService.setUser(user);
+    }
   }
 }
 

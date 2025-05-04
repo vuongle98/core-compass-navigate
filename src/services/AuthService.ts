@@ -1,21 +1,10 @@
 
 import EnhancedApiService from './EnhancedApiService';
-import LoggingService from './LoggingService';
 import { jwtDecode } from 'jwt-decode';
+import { User } from '../types/Auth';
+import LoggingService from './LoggingService';
 
-// Define the User interface
-export interface User {
-  id: string;
-  username: string;
-  email?: string;
-  name: string;
-  role: string;
-  roles?: string[];
-  permissions?: string[];
-  joinDate?: string;
-  lastLogin?: string;
-}
-
+// Define the AuthResponse interface for API responses
 interface AuthResponse {
   access_token: string;
   refresh_token: string;
@@ -32,10 +21,13 @@ class AuthService {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private currentUser: User | null = null;
+  private isInitialized = false;
   
   constructor() {
     this.loadTokensFromStorage();
-    LoggingService.info('auth', 'service_initialized', 'Auth service initialized');
+    // Use console.log initially to avoid circular dependency
+    console.log('Auth service initialized');
+    this.isInitialized = true;
   }
   
   /**
@@ -213,7 +205,7 @@ class AuthService {
       // Check if token expired (with 10 second buffer)
       return decoded.exp * 1000 < Date.now() + 10000;
     } catch (err) {
-      LoggingService.error('auth', 'token_validation_failed', 'Failed to validate token', { err });
+      console.error('Failed to validate token', err);
       return true;
     }
   }
@@ -245,9 +237,10 @@ class AuthService {
         this.currentUser = JSON.parse(userJson);
       }
       
-      LoggingService.debug('auth', 'tokens_loaded', 'Tokens loaded from storage');
+      // Use console.log during initialization to avoid circular dependency
+      console.debug('Auth tokens loaded from storage');
     } catch (error) {
-      LoggingService.error('auth', 'load_tokens_failed', 'Failed to load tokens from storage', { error });
+      console.error('Failed to load tokens from storage', error);
       this.accessToken = null;
       this.refreshToken = null;
     }
@@ -270,10 +263,26 @@ class AuthService {
         localStorage.setItem('user', JSON.stringify(this.currentUser));
       }
       
-      LoggingService.debug('auth', 'tokens_saved', 'Tokens saved to storage');
+      // Now we can use LoggingService since Auth should be initialized
+      if (this.isInitialized) {
+        LoggingService.debug('auth', 'tokens_saved', 'Tokens saved to storage');
+      } else {
+        console.debug('Auth tokens saved to storage');
+      }
     } catch (error) {
-      LoggingService.error('auth', 'save_tokens_failed', 'Failed to save tokens to storage', { error });
+      if (this.isInitialized) {
+        LoggingService.error('auth', 'save_tokens_failed', 'Failed to save tokens to storage', { error });
+      } else {
+        console.error('Failed to save tokens to storage', error);
+      }
     }
+  }
+  
+  /**
+   * Return the service's initialization state
+   */
+  public getInitializationState(): boolean {
+    return this.isInitialized;
   }
 }
 

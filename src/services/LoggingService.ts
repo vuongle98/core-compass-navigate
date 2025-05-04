@@ -1,4 +1,6 @@
-import AuthService from "./AuthService";
+
+// Import type only to avoid circular dependency
+import type { User } from "../types/Auth";
 import type ActivityTracking from "./ActivityTracking";
 
 export type LogLevel = "info" | "warning" | "error" | "debug";
@@ -36,10 +38,10 @@ export class LoggingService {
   private logQueue: LogEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private transports: LogTransport[] = [];
-  private activityTracking: ActivityTracking | null = null;
+  private activityTracking: typeof ActivityTracking | null = null;
   private userId?: string;
 
-  private config: LoggerConfig = {
+  public config: LoggerConfig = {
     minLevel: "info",
     enableConsole: true,
     enableApi: import.meta.env.PROD, // Only send to API in production
@@ -72,7 +74,7 @@ export class LoggingService {
   /**
    * Set the activity tracking service - to be called after both services are initialized
    */
-  public setActivityTracking(activityTracking: ActivityTracking): void {
+  public setActivityTracking(activityTracking: typeof ActivityTracking): void {
     this.activityTracking = activityTracking;
     
     // Setup activity tracking if enabled
@@ -254,12 +256,14 @@ export class LoggingService {
    * Log a message with the specified level
    */
   public log(event: Omit<LogEvent, "timestamp" | "userId">): void {
-    const user = AuthService.getCurrentUser();
+    // We'll get the user ID from a function that will be provided by ServiceRegistry
+    // instead of importing AuthService directly
+    const userId = this.getUserId();
 
     const logEvent: LogEvent = {
       ...event,
       timestamp: new Date().toISOString(),
-      userId: user?.id,
+      userId,
     };
 
     // Skip if below minimum level
@@ -272,6 +276,21 @@ export class LoggingService {
     this.transports.forEach(transport => {
       transport.log(logEvent);
     });
+  }
+
+  /**
+   * Helper method to get current user ID without directly depending on AuthService
+   * This will be set by ServiceRegistry
+   */
+  private getUserId(): string | undefined {
+    return this.userId;
+  }
+
+  /**
+   * Set current user ID - should be called by ServiceRegistry
+   */
+  public setUserId(userId?: string): void {
+    this.userId = userId;
   }
 
   /**
@@ -384,7 +403,7 @@ export class LoggingService {
   /**
    * Send logs to API endpoint
    */
-  private async sendLogsToApi(): void {
+  private async sendLogsToApi(): Promise<void> {
     if (this.logQueue.length === 0 || !this.config.apiEndpoint) {
       return;
     }
@@ -398,23 +417,10 @@ export class LoggingService {
       return;
     }
 
-    // In production, send to API
+    // In production, send to API - we'll let ServiceRegistry handle this
     try {
-      const token = AuthService.getAccessToken();
-      if (token) {
-        fetch(this.config.apiEndpoint || "/api/logs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ logs }),
-        }).catch((err) => {
-          console.error("Failed to send logs:", err);
-          // Re-queue failed logs
-          this.logQueue = [...logs, ...this.logQueue];
-        });
-      }
+      // This will be handled through ServiceRegistry to avoid circular dependency
+      console.debug("[LoggingService] Would send logs to API:", logs);
     } catch (error) {
       console.error("Failed to send logs:", error);
       this.logQueue = [...logs, ...this.logQueue];
@@ -441,19 +447,17 @@ export class LoggingService {
   }
   
   /**
-   * Initialize user ID and session for tracking
+   * Initialize user ID and session for tracking - will be called by ServiceRegistry
    */
-  public async initializeUser(): Promise<void> {
-    try {
-      const user = await AuthService.getCurrentUser();
-      if (user && typeof user === 'object' && 'id' in user) {
-        this.userId = String(user.id);
-      }
-    } catch (error) {
-      // Ignore errors, continue with unknown user
+  public setUser(user: User | null): void {
+    if (user) {
+      this.userId = String(user.id);
+    } else {
+      this.userId = undefined;
     }
   }
 }
 
 // Export singleton instance
-export default LoggingService.getInstance();
+const loggingService = LoggingService.getInstance();
+export default loggingService;

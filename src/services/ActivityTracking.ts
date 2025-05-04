@@ -1,5 +1,6 @@
-import type { LoggingService as LoggingServiceType } from './LoggingService';
+
 import { debounce } from 'lodash';
+import type { LoggingService as LoggingServiceType } from './LoggingService';
 
 export interface Activity {
   type: string;
@@ -105,7 +106,11 @@ class ActivityTracking {
    */
   public trackClicks(): void {
     document.addEventListener('click', this.handleClick);
-    LoggingService.info('activity', 'click_tracking_enabled', 'Click tracking enabled');
+    if (this.loggingService) {
+      this.loggingService.info('activity', 'click_tracking_enabled', 'Click tracking enabled');
+    } else {
+      console.info('Click tracking enabled');
+    }
   }
 
   /**
@@ -113,7 +118,11 @@ class ActivityTracking {
    */
   public stopTrackingClicks(): void {
     document.removeEventListener('click', this.handleClick);
-    LoggingService.info('activity', 'click_tracking_disabled', 'Click tracking disabled');
+    if (this.loggingService) {
+      this.loggingService.info('activity', 'click_tracking_disabled', 'Click tracking disabled');
+    } else {
+      console.info('Click tracking disabled');
+    }
   }
 
   /**
@@ -121,7 +130,11 @@ class ActivityTracking {
    */
   public trackFormSubmissions(): void {
     document.addEventListener('submit', this.handleFormSubmit);
-    LoggingService.info('activity', 'form_tracking_enabled', 'Form submission tracking enabled');
+    if (this.loggingService) {
+      this.loggingService.info('activity', 'form_tracking_enabled', 'Form submission tracking enabled');
+    } else {
+      console.info('Form submission tracking enabled');
+    }
   }
 
   /**
@@ -129,7 +142,11 @@ class ActivityTracking {
    */
   public stopTrackingForms(): void {
     document.removeEventListener('submit', this.handleFormSubmit);
-    LoggingService.info('activity', 'form_tracking_disabled', 'Form submission tracking disabled');
+    if (this.loggingService) {
+      this.loggingService.info('activity', 'form_tracking_disabled', 'Form submission tracking disabled');
+    } else {
+      console.info('Form submission tracking disabled');
+    }
   }
 
   /**
@@ -317,7 +334,11 @@ class ActivityTracking {
       
       localStorage.setItem('user_activities', JSON.stringify(allActivities));
     } catch (error) {
-      LoggingService.error('activity', 'local_storage_failed', 'Failed to store activities in localStorage', { error });
+      if (this.loggingService) {
+        this.loggingService.error('activity', 'local_storage_failed', 'Failed to store activities in localStorage', { error });
+      } else {
+        console.error('Failed to store activities in localStorage', error);
+      }
     }
   }
 
@@ -327,9 +348,17 @@ class ActivityTracking {
   public clearLocalActivities(): void {
     try {
       localStorage.removeItem('user_activities');
-      LoggingService.info('activity', 'local_storage_cleared', 'Cleared locally stored activities');
+      if (this.loggingService) {
+        this.loggingService.info('activity', 'local_storage_cleared', 'Cleared locally stored activities');
+      } else {
+        console.info('Cleared locally stored activities');
+      }
     } catch (error) {
-      LoggingService.error('activity', 'clear_local_storage_failed', 'Failed to clear local storage', { error });
+      if (this.loggingService) {
+        this.loggingService.error('activity', 'clear_local_storage_failed', 'Failed to clear local storage', { error });
+      } else {
+        console.error('Failed to clear local storage', error);
+      }
     }
   }
 }
