@@ -35,7 +35,7 @@ export function useChat(): UseChatReturn {
       LoggingService.info('chat', 'initialized', 'Chat hook initialized');
     }
 
-    // Since ChatService extends EventEmitter, we can use addListener instead of on
+    // Since ChatService extends EventEmitter, we can use addListener
     chatService.addListener('connected', handleConnected);
     chatService.addListener('disconnected', handleDisconnected);
     chatService.addListener('message', handleNewMessage);
@@ -120,7 +120,7 @@ export function useChat(): UseChatReturn {
       return;
     }
     
-    chatService.sendMessage(activeChat.id, text, type);
+    chatService.sendMessage(activeChat.id, text);
     LoggingService.info('chat', 'message_sent', `Message sent to chat ${activeChat.id}`);
   };
 

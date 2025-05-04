@@ -53,10 +53,13 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
         { params }
       );
 
-      const response = await EnhancedApiService.get<T>(options.endpoint, params, options.mockData);
+      const response = await EnhancedApiService.get<ApiResponse<T>>(options.endpoint, params, options.mockData as ApiResponse<T>);
+      
+      // Get actual data from the ApiResponse wrapper
+      const actualData = response.data;
       
       // Apply transform function if provided
-      const transformedData = options.transform ? options.transform(response) : response;
+      const transformedData = options.transform ? options.transform(actualData) : actualData;
 
       LoggingService.info(
         "api_data",
@@ -80,7 +83,8 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
           "using_mock_data",
           `Using mock data for ${options.endpoint}`
         );
-        return options.transform ? options.transform(options.mockData) : options.mockData;
+        const mockResponse = options.mockData as T;
+        return options.transform ? options.transform(mockResponse) : mockResponse;
       }
 
       throw error;
@@ -101,17 +105,13 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     retryDelay: options.retryDelay,
   };
 
-  // Add callbacks via meta
-  if (options.onSuccess || options.onError) {
-    queryOptions.meta = {};
-    
-    if (options.onSuccess) {
-      queryOptions.meta.onSuccess = options.onSuccess;
-    }
-    
-    if (options.onError) {
-      queryOptions.meta.onError = options.onError;
-    }
+  // Add callbacks
+  if (options.onSuccess) {
+    queryOptions.onSuccess = options.onSuccess;
+  }
+  
+  if (options.onError) {
+    queryOptions.onError = options.onError;
   }
 
   const { data, isLoading, isError, error, refetch } = useQuery(queryOptions);
