@@ -31,3 +31,18 @@ export const removeAccessToken = (): void => {
 export const isAuthenticated = (): boolean => {
   return !!getAccessToken();
 };
+
+// For backward compatibility with code that uses TokenService as default import
+const TokenService = {
+  getToken: getAccessToken,
+  setToken: setAccessToken,
+  removeToken: removeAccessToken,
+  isAuthenticated,
+  refreshToken: async (): Promise<boolean> => {
+    // This is a placeholder - actual implementation would depend on your auth flow
+    console.warn('TokenService.refreshToken() called but not fully implemented');
+    return false;
+  }
+};
+
+export default TokenService;

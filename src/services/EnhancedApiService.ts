@@ -1,6 +1,6 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import TokenService from './TokenService';
+import TokenService, * as TokenServiceExports from './TokenService';
 import LoggingService from './LoggingService';
 
 export interface PaginatedData<T> {
@@ -141,8 +141,8 @@ class EnhancedApiService {
    */
   public static async getPaginated<T>(
     url: string, 
-    headers?: any, 
-    options?: PaginationOptions
+    options?: PaginationOptions,
+    headers?: any
   ): Promise<PaginatedData<T>> {
     const params = {
       page: options?.page || 0,
