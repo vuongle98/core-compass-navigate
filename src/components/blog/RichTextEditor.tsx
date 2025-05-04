@@ -123,8 +123,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         description: "Please wait while the image is being uploaded.",
       });
       
-      const uploadFunction = onImageUpload || BlogService.uploadImage.bind(BlogService);
-      const result = await uploadFunction(file);
+      let result;
+      if (onImageUpload) {
+        result = await onImageUpload(file);
+      } else {
+        result = await BlogService.uploadImage(file);
+      }
       
       if (result.success && result.data.url) {
         execCommand('insertImage', result.data.url);

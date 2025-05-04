@@ -1,427 +1,332 @@
-
-import { EventEmitter } from '@/lib/EventEmitter';
-import { User } from '@/contexts/AuthContext';
-import LoggingService from './LoggingService';
-
-export interface Message {
-  id: string;
-  text: string;
-  sender: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  timestamp: string;
-  read: boolean;
-  chatId: string;
-  type: 'text' | 'image' | 'file' | 'system';
-  metadata?: Record<string, any>;
-}
+import LoggingService from "./LoggingService";
+import ServiceRegistry from "./ServiceRegistry";
 
 export interface Chat {
   id: string;
+  type: 'public' | 'private' | 'group';
   name?: string;
-  type: 'private' | 'group' | 'public';
-  participants: {
-    id: string;
-    name: string;
-    avatar?: string;
-  }[];
-  lastMessage?: Message;
+  participants: { id: string; name: string; avatar?: string }[];
+  messages: ChatMessage[];
+  lastMessage?: ChatMessage;
   unreadCount: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
-class ChatService extends EventEmitter {
-  private socket: WebSocket | null = null;
-  private isConnected = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectTimeout: NodeJS.Timeout | null = null;
-  private messageQueue: Message[] = [];
-  private chats: Chat[] = [];
-  private currentUser: User | null = null;
+export interface ChatMessage {
+  id: string;
+  sender: { id: string; name: string; avatar?: string };
+  text: string;
+  timestamp: Date;
+}
+
+/**
+ * Chat Service for managing chat rooms and messages
+ */
+class ChatService {
+  private static instance: ChatService;
+  private chats: Map<string, Chat> = new Map();
   
-  private mockMessages: Message[] = [];
-  private mockChats: Chat[] = [];
-  
-  constructor() {
-    super();
-    this.initializeMockData();
+  private constructor() {
+    // Initialize with some mock data
+    this.createPublicChat('General Chat');
+    this.createPublicChat('Random Banter');
+    this.createPrivateChat('user-1', 'John Doe');
+    this.createGroupChat('Team Awesome', ['user-1', 'user-2']);
+    
+    LoggingService.info('chat', 'service_initialized', 'Chat service initialized');
   }
   
-  private initializeMockData() {
-    this.mockChats = [
-      {
-        id: 'public-general',
-        name: 'General',
-        type: 'public',
-        participants: [
-          { id: 'system', name: 'System' },
-          { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
-          { id: 'user2', name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2' }
-        ],
-        unreadCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'group-dev',
-        name: 'Development Team',
-        type: 'group',
-        participants: [
-          { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
-          { id: 'user3', name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/150?img=3' },
-          { id: 'user4', name: 'Sarah Williams', avatar: 'https://i.pravatar.cc/150?img=4' }
-        ],
-        unreadCount: 2,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'private-user2',
-        type: 'private',
-        participants: [
-          { id: 'user2', name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2' }
-        ],
-        unreadCount: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    this.mockMessages = [
-      {
-        id: 'msg1',
-        text: 'Welcome to the General chat!',
-        sender: { id: 'system', name: 'System' },
-        timestamp: new Date().toISOString(),
-        read: true,
-        chatId: 'public-general',
-        type: 'system'
-      },
-      {
-        id: 'msg2',
-        text: 'Hello everyone!',
-        sender: { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
-        timestamp: new Date().toISOString(),
-        read: true,
-        chatId: 'public-general',
-        type: 'text'
-      },
-      {
-        id: 'msg3',
-        text: 'Hi John, how are you?',
-        sender: { id: 'user2', name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2' },
-        timestamp: new Date().toISOString(),
-        read: true,
-        chatId: 'public-general',
-        type: 'text'
-      }
-    ];
-    
-    this.mockChats = this.mockChats.map(chat => {
-      const lastMessage = this.mockMessages
-        .filter(msg => msg.chatId === chat.id)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-        
-      return {
-        ...chat,
-        lastMessage
-      };
-    });
-    
-    this.chats = [...this.mockChats];
-    
-    LoggingService.info('chat', 'service_initialized', 'Chat service initialized with mock data');
+  public static getInstance(): ChatService {
+    if (!ChatService.instance) {
+      ChatService.instance = new ChatService();
+    }
+    return ChatService.instance;
   }
-
-  public connect(user: User, server = 'wss://api.example.com/chat'): void {
-    this.currentUser = user;
-    
-    if (this.isConnected) {
-      return;
-    }
-
-    try {
-      this.socket = new WebSocket(server);
-      
-      this.socket.onopen = this.handleSocketOpen.bind(this);
-      this.socket.onmessage = this.handleSocketMessage.bind(this);
-      this.socket.onclose = this.handleSocketClose.bind(this);
-      this.socket.onerror = this.handleSocketError.bind(this);
-      
-      LoggingService.info('chat', 'connection_attempt', 'Attempting to connect to chat server');
-    } catch (error) {
-      LoggingService.error('chat', 'connection_failed', 'Failed to connect to chat server', { error });
-      this.emit('error', 'Failed to connect to chat server');
-    }
-  }
-
-  public disconnect(): void {
-    if (this.socket) {
-      this.socket.close();
-      this.socket = null;
-    }
-    
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-    
-    this.isConnected = false;
-    this.emit('disconnected');
-    LoggingService.info('chat', 'disconnected', 'Disconnected from chat server');
-  }
-
-  public sendMessage(chatId: string, text: string, type: 'text' | 'image' | 'file' = 'text', metadata?: Record<string, any>): void {
-    if (!this.currentUser) {
-      this.emit('error', 'User not authenticated');
-      LoggingService.error('chat', 'send_message_failed', 'Cannot send message: User not authenticated');
-      return;
-    }
-    
-    const message: Message = {
-      id: `msg_${Date.now()}`,
-      text,
-      sender: {
-        id: this.currentUser.id,
-        name: this.currentUser.name,
-      },
-      timestamp: new Date().toISOString(),
-      read: false,
-      chatId,
-      type,
-      metadata
-    };
-    
-    if (this.isConnected && this.socket) {
-      this.socket.send(JSON.stringify({
-        type: 'message',
-        data: message
-      }));
-      LoggingService.info('chat', 'message_sent', `Message sent to chat ${chatId}`);
-    } else {
-      this.messageQueue.push(message);
-      LoggingService.info('chat', 'message_queued', `Message queued for chat ${chatId} (not connected)`);
-    }
-    
-    this.mockMessages.push(message);
-    this.emit('message', message);
-    
-    this.updateChatWithMessage(chatId, message);
-  }
-
+  
+  /**
+   * Get all chats
+   */
   public getChats(): Chat[] {
-    return this.chats;
+    return Array.from(this.chats.values());
   }
-
-  public getMessages(chatId: string): Message[] {
-    return this.mockMessages
-      .filter(message => message.chatId === chatId)
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  
+  /**
+   * Get a chat by ID
+   */
+  public getChat(id: string): Chat | undefined {
+    return this.chats.get(id);
   }
-
-  public createPrivateChat(userId: string, userName: string, userAvatar?: string): Chat {
-    const existingChat = this.chats.find(chat => 
-      chat.type === 'private' && 
-      chat.participants.some(p => p.id === userId)
-    );
-    
-    if (existingChat) {
-      LoggingService.info('chat', 'private_chat_exists', `Private chat with user ${userName} already exists`);
-      return existingChat;
-    }
-    
-    const newChat: Chat = {
-      id: `private-${userId}`,
-      type: 'private',
-      participants: [
-        { id: userId, name: userName, avatar: userAvatar }
-      ],
-      unreadCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    this.chats.push(newChat);
-    this.emit('chat-created', newChat);
-    LoggingService.info('chat', 'private_chat_created', `Created private chat with user ${userName}`);
-    
-    return newChat;
-  }
-
-  public createGroupChat(name: string, participantIds: string[]): Chat {
-    // In a real implementation, we would use the participantIds to fetch user details
-    // For mock data, we'll use some hardcoded users
-    LoggingService.info('chat', 'group_chat_creation_started', 'Creating group chat', { name, participantCount: participantIds.length });
-    
-    const newChat: Chat = {
-      id: `group-${Date.now()}`,
-      name,
-      type: 'group',
-      participants: [
-        { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
-        { id: 'user3', name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/150?img=3' }
-      ],
-      unreadCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    this.chats.push(newChat);
-    this.emit('chat-created', newChat);
-    LoggingService.info('chat', 'group_chat_created', `Created group chat: ${name}`, { chatId: newChat.id });
-    
-    return newChat;
-  }
-
+  
+  /**
+   * Create a new public chat
+   */
   public createPublicChat(name: string): Chat {
-    LoggingService.info('chat', 'public_chat_creation_started', 'Creating public chat', { name });
-    
+    const chatId = `public-${Date.now()}`;
     const newChat: Chat = {
-      id: `public-${Date.now()}`,
-      name,
+      id: chatId,
       type: 'public',
-      participants: [
-        { id: 'system', name: 'System' }
-      ],
+      name: name,
+      participants: [],
+      messages: [],
       unreadCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
     };
-    
-    this.chats.push(newChat);
-    this.emit('chat-created', newChat);
-    LoggingService.info('chat', 'public_chat_created', `Created public chat: ${name}`, { chatId: newChat.id });
-    
+    this.chats.set(chatId, newChat);
+    LoggingService.info('chat', 'chat_created', 'Public chat created', { chatId, name });
     return newChat;
   }
-
-  public markAsRead(chatId: string): void {
-    this.mockMessages = this.mockMessages.map(message => 
-      message.chatId === chatId ? { ...message, read: true } : message
-    );
-    
-    this.chats = this.chats.map(chat => 
-      chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
-    );
-    
-    this.emit('messages-read', chatId);
-    LoggingService.info('chat', 'messages_marked_read', `Marked messages as read for chat ${chatId}`);
+  
+  /**
+   * Create a new private chat
+   */
+  public createPrivateChat(userId: string, username: string): Chat {
+    const chatId = `private-${Date.now()}`;
+    const newChat: Chat = {
+      id: chatId,
+      type: 'private',
+      participants: [{ id: userId, name: username }],
+      messages: [],
+      unreadCount: 0,
+    };
+    this.chats.set(chatId, newChat);
+    LoggingService.info('chat', 'chat_created', 'Private chat created', { chatId, userId, username });
+    return newChat;
   }
-
-  private handleSocketOpen(): void {
-    this.isConnected = true;
-    this.reconnectAttempts = 0;
-    
-    if (this.socket && this.currentUser) {
-      this.socket.send(JSON.stringify({
-        type: 'auth',
-        data: {
-          userId: this.currentUser.id,
-          token: 'jwt-token-here'
-        }
-      }));
+  
+  /**
+   * Create a new group chat
+   */
+  public createGroupChat(name: string, userIds: string[]): Chat {
+    const chatId = `group-${Date.now()}`;
+    // Mock fetching user details
+    const participants = userIds.map(id => ({ id, name: `User ${id}` }));
+    const newChat: Chat = {
+      id: chatId,
+      type: 'group',
+      name: name,
+      participants: participants,
+      messages: [],
+      unreadCount: 0,
+    };
+    this.chats.set(chatId, newChat);
+    LoggingService.info('chat', 'chat_created', 'Group chat created', { chatId, name, userIds });
+    return newChat;
+  }
+  
+  /**
+   * Send a message to a chat
+   */
+  public sendMessage(chatId: string, senderId: string, text: string): ChatMessage {
+    const chat = this.chats.get(chatId);
+    if (!chat) {
+      LoggingService.error('chat', 'chat_not_found', 'Chat not found', { chatId });
+      throw new Error(`Chat not found: ${chatId}`);
     }
     
-    while (this.messageQueue.length > 0 && this.socket) {
-      const message = this.messageQueue.shift();
-      if (message) {
-        this.socket.send(JSON.stringify({
-          type: 'message',
-          data: message
-        }));
+    // Mock fetching sender details
+    const sender = { id: senderId, name: `User ${senderId}` };
+    const message: ChatMessage = {
+      id: `message-${Date.now()}`,
+      sender: sender,
+      text: text,
+      timestamp: new Date(),
+    };
+    
+    chat.messages.push(message);
+    chat.lastMessage = message;
+    
+    // Increment unread count for other participants
+    this.chats.forEach((c, id) => {
+      if (id !== chatId) {
+        c.unreadCount++;
       }
-    }
-    
-    this.emit('connected');
-    LoggingService.info('chat', 'connected', 'Connected to chat server');
-  }
-
-  private handleSocketMessage(event: MessageEvent): void {
-    try {
-      const data = JSON.parse(event.data);
-      
-      switch (data.type) {
-        case 'message':
-          this.handleIncomingMessage(data.data);
-          break;
-        case 'chat-created':
-          this.handleChatCreated(data.data);
-          break;
-        case 'user-typing':
-          this.emit('user-typing', data.data);
-          break;
-        case 'user-status':
-          this.emit('user-status', data.data);
-          break;
-        default:
-          LoggingService.warn('chat', 'unhandled_message_type', 'Unhandled WebSocket message type', { type: data.type });
-      }
-    } catch (error) {
-      LoggingService.error('chat', 'message_handling_failed', 'Error handling WebSocket message', { error });
-    }
-  }
-
-  private handleSocketClose(event: CloseEvent): void {
-    this.isConnected = false;
-    this.socket = null;
-    
-    if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentUser) {
-      const delay = Math.pow(2, this.reconnectAttempts) * 1000;
-      LoggingService.info('chat', 'reconnect_scheduled', `Attempting to reconnect in ${delay}ms`, { attempt: this.reconnectAttempts + 1, maxAttempts: this.maxReconnectAttempts });
-      
-      this.reconnectTimeout = setTimeout(() => {
-        this.reconnectAttempts++;
-        this.connect(this.currentUser!);
-      }, delay);
-    } else {
-      this.emit('disconnected');
-      LoggingService.warn('chat', 'connection_closed', 'Connection to chat server closed', { code: event.code, reason: event.reason });
-    }
-  }
-
-  private handleSocketError(event: Event): void {
-    LoggingService.error('chat', 'websocket_error', 'WebSocket connection error', { event });
-    this.emit('error', 'Connection error');
-  }
-
-  private handleIncomingMessage(message: Message): void {
-    this.mockMessages.push(message);
-    
-    this.updateChatWithMessage(message.chatId, message);
-    
-    this.emit('message', message);
-    LoggingService.info('chat', 'message_received', `Message received in chat ${message.chatId}`, { messageId: message.id });
-  }
-
-  private handleChatCreated(chat: Chat): void {
-    this.chats.push(chat);
-    this.emit('chat-created', chat);
-    LoggingService.info('chat', 'chat_received', `Chat created: ${chat.name || chat.id}`, { chatId: chat.id, chatType: chat.type });
-  }
-
-  private updateChatWithMessage(chatId: string, message: Message): void {
-    this.chats = this.chats.map(chat => {
-      if (chat.id === chatId) {
-        const isFromCurrentUser = this.currentUser && message.sender.id === this.currentUser.id;
-        const unreadCount = isFromCurrentUser ? chat.unreadCount : chat.unreadCount + 1;
-        
-        return {
-          ...chat,
-          lastMessage: message,
-          unreadCount,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return chat;
     });
     
-    this.emit('chats-updated', this.chats);
+    LoggingService.info('chat', 'message_sent', 'Message sent to chat', { chatId, senderId, text });
+    return message;
+  }
+  
+  /**
+   * Mark a chat as read
+   */
+  public markChatAsRead(chatId: string): void {
+    const chat = this.chats.get(chatId);
+    if (chat) {
+      chat.unreadCount = 0;
+      LoggingService.info('chat', 'chat_read', 'Chat marked as read', { chatId });
+    }
+  }
+  
+  /**
+   * Add a participant to a group chat
+   */
+  public addParticipant(chatId: string, userId: string, username: string): void {
+    const chat = this.chats.get(chatId);
+    if (!chat || chat.type !== 'group') {
+      LoggingService.error('chat', 'chat_invalid_operation', 'Cannot add participant to non-group chat', { chatId });
+      throw new Error('Cannot add participant to non-group chat');
+    }
+    
+    // Check if user already exists
+    if (chat.participants.find(p => p.id === userId)) {
+      LoggingService.warn('chat', 'chat_duplicate_participant', 'Participant already exists in chat', { chatId, userId });
+      return;
+    }
+    
+    chat.participants.push({ id: userId, name: username });
+    LoggingService.info('chat', 'chat_participant_added', 'Participant added to chat', { chatId, userId, username });
+  }
+  
+  /**
+   * Remove a participant from a group chat
+   */
+  public removeParticipant(chatId: string, userId: string): void {
+    const chat = this.chats.get(chatId);
+    if (!chat || chat.type !== 'group') {
+      LoggingService.error('chat', 'chat_invalid_operation', 'Cannot remove participant from non-group chat', { chatId });
+      throw new Error('Cannot remove participant from non-group chat');
+    }
+    
+    chat.participants = chat.participants.filter(p => p.id !== userId);
+    LoggingService.info('chat', 'chat_participant_removed', 'Participant removed from chat', { chatId, userId });
+  }
+  
+  /**
+   * Update chat name (for public and group chats)
+   */
+  public updateChatName(chatId: string, name: string): void {
+    const chat = this.chats.get(chatId);
+    if (!chat || chat.type === 'private') {
+      LoggingService.error('chat', 'chat_invalid_operation', 'Cannot update name for private chat', { chatId });
+      throw new Error('Cannot update name for private chat');
+    }
+    
+    chat.name = name;
+    LoggingService.info('chat', 'chat_name_updated', 'Chat name updated', { chatId, name });
+  }
+  
+  /**
+   * Get messages for a chat
+   */
+  public getChatMessages(chatId: string): ChatMessage[] {
+    const chat = this.chats.get(chatId);
+    return chat ? chat.messages : [];
+  }
+  
+  /**
+   * Clear chat history
+   */
+  public clearChatHistory(chatId: string): void {
+    const chat = this.chats.get(chatId);
+    if (chat) {
+      chat.messages = [];
+      LoggingService.info('chat', 'chat_history_cleared', 'Chat history cleared', { chatId });
+    }
+  }
+  
+  /**
+   * Delete a chat
+   */
+  public deleteChat(chatId: string): void {
+    if (this.chats.has(chatId)) {
+      this.chats.delete(chatId);
+      LoggingService.info('chat', 'chat_deleted', 'Chat deleted', { chatId });
+    } else {
+      LoggingService.warn('chat', 'chat_delete_failed', 'Chat not found for deletion', { chatId });
+    }
+  }
+  
+  /**
+   * Simulate typing indicator
+   */
+  public simulateTyping(chatId: string, userId: string): void {
+    LoggingService.debug('chat', 'chat_typing', 'User is typing in chat', { chatId, userId });
+    // In a real application, you would implement a more sophisticated typing indicator
+  }
+  
+  /**
+   * Get total number of unread messages across all chats
+   */
+  public getTotalUnreadMessages(): number {
+    let total = 0;
+    this.chats.forEach(chat => {
+      total += chat.unreadCount;
+    });
+    return total;
+  }
+  
+  /**
+   * Reset unread messages count for all chats (e.g., on user logout)
+   */
+  public resetUnreadMessages(): void {
+    this.chats.forEach(chat => {
+      chat.unreadCount = 0;
+    });
+    LoggingService.info('chat', 'chat_unread_reset', 'Unread messages reset for all chats');
+  }
+  
+  /**
+   * Search for chats by name or participant name
+   */
+  public searchChats(query: string): Chat[] {
+    const searchTerm = query.toLowerCase();
+    const results: Chat[] = [];
+    
+    this.chats.forEach(chat => {
+      if (chat.name?.toLowerCase().includes(searchTerm) ||
+          chat.participants.some(p => p.name.toLowerCase().includes(searchTerm))) {
+        results.push(chat);
+      }
+    });
+    
+    return results;
+  }
+  
+  /**
+   * Generate a unique chat ID
+   */
+  private generateChatId(type: 'public' | 'private' | 'group'): string {
+    return `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+  }
+  
+  /**
+   * Mock function to simulate fetching user details
+   */
+  private mockGetUserDetails(userId: string): { id: string; name: string; avatar?: string } {
+    // Replace with actual user data retrieval logic
+    return {
+      id: userId,
+      name: `User ${userId}`,
+      avatar: `https://i.pravatar.cc/150?u=${userId}`, // Generate a random avatar URL
+    };
+  }
+  
+  /**
+   * Simulate receiving a new message (for testing purposes)
+   */
+  public receiveMessage(chatId: string, senderId: string, text: string): void {
+    const chat = this.chats.get(chatId);
+    if (!chat) {
+      LoggingService.error('chat', 'chat_not_found', 'Chat not found', { chatId });
+      return;
+    }
+    
+    const sender = this.mockGetUserDetails(senderId);
+    const message: ChatMessage = {
+      id: `message-${Date.now()}`,
+      sender: sender,
+      text: text,
+      timestamp: new Date(),
+    };
+    
+    chat.messages.push(message);
+    chat.lastMessage = message;
+    chat.unreadCount++;
+    
+    LoggingService.info('chat', 'message_received', 'Simulated message received', { chatId, senderId, text });
   }
 }
 
-const chatService = new ChatService();
+// Export singleton instance
+const chatService = ChatService.getInstance();
+ServiceRegistry.getInstance().register('chat', chatService);
+
 export default chatService;

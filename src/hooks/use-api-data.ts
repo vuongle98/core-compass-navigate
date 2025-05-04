@@ -1,5 +1,5 @@
 
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
@@ -50,7 +50,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
       const response = await EnhancedApiService.get<T>(options.endpoint, params, options.mockData);
       
       // Apply transform function if provided
-      const transformedData = options.transform ? options.transform(response.data) : response.data;
+      const transformedData = options.transform ? options.transform(response) : response;
 
       LoggingService.info(
         "api_data",
@@ -82,7 +82,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
   }, [options.endpoint, options.mockData, options.transform, params]);
 
   // Set up query options
-  const queryOptions: UseQueryOptions<T, unknown, T> = {
+  const queryOptions: UseQueryOptions<T, unknown, T, QueryKey> = {
     queryKey: Array.isArray(options.queryKey) 
       ? [...options.queryKey, params] 
       : [options.queryKey, params],
@@ -95,15 +95,17 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     retryDelay: options.retryDelay,
   };
 
-  if (options.onSuccess) {
-    queryOptions.onSuccess = options.onSuccess;
-  }
-
-  if (options.onError) {
-    queryOptions.meta = {
-      ...queryOptions.meta,
-      onError: options.onError
-    };
+  // Add callbacks in a type-compatible way
+  if (options.onSuccess || options.onError) {
+    queryOptions.meta = {};
+    
+    if (options.onSuccess) {
+      queryOptions.meta.onSuccess = options.onSuccess;
+    }
+    
+    if (options.onError) {
+      queryOptions.meta.onError = options.onError;
+    }
   }
 
   const { data, isLoading, isError, error, refetch } = useQuery(queryOptions);

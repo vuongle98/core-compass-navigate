@@ -97,25 +97,33 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
     fetchData();
   }, [toast]);
 
+  // Transform the post data to match the form schema
+  const getDefaultValues = () => {
+    if (post) {
+      return {
+        ...post,
+        publishDate: new Date(post.publishDate),
+        tags: post.tags || [],
+        metaKeywords: post.metaKeywords || [],
+        status: post.status as "draft" | "published" | "scheduled"
+      };
+    } else {
+      return {
+        title: "",
+        slug: "",
+        content: "",
+        excerpt: "",
+        publishDate: new Date(),
+        status: "draft" as const,
+        tags: [],
+        metaKeywords: [],
+      };
+    }
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(postSchema),
-    defaultValues: post
-      ? {
-          ...post,
-          publishDate: new Date(post.publishDate),
-          tags: post.tags || [],
-          metaKeywords: post.metaKeywords || [],
-        }
-      : {
-          title: "",
-          slug: "",
-          content: "",
-          excerpt: "",
-          publishDate: new Date(),
-          status: "draft",
-          tags: [],
-          metaKeywords: [],
-        },
+    defaultValues: getDefaultValues()
   });
 
   useEffect(() => {
