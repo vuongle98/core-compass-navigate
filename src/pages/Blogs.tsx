@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -198,6 +197,7 @@ const Blogs = () => {
           title="Blogs"
           description="Manage blog posts"
           showAddButton={true}
+          addButtonText="Add New"
           onAddClick={handleAddBlog}
         >
           <DataFilters

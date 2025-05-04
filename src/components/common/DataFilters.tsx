@@ -50,7 +50,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
               <Input
                 type="text"
                 id={option.id}
-                value={localFilters[option.id]?.toString() || ''}
+                value={(localFilters[option.id] as string) || ''}
                 onChange={(e) => handleFilterChange(option.id, e.target.value)}
                 className="mt-1"
               />
@@ -63,7 +63,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
                 type="search"
                 id={option.id}
                 placeholder={option.placeholder || `Search ${option.label.toLowerCase()}...`}
-                value={localFilters[option.id]?.toString() || ''}
+                value={(localFilters[option.id] as string) || ''}
                 onChange={(e) => handleFilterChange(option.id, e.target.value)}
                 className="pl-10"
               />
@@ -85,7 +85,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
             <div>
               <label htmlFor={option.id} className="block text-sm font-medium text-gray-700">{option.label}</label>
               <Select 
-                value={localFilters[option.id]?.toString()} 
+                value={(localFilters[option.id] as string) || undefined} 
                 onValueChange={(value) => handleFilterChange(option.id, value)}
               >
                 <SelectTrigger className="w-full mt-1">

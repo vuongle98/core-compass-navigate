@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -130,7 +129,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         result = await BlogService.uploadImage(file);
       }
       
-      if (result.success && result.data.url) {
+      if (result.success && result.data && result.data.url) {
         execCommand('insertImage', result.data.url);
         
         const images = editorRef.current?.querySelectorAll('img');

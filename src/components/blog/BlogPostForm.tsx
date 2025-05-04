@@ -83,10 +83,10 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
           BlogService.getCategories(),
           BlogService.getTags()
         ]);
-        if (categoriesRes.success) {
+        if (categoriesRes.success && categoriesRes.data) {
           setCategories(categoriesRes.data);
         }
-        if (tagsRes.success) {
+        if (tagsRes.success && tagsRes.data) {
           setTags(tagsRes.data);
         }
       } catch (error) {
@@ -150,11 +150,21 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
   const handleSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
+      // Create a partial BlogPost with only the fields we need
       const postData = {
-        ...values,
+        title: values.title,
+        slug: values.slug,
+        content: values.content,
+        excerpt: values.excerpt,
         publishDate: values.publishDate.toISOString(),
-        coverImage: coverImageUrl,
-        // Convert to string to fix type issue
+        coverImage: coverImageUrl || '',
+        status: values.status,
+        categoryId: values.categoryId,
+        tags: values.tags,
+        metaTitle: values.metaTitle,
+        metaDescription: values.metaDescription,
+        metaKeywords: values.metaKeywords,
+        // Add author information
         authorId: user?.id ? String(user.id) : 'anonymous',
         authorName: user?.name || user?.email || 'Anonymous User',
       };
@@ -496,8 +506,8 @@ export const BlogPostForm = ({ post, onSuccess, isSubmitting = false }: BlogPost
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : isEditMode ? "Update Post" : "Create Post"}
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Saving..." : isEditMode ? "Update Post" : "Create Post"}
               </Button>
             </div>
           </form>
