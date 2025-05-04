@@ -9,7 +9,8 @@ interface PageHeaderProps {
   description?: string;
   showAddButton?: boolean;
   addButtonText?: string;
-  onAddButtonClick?: () => void;
+  onAddClick?: () => void;
+  onAddButtonClick?: () => void; // For backward compatibility
   addButtonLabel?: string;
   actions?: ReactNode;
   button?: ReactNode;
@@ -21,6 +22,7 @@ export function PageHeader({
   description,
   showAddButton = false,
   addButtonText = "Add New",
+  onAddClick,
   onAddButtonClick,
   addButtonLabel,
   actions,
@@ -28,7 +30,9 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   const handleAdd = () => {
-    if (onAddButtonClick) {
+    if (onAddClick) {
+      onAddClick();
+    } else if (onAddButtonClick) {
       onAddButtonClick();
     } else {
       toast.success(`Add new ${title.toLowerCase()} action triggered`);

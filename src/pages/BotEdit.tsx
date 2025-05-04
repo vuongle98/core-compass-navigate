@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ const BotEdit = () => {
       if (!id) throw new Error("Bot ID is required");
       try {
         const response = await EnhancedApiService.get<Bot>(`/api/v1/bots/${id}`);
-        return response.data;
+        return response;
       } catch (error) {
         console.error(
           "Failed to fetch bot data from API, using mock data:",

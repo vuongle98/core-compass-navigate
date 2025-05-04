@@ -23,7 +23,7 @@ interface DataFiltersProps {
 }
 
 export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onChange, onReset, className }) => {
-  const [localFilters, setLocalFilters] = useState(filters);
+  const [localFilters, setLocalFilters] = useState<ApiQueryFilters>(filters);
 
   useEffect(() => {
     setLocalFilters(filters);
@@ -50,7 +50,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
               <Input
                 type="text"
                 id={option.id}
-                value={localFilters[option.id] || ''}
+                value={localFilters[option.id]?.toString() || ''}
                 onChange={(e) => handleFilterChange(option.id, e.target.value)}
                 className="mt-1"
               />
@@ -63,7 +63,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
                 type="search"
                 id={option.id}
                 placeholder={option.placeholder || `Search ${option.label.toLowerCase()}...`}
-                value={localFilters[option.id] || ''}
+                value={localFilters[option.id]?.toString() || ''}
                 onChange={(e) => handleFilterChange(option.id, e.target.value)}
                 className="pl-10"
               />
@@ -84,9 +84,12 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
           {option.type === 'select' && (
             <div>
               <label htmlFor={option.id} className="block text-sm font-medium text-gray-700">{option.label}</label>
-              <Select onValueChange={(value) => handleFilterChange(option.id, value)}>
+              <Select 
+                value={localFilters[option.id]?.toString()} 
+                onValueChange={(value) => handleFilterChange(option.id, value)}
+              >
                 <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} defaultValue={filters[option.id]?.toString()} />
+                  <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
                   {option.options?.map(opt => (

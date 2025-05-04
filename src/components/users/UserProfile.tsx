@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -38,7 +39,7 @@ import EnhancedApiService from "@/services/EnhancedApiService";
 import { UserInfo } from "@/pages/Users";
 import { useQuery } from "@tanstack/react-query";
 import RoleSelect from "./RoleSelect";
-import { Role } from "@/pages/Roles";
+import { Role } from "@/types/Auth";
 
 interface UserProfileProps {
   userId: number;
@@ -88,7 +89,7 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
 
   // Mock user data - in a real app, you would fetch this from an API
   const {
-    data: user,
+    data: userData,
     isLoading,
     isError,
     error,
@@ -99,9 +100,11 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       const response = await EnhancedApiService.get<UserInfo>(
         `/api/user/${userId}/profile`
       );
-      return response.data;
+      return response;
     },
   });
+
+  const user = userData;
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -191,11 +194,11 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       });
   };
 
-  const onSelectRoleChange = (rawValue: Role[], codes: string[]) => {
-    console.log("Selected roles:", rawValue, codes);
+  const onSelectRoleChange = (rawValue: any[], numericIds: number[]) => {
+    console.log("Selected roles:", rawValue, numericIds);
     roleForm.setValue(
       "roleIds",
-      rawValue.map((role) => role.id)
+      numericIds
     );
     roleForm.trigger("roleIds");
   };
@@ -570,8 +573,8 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
                             <FormControl>
                               <RoleSelect
                                 value={(field.value || []).map(
-                                  (id) => ({ id } as Role)
-                                )} // Convert roles to list of role IDs
+                                  (id) => ({ id } as any)
+                                )}
                                 onChange={onSelectRoleChange}
                               />
                             </FormControl>
