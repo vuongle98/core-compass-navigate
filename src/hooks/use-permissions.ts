@@ -35,7 +35,7 @@ export function usePermissions(): UserPermissions {
       if (role.permissions) {
         (role.permissions as (string | Permission)[]).forEach(perm => {
           if (typeof perm === 'string') {
-            rolePermissions.push({ id: perm, name: perm });
+            rolePermissions.push({ id: perm, name: perm, code: perm });
           } else {
             rolePermissions.push(perm);
           }
@@ -60,7 +60,7 @@ export function usePermissions(): UserPermissions {
       );
       
       if (!hasFeatureFlags) {
-        uniquePermissions.push({ id: 'feature:flags', name: 'feature:flags' });
+        uniquePermissions.push({ id: 'feature:flags', name: 'feature:flags', code: 'feature:flags' });
       }
     }
     

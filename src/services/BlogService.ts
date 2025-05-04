@@ -1,246 +1,329 @@
 
-import axios from "axios";
-import { BlogPost, BlogCategory, BlogTag } from "@/types/Blog";
-import LoggingService from "@/services/LoggingService";
+import EnhancedApiService from './EnhancedApiService';
+import { Blog, BlogPost, BlogCategory, BlogTag, BlogComment } from '@/types/Blog';
+import LoggingService from './LoggingService';
 
 /**
- * Service for handling blog-related operations
+ * Service for blog related operations
  */
 class BlogService {
-  private static instance: BlogService | null = null;
-
-  private constructor() {}
-
-  public static getInstance(): BlogService {
-    if (!BlogService.instance) {
-      BlogService.instance = new BlogService();
-    }
-    return BlogService.instance;
-  }
-
-  // Blog Post methods
-  async getPost(id: string): Promise<any> {
+  private static API_ENDPOINT = '/api/blogs';
+  
+  /**
+   * Get a paginated list of blog posts
+   */
+  static async getPosts(params?: any) {
     try {
-      const response = await axios.get(`/api/blog/${id}`);
-      return response.data;
+      LoggingService.getInstance().info('blog_service', 'get_posts', 'Fetching blog posts');
+      return await EnhancedApiService.getPaginated<Blog>(this.API_ENDPOINT, {}, params);
     } catch (error) {
-      LoggingService.error('blog', 'get_post_failed', 'Failed to get post', error);
+      LoggingService.error('blog_service', 'get_posts_failed', 'Failed to fetch blog posts', error);
       throw error;
     }
   }
 
-  async createPost(post: Partial<BlogPost>): Promise<any> {
+  /**
+   * Get a single blog post by ID
+   */
+  static async getPost(id: string) {
     try {
-      const response = await axios.post('/api/blog', post);
-      return response.data;
+      LoggingService.getInstance().info('blog_service', 'get_post', `Fetching blog post ${id}`);
+      const response = await EnhancedApiService.get(`${this.API_ENDPOINT}/${id}`);
+      return {
+        success: true,
+        data: response
+      };
     } catch (error) {
-      LoggingService.error('blog', 'create_post_failed', 'Failed to create post', error);
-      throw error;
+      LoggingService.error('blog_service', 'get_post_failed', `Failed to fetch blog post ${id}`, error);
+      return {
+        success: false,
+        error
+      };
     }
   }
 
-  async updatePost(id: string, post: Partial<BlogPost>): Promise<any> {
+  /**
+   * Create a new blog post
+   */
+  static async createPost(data: Partial<BlogPost>) {
     try {
-      const response = await axios.put(`/api/blog/${id}`, post);
-      return response.data;
+      LoggingService.getInstance().info('blog_service', 'create_post', 'Creating new blog post');
+      const response = await EnhancedApiService.post(this.API_ENDPOINT, data);
+      return {
+        success: true,
+        data: response
+      };
     } catch (error) {
-      LoggingService.error('blog', 'update_post_failed', 'Failed to update post', error);
-      throw error;
+      LoggingService.error('blog_service', 'create_post_failed', 'Failed to create blog post', error);
+      return {
+        success: false,
+        error
+      };
     }
   }
 
-  async deletePost(id: string): Promise<any> {
+  /**
+   * Update an existing blog post
+   */
+  static async updatePost(id: string, data: Partial<BlogPost>) {
     try {
-      const response = await axios.delete(`/api/blog/${id}`);
-      return response.data;
+      LoggingService.getInstance().info('blog_service', 'update_post', `Updating blog post ${id}`);
+      const response = await EnhancedApiService.put(`${this.API_ENDPOINT}/${id}`, data);
+      return {
+        success: true,
+        data: response
+      };
     } catch (error) {
-      LoggingService.error('blog', 'delete_post_failed', 'Failed to delete post', error);
-      throw error;
+      LoggingService.error('blog_service', 'update_post_failed', `Failed to update blog post ${id}`, error);
+      return {
+        success: false,
+        error
+      };
     }
   }
 
-  // Image upload method
-  async uploadImage(file: File): Promise<any> {
+  /**
+   * Delete a blog post
+   */
+  static async deletePost(id: string) {
     try {
+      LoggingService.getInstance().info('blog_service', 'delete_post', `Deleting blog post ${id}`);
+      await EnhancedApiService.delete(`${this.API_ENDPOINT}/${id}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'delete_post_failed', `Failed to delete blog post ${id}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Get categories
+   */
+  static async getCategories(params?: any) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'get_categories', 'Fetching blog categories');
+      const response = await EnhancedApiService.get(`${this.API_ENDPOINT}/categories`, params);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'get_categories_failed', 'Failed to fetch blog categories', error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Create a new category
+   */
+  static async createCategory(data: Partial<BlogCategory>) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'create_category', 'Creating new blog category');
+      const response = await EnhancedApiService.post(`${this.API_ENDPOINT}/categories`, data);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'create_category_failed', 'Failed to create blog category', error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Update an existing category
+   */
+  static async updateCategory(id: string, data: Partial<BlogCategory>) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'update_category', `Updating blog category ${id}`);
+      const response = await EnhancedApiService.put(`${this.API_ENDPOINT}/categories/${id}`, data);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'update_category_failed', `Failed to update blog category ${id}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Delete a category
+   */
+  static async deleteCategory(id: string) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'delete_category', `Deleting blog category ${id}`);
+      await EnhancedApiService.delete(`${this.API_ENDPOINT}/categories/${id}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'delete_category_failed', `Failed to delete blog category ${id}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Get tags
+   */
+  static async getTags(params?: any) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'get_tags', 'Fetching blog tags');
+      const response = await EnhancedApiService.get(`${this.API_ENDPOINT}/tags`, params);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'get_tags_failed', 'Failed to fetch blog tags', error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Create a new tag
+   */
+  static async createTag(data: Partial<BlogTag>) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'create_tag', 'Creating new blog tag');
+      const response = await EnhancedApiService.post(`${this.API_ENDPOINT}/tags`, data);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'create_tag_failed', 'Failed to create blog tag', error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Update an existing tag
+   */
+  static async updateTag(id: string, data: Partial<BlogTag>) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'update_tag', `Updating blog tag ${id}`);
+      const response = await EnhancedApiService.put(`${this.API_ENDPOINT}/tags/${id}`, data);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'update_tag_failed', `Failed to update blog tag ${id}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Delete a tag
+   */
+  static async deleteTag(id: string) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'delete_tag', `Deleting blog tag ${id}`);
+      await EnhancedApiService.delete(`${this.API_ENDPOINT}/tags/${id}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'delete_tag_failed', `Failed to delete blog tag ${id}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Get comments for a blog post
+   */
+  static async getComments(postId: string, params?: any) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'get_comments', `Fetching comments for blog post ${postId}`);
+      const response = await EnhancedApiService.get(`${this.API_ENDPOINT}/${postId}/comments`, params);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'get_comments_failed', `Failed to fetch comments for blog post ${postId}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Add a comment to a blog post
+   */
+  static async addComment(postId: string, data: Partial<BlogComment>) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'add_comment', `Adding comment to blog post ${postId}`);
+      const response = await EnhancedApiService.post(`${this.API_ENDPOINT}/${postId}/comments`, data);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      LoggingService.error('blog_service', 'add_comment_failed', `Failed to add comment to blog post ${postId}`, error);
+      return {
+        success: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Upload an image for a blog post
+   */
+  static async uploadImage(file: File) {
+    try {
+      LoggingService.getInstance().info('blog_service', 'upload_image', 'Uploading blog image');
+      
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post('/api/blog/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await EnhancedApiService.post(`${this.API_ENDPOINT}/upload`, formData, {
+        'Content-Type': 'multipart/form-data'
       });
       
-      LoggingService.info('blog', 'image_upload_success', 'Image uploaded successfully');
-      return response.data;
+      return {
+        success: true,
+        data: response
+      };
     } catch (error) {
-      LoggingService.error('blog', 'image_upload_failed', 'Failed to upload image', error);
-      throw new Error('Failed to upload image');
+      LoggingService.error('blog_service', 'upload_image_failed', 'Failed to upload blog image', error);
+      return {
+        success: false,
+        error
+      };
     }
-  }
-
-  // Category methods
-  async getCategories(): Promise<any> {
-    try {
-      const response = await axios.get('/api/blog/categories');
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'get_categories_failed', 'Failed to get categories', error);
-      throw error;
-    }
-  }
-
-  async createCategory(category: Partial<BlogCategory>): Promise<any> {
-    try {
-      const response = await axios.post('/api/blog/categories', category);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'create_category_failed', 'Failed to create category', error);
-      throw error;
-    }
-  }
-
-  async updateCategory(id: string, category: Partial<BlogCategory>): Promise<any> {
-    try {
-      const response = await axios.put(`/api/blog/categories/${id}`, category);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'update_category_failed', 'Failed to update category', error);
-      throw error;
-    }
-  }
-
-  async deleteCategory(id: string): Promise<any> {
-    try {
-      const response = await axios.delete(`/api/blog/categories/${id}`);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'delete_category_failed', 'Failed to delete category', error);
-      throw error;
-    }
-  }
-
-  // Tag methods
-  async getTags(): Promise<any> {
-    try {
-      const response = await axios.get('/api/blog/tags');
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'get_tags_failed', 'Failed to get tags', error);
-      throw error;
-    }
-  }
-
-  async createTag(tag: Partial<BlogTag>): Promise<any> {
-    try {
-      const response = await axios.post('/api/blog/tags', tag);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'create_tag_failed', 'Failed to create tag', error);
-      throw error;
-    }
-  }
-
-  async updateTag(id: string, tag: Partial<BlogTag>): Promise<any> {
-    try {
-      const response = await axios.put(`/api/blog/tags/${id}`, tag);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'update_tag_failed', 'Failed to update tag', error);
-      throw error;
-    }
-  }
-
-  async deleteTag(id: string): Promise<any> {
-    try {
-      const response = await axios.delete(`/api/blog/tags/${id}`);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'delete_tag_failed', 'Failed to delete tag', error);
-      throw error;
-    }
-  }
-
-  // Comment methods
-  async getComments(blogId: string): Promise<any> {
-    try {
-      const response = await axios.get(`/api/blog/${blogId}/comments`);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'get_comments_failed', 'Failed to get comments', error);
-      throw error;
-    }
-  }
-
-  async addComment(blogId: string, comment: any): Promise<any> {
-    try {
-      const response = await axios.post(`/api/blog/${blogId}/comments`, comment);
-      return response.data;
-    } catch (error) {
-      LoggingService.error('blog', 'add_comment_failed', 'Failed to add comment', error);
-      throw error;
-    }
-  }
-
-  // Static methods that delegate to instance methods
-  public static async getPost(id: string): Promise<any> {
-    return BlogService.getInstance().getPost(id);
-  }
-
-  public static async createPost(post: Partial<BlogPost>): Promise<any> {
-    return BlogService.getInstance().createPost(post);
-  }
-
-  public static async updatePost(id: string, post: Partial<BlogPost>): Promise<any> {
-    return BlogService.getInstance().updatePost(id, post);
-  }
-
-  public static async deletePost(id: string): Promise<any> {
-    return BlogService.getInstance().deletePost(id);
-  }
-
-  public static async uploadImage(file: File): Promise<any> {
-    return BlogService.getInstance().uploadImage(file);
-  }
-
-  public static async getCategories(): Promise<any> {
-    return BlogService.getInstance().getCategories();
-  }
-
-  public static async createCategory(category: Partial<BlogCategory>): Promise<any> {
-    return BlogService.getInstance().createCategory(category);
-  }
-
-  public static async updateCategory(id: string, category: Partial<BlogCategory>): Promise<any> {
-    return BlogService.getInstance().updateCategory(id, category);
-  }
-
-  public static async deleteCategory(id: string): Promise<any> {
-    return BlogService.getInstance().deleteCategory(id);
-  }
-
-  public static async getTags(): Promise<any> {
-    return BlogService.getInstance().getTags();
-  }
-
-  public static async createTag(tag: Partial<BlogTag>): Promise<any> {
-    return BlogService.getInstance().createTag(tag);
-  }
-
-  public static async updateTag(id: string, tag: Partial<BlogTag>): Promise<any> {
-    return BlogService.getInstance().updateTag(id, tag);
-  }
-
-  public static async deleteTag(id: string): Promise<any> {
-    return BlogService.getInstance().deleteTag(id);
-  }
-
-  public static async getComments(blogId: string): Promise<any> {
-    return BlogService.getInstance().getComments(blogId);
-  }
-
-  public static async addComment(blogId: string, comment: any): Promise<any> {
-    return BlogService.getInstance().addComment(blogId, comment);
   }
 }
 

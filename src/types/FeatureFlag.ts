@@ -1,17 +1,18 @@
 
 export interface FeatureFlag {
   id: string;
+  key: string;
   name: string;
-  description: string;
+  description?: string;
   enabled: boolean;
-  category?: string;
-  audience?: string;
+  environments?: string[];
+  roles?: string[];
+  percentage?: number;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface FeatureFlagResponse {
-  success: boolean;
-  data: FeatureFlag[];
-  message?: string;
+export interface FeatureFlagGroup {
+  name: string;
+  flags: FeatureFlag[];
 }

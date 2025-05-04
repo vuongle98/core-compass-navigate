@@ -87,6 +87,18 @@ class LoggingService {
   public static logUserAction(action: string, details?: any): void {
     LoggingService.getInstance().logUserAction(action, details);
   }
+
+  public static setUser(user: any): void {
+    LoggingService.getInstance().setUser(user);
+  }
+
+  public static setActivityTracking(tracking: any): void {
+    LoggingService.getInstance().setActivityTracking(tracking);
+  }
+
+  public static get config() {
+    return LoggingService.getInstance().config;
+  }
 }
 
 export default LoggingService;

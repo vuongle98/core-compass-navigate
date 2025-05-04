@@ -1,167 +1,146 @@
 
-import axios from 'axios';
-import { FeatureFlag, FeatureFlagResponse } from '@/types/FeatureFlag';
+import EnhancedApiService from './EnhancedApiService';
+import { FeatureFlag } from '@/types/FeatureFlag';
 
 class FeatureFlagService {
-  private static instance: FeatureFlagService;
-  private flags: FeatureFlag[] = [];
-  private listeners: ((flags: FeatureFlag[]) => void)[] = [];
+  private static flagCache: Map<string, FeatureFlag> = new Map();
+  private static lastFetch: number = 0;
+  private static cacheDuration: number = 5 * 60 * 1000; // 5 minutes
 
-  private constructor() {
-    this.initializeFlags();
-  }
-
-  public static getInstance(): FeatureFlagService {
-    if (!FeatureFlagService.instance) {
-      FeatureFlagService.instance = new FeatureFlagService();
-    }
-    return FeatureFlagService.instance;
-  }
-
-  private async initializeFlags(): Promise<void> {
+  /**
+   * Fetches all feature flags from the API
+   */
+  public static async getFlags(): Promise<FeatureFlag[]> {
     try {
-      const initialFlags = await this.getAllFlags();
-      this.flags = initialFlags;
-      this.notifyListeners();
-    } catch (error) {
-      console.error('Failed to initialize feature flags:', error);
-    }
-  }
-
-  async getAllFlags(): Promise<FeatureFlag[]> {
-    try {
-      const response = await axios.get<FeatureFlagResponse>('/api/feature-flags');
-      return response.data.data;
-    } catch (error) {
-      console.error('Error fetching feature flags:', error);
-      return [];
-    }
-  }
-
-  getFlag(flagId: string): FeatureFlag | undefined {
-    return this.flags.find(flag => flag.id === flagId);
-  }
-
-  isFeatureEnabled(flagId: string, environment?: string, roles?: string[]): boolean {
-    const flag = this.getFlag(flagId);
-    
-    // If flag doesn't exist, it's disabled
-    if (!flag) return false;
-    
-    // Check if the flag is globally enabled
-    if (!flag.enabled) return false;
-    
-    // Check environment restrictions if applicable
-    if (environment && flag.audience === environment) return true;
-    
-    // Check role restrictions if applicable
-    if (roles && roles.length > 0 && flag.audience) {
-      // If flag audience is specific to a role, check if user has that role
-      return roles.some(role => flag.audience === role);
-    }
-    
-    // If no specific restrictions, respect the enabled flag
-    return flag.enabled;
-  }
-
-  async createFlag(flag: Omit<FeatureFlag, 'id'>): Promise<FeatureFlag | null> {
-    try {
-      const response = await axios.post<{ success: boolean, data: FeatureFlag }>('/api/feature-flags', flag);
-      if (response.data && response.data.success) {
-        const newFlag: FeatureFlag = response.data.data;
-        this.flags.push(newFlag);
-        this.notifyListeners();
-        return newFlag;
+      // Only fetch if cache is expired
+      const now = Date.now();
+      if (now - this.lastFetch > this.cacheDuration) {
+        const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
+        
+        // Update cache
+        this.flagCache.clear();
+        response.forEach(flag => {
+          this.flagCache.set(flag.key, flag);
+        });
+        
+        this.lastFetch = now;
+        return response;
       }
-      return null;
+      
+      // Return from cache
+      return Array.from(this.flagCache.values());
     } catch (error) {
-      console.error('Error creating feature flag:', error);
-      return null;
+      console.error('Failed to fetch feature flags:', error);
+      return Array.from(this.flagCache.values());
     }
   }
 
-  async updateFlag(id: string, updates: Partial<FeatureFlag>): Promise<boolean> {
+  /**
+   * Refreshes the feature flag cache
+   */
+  public static async refreshFlags(): Promise<void> {
     try {
-      const response = await axios.put(`/api/feature-flags/${id}`, updates);
-      if (response.status >= 200 && response.status < 300) {
-        // Update local cache if the API call was successful
-        this.flags = this.flags.map(flag =>
-          flag.id === id ? { ...flag, ...updates } : flag
-        );
-        this.notifyListeners();
-        return true;
-      }
-      return false;
+      const response = await EnhancedApiService.get<FeatureFlag[]>('/api/feature-flags');
+      
+      // Update cache
+      this.flagCache.clear();
+      response.forEach(flag => {
+        this.flagCache.set(flag.key, flag);
+      });
+      
+      this.lastFetch = Date.now();
     } catch (error) {
-      console.error('Error updating feature flag:', error);
-      return false;
+      console.error('Failed to refresh feature flags:', error);
     }
   }
 
-  async deleteFlag(flagId: string): Promise<boolean> {
-    try {
-      await axios.delete(`/api/feature-flags/${flagId}`);
-      this.flags = this.flags.filter(flag => flag.id !== flagId);
-      this.notifyListeners();
-      return true;
-    } catch (error) {
-      console.error('Error deleting feature flag:', error);
+  /**
+   * Checks if a feature flag is enabled
+   * @param flagKey The feature flag key
+   * @param environment Current environment
+   * @param userRoles User roles to check against
+   * @returns boolean indicating if the feature is enabled
+   */
+  public static isFeatureEnabled(flagKey: string, environment: string, userRoles: string[]): boolean {
+    const flag = this.flagCache.get(flagKey);
+    
+    // If flag doesn't exist, default to disabled
+    if (!flag) {
       return false;
     }
-  }
-
-  subscribe(listener: (flags: FeatureFlag[]) => void): void {
-    this.listeners.push(listener);
-  }
-
-  unsubscribe(listener: (flags: FeatureFlag[]) => void): void {
-    this.listeners = this.listeners.filter(l => l !== listener);
-  }
-
-  private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.flags));
-  }
-
-  async setFlagState(flagId: string, enabled: boolean): Promise<boolean> {
-    try {
-      const response = await axios.patch(`/api/feature-flags/${flagId}`, { enabled });
-      if (response.status === 200) {
-        this.flags = this.flags.map(flag =>
-          flag.id === flagId ? { ...flag, enabled } : flag
-        );
-        this.notifyListeners();
-        return true;
-      } else {
-        console.error('Failed to set flag state:', response.status, response.data);
+    
+    // Check if flag is globally enabled
+    if (!flag.enabled) {
+      return false;
+    }
+    
+    // Check environment restrictions
+    if (flag.environments && flag.environments.length > 0) {
+      if (!flag.environments.includes(environment)) {
         return false;
       }
-    } catch (error) {
-      console.error('Error setting flag state:', error);
-      return false;
     }
-  }
-
-  // Add static method for refreshFlags
-  static async refreshFlags(): Promise<boolean> {
-    return FeatureFlagService.getInstance().refreshFlags();
-  }
-
-  // Add the refreshFlags method
-  async refreshFlags(): Promise<boolean> {
-    try {
-      const flags = await this.getAllFlags();
-      this.flags = flags;
-      this.notifyListeners();
-      return true;
-    } catch (error) {
-      console.error('Error refreshing feature flags:', error);
-      return false;
+    
+    // Check role restrictions
+    if (flag.roles && flag.roles.length > 0) {
+      // If no user roles or no match, feature is disabled
+      if (!userRoles || userRoles.length === 0) {
+        return false;
+      }
+      
+      // Check if user has any of the required roles
+      const hasRequiredRole = userRoles.some(role => 
+        flag.roles!.includes(role)
+      );
+      
+      if (!hasRequiredRole) {
+        return false;
+      }
     }
+    
+    return true;
   }
 
-  // Static method for isFeatureEnabled
-  static isFeatureEnabled(flagId: string, environment?: string, roles?: string[]): boolean {
-    return FeatureFlagService.getInstance().isFeatureEnabled(flagId, environment, roles);
+  /**
+   * Updates a feature flag
+   * @param flag The feature flag to update
+   */
+  public static async updateFlag(flag: FeatureFlag): Promise<FeatureFlag> {
+    const response = await EnhancedApiService.put<FeatureFlag>(`/api/feature-flags/${flag.id}`, flag);
+    
+    // Update cache
+    this.flagCache.set(flag.key, response);
+    
+    return response;
+  }
+
+  /**
+   * Creates a new feature flag
+   * @param flag The feature flag to create
+   */
+  public static async createFlag(flag: FeatureFlag): Promise<FeatureFlag> {
+    const response = await EnhancedApiService.post<FeatureFlag>('/api/feature-flags', flag);
+    
+    // Update cache
+    this.flagCache.set(flag.key, response);
+    
+    return response;
+  }
+
+  /**
+   * Deletes a feature flag
+   * @param id The ID of the feature flag to delete
+   */
+  public static async deleteFlag(id: string): Promise<void> {
+    await EnhancedApiService.delete(`/api/feature-flags/${id}`);
+    
+    // Remove from cache
+    for (const [key, flag] of this.flagCache.entries()) {
+      if (flag.id === id) {
+        this.flagCache.delete(key);
+        break;
+      }
+    }
   }
 }
 

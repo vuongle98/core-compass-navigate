@@ -1,182 +1,159 @@
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse, AxiosRequestHeaders } from 'axios';
-import { toast } from 'sonner';
-import { getAccessToken, removeAccessToken } from './TokenService';
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
+import { toast } from "sonner";
+import { getAccessToken, removeAccessToken } from "./TokenService";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
-interface ApiException {
-  code: string;
-  message: string;
-  details?: any;
-}
-
+// Paginated response interface
 export interface PaginatedData<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
   number: number;
   size: number;
+  first?: boolean;
+  last?: boolean;
+  empty?: boolean;
 }
 
+// Pagination options interface
 export interface PaginationOptions {
   page?: number;
   size?: number;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
-  search?: string;
-  [key: string]: any;
+  sort?: string;
+  direction?: 'asc' | 'desc';
 }
 
 class EnhancedApiService {
-  private static axiosInstance: AxiosInstance;
+  static axiosInstance: any;
 
   static initialize() {
     EnhancedApiService.axiosInstance = axios.create({
       baseURL: API_BASE_URL,
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json',
-      },
+        "Content-Type": "application/json"
+      }
     });
 
     EnhancedApiService.axiosInstance.interceptors.response.use(
-      (response) => response,
-      async (error: AxiosError) => {
+      (response: any) => response,
+      async (error: any) => {
         if (error.response?.status === 401) {
           removeAccessToken();
-          window.location.href = '/login';
-          toast.error('Your session has expired. Please log in again.');
+          window.location.href = "/login";
+          toast.error("Your session has expired. Please log in again.");
         }
         return Promise.reject(error);
       }
     );
   }
 
-  private static addAuthToken(config: AxiosRequestConfig): void {
+  static addAuthToken(config: AxiosRequestConfig) {
     const token = getAccessToken();
     if (token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
   }
 
-  private static handleApiError(error: any, url: string, method: string): void {
-    const errorData: ApiException = {
-      code: 'API_ERROR',
-      message: 'API request failed',
+  static handleApiError(error: any, url: string, method: string) {
+    const errorData = {
+      code: "API_ERROR",
+      message: "API request failed",
       details: {
-        url: url,
-        method: method,
+        url,
+        method,
         error: error.message,
         status: error.response?.status,
-        data: error.response?.data,
-      },
+        data: error.response?.data
+      }
     };
-
-    console.error('API Error:', errorData);
+    console.error("API Error:", errorData);
     toast.error(`API request failed: ${error.message}`);
   }
 
-  static async get<T>(url: string, params?: any, headers?: AxiosRequestHeaders): Promise<T> {
+  static async get<T>(url: string, params?: any, headers?: any): Promise<T> {
     try {
       const config: AxiosRequestConfig = {
         params,
-        headers: headers || {} as AxiosRequestHeaders
+        headers: headers || {}
       };
-      
-      // Add authentication token if available
       this.addAuthToken(config);
-
       const response = await this.axiosInstance.get(url, config);
       return response.data;
     } catch (error) {
-      this.handleApiError(error, url, 'GET');
-      throw error;
-    }
-  }
-  
-  static async getPaginated<T>(
-    url: string, 
-    options?: PaginationOptions, 
-    headers?: AxiosRequestHeaders
-  ): Promise<PaginatedData<T>> {
-    try {
-      const config: AxiosRequestConfig = {
-        params: options,
-        headers: headers || {} as AxiosRequestHeaders
-      };
-      
-      this.addAuthToken(config);
-
-      const response = await this.axiosInstance.get(url, config);
-      return response.data;
-    } catch (error) {
-      this.handleApiError(error, url, 'GET');
+      this.handleApiError(error, url, "GET");
       throw error;
     }
   }
 
-  static async post<T>(url: string, data: any, headers?: AxiosRequestHeaders): Promise<T> {
+  static async post<T>(url: string, data?: any, headers?: any): Promise<T> {
     try {
       const config: AxiosRequestConfig = {
-        headers: headers || {} as AxiosRequestHeaders,
+        headers: headers || {}
       };
       this.addAuthToken(config);
       const response = await this.axiosInstance.post(url, data, config);
       return response.data;
     } catch (error) {
-      this.handleApiError(error, url, 'POST');
+      this.handleApiError(error, url, "POST");
       throw error;
     }
   }
 
-  static async put<T>(url: string, data: any, headers?: AxiosRequestHeaders): Promise<T> {
+  static async put<T>(url: string, data?: any, headers?: any): Promise<T> {
     try {
       const config: AxiosRequestConfig = {
-        headers: headers || {} as AxiosRequestHeaders,
+        headers: headers || {}
       };
       this.addAuthToken(config);
       const response = await this.axiosInstance.put(url, data, config);
       return response.data;
     } catch (error) {
-      this.handleApiError(error, url, 'PUT');
+      this.handleApiError(error, url, "PUT");
       throw error;
     }
   }
 
-  static async delete<T>(url: string, headers?: AxiosRequestHeaders): Promise<T> {
+  static async delete<T>(url: string, headers?: any): Promise<T> {
     try {
       const config: AxiosRequestConfig = {
-        headers: headers || {} as AxiosRequestHeaders,
+        headers: headers || {}
       };
       this.addAuthToken(config);
       const response = await this.axiosInstance.delete(url, config);
       return response.data;
     } catch (error) {
-      this.handleApiError(error, url, 'DELETE');
+      this.handleApiError(error, url, "DELETE");
       throw error;
     }
   }
 
-  static setHeader(header: string, value: string): void {
+  static async getPaginated<T>(url: string, options: PaginationOptions = {}, params: any = {}): Promise<PaginatedData<T>> {
+    const queryParams = {
+      page: options.page !== undefined ? options.page : 0,
+      size: options.size || 10,
+      ...params
+    };
+    
+    if (options.sort) {
+      queryParams.sort = `${options.sort},${options.direction || 'asc'}`;
+    }
+
+    return this.get<PaginatedData<T>>(url, queryParams);
+  }
+
+  static setHeader(header: string, value: string) {
     EnhancedApiService.axiosInstance.defaults.headers.common[header] = value;
   }
 
-  static removeHeader(header: string): void {
+  static removeHeader(header: string) {
     delete EnhancedApiService.axiosInstance.defaults.headers.common[header];
   }
-  
-  // Add logUserAction method
-  static async logUserAction(action: string, details?: any): Promise<void> {
-    try {
-      await this.post('/api/logs/user-action', {
-        action,
-        timestamp: new Date().toISOString(),
-        details
-      });
-    } catch (error) {
-      console.error('Failed to log user action:', error);
-    }
+
+  static logUserAction(action: string, details?: any) {
+    console.log(`[USER_ACTION] ${action}`, details);
   }
 }
 
