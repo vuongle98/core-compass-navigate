@@ -1,5 +1,7 @@
+
 import { EventEmitter } from '@/lib/EventEmitter';
 import { User } from '@/contexts/AuthContext';
+import LoggingService from './LoggingService';
 
 export interface Message {
   id: string;
@@ -131,6 +133,8 @@ class ChatService extends EventEmitter {
     });
     
     this.chats = [...this.mockChats];
+    
+    LoggingService.info('chat', 'service_initialized', 'Chat service initialized with mock data');
   }
 
   public connect(user: User, server = 'wss://api.example.com/chat'): void {
@@ -147,8 +151,10 @@ class ChatService extends EventEmitter {
       this.socket.onmessage = this.handleSocketMessage.bind(this);
       this.socket.onclose = this.handleSocketClose.bind(this);
       this.socket.onerror = this.handleSocketError.bind(this);
+      
+      LoggingService.info('chat', 'connection_attempt', 'Attempting to connect to chat server');
     } catch (error) {
-      console.error('WebSocket connection error:', error);
+      LoggingService.error('chat', 'connection_failed', 'Failed to connect to chat server', { error });
       this.emit('error', 'Failed to connect to chat server');
     }
   }
@@ -166,11 +172,13 @@ class ChatService extends EventEmitter {
     
     this.isConnected = false;
     this.emit('disconnected');
+    LoggingService.info('chat', 'disconnected', 'Disconnected from chat server');
   }
 
   public sendMessage(chatId: string, text: string, type: 'text' | 'image' | 'file' = 'text', metadata?: Record<string, any>): void {
     if (!this.currentUser) {
       this.emit('error', 'User not authenticated');
+      LoggingService.error('chat', 'send_message_failed', 'Cannot send message: User not authenticated');
       return;
     }
     
@@ -193,8 +201,10 @@ class ChatService extends EventEmitter {
         type: 'message',
         data: message
       }));
+      LoggingService.info('chat', 'message_sent', `Message sent to chat ${chatId}`);
     } else {
       this.messageQueue.push(message);
+      LoggingService.info('chat', 'message_queued', `Message queued for chat ${chatId} (not connected)`);
     }
     
     this.mockMessages.push(message);
@@ -220,6 +230,7 @@ class ChatService extends EventEmitter {
     );
     
     if (existingChat) {
+      LoggingService.info('chat', 'private_chat_exists', `Private chat with user ${userName} already exists`);
       return existingChat;
     }
     
@@ -236,28 +247,54 @@ class ChatService extends EventEmitter {
     
     this.chats.push(newChat);
     this.emit('chat-created', newChat);
+    LoggingService.info('chat', 'private_chat_created', `Created private chat with user ${userName}`);
     
     return newChat;
   }
 
   public createGroupChat(name: string, participantIds: string[]): Chat {
+    // In a real implementation, we would use the participantIds to fetch user details
+    // For mock data, we'll use some hardcoded users
+    LoggingService.info('chat', 'group_chat_creation_started', 'Creating group chat', { name, participantCount: participantIds.length });
+    
     const newChat: Chat = {
       id: `group-${Date.now()}`,
       name,
       type: 'group',
-      participants: [],
+      participants: [
+        { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
+        { id: 'user3', name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/150?img=3' }
+      ],
       unreadCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     
-    newChat.participants = [
-      { id: 'user1', name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1' },
-      { id: 'user3', name: 'Mike Johnson', avatar: 'https://i.pravatar.cc/150?img=3' }
-    ];
+    this.chats.push(newChat);
+    this.emit('chat-created', newChat);
+    LoggingService.info('chat', 'group_chat_created', `Created group chat: ${name}`, { chatId: newChat.id });
+    
+    return newChat;
+  }
+
+  public createPublicChat(name: string): Chat {
+    LoggingService.info('chat', 'public_chat_creation_started', 'Creating public chat', { name });
+    
+    const newChat: Chat = {
+      id: `public-${Date.now()}`,
+      name,
+      type: 'public',
+      participants: [
+        { id: 'system', name: 'System' }
+      ],
+      unreadCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
     this.chats.push(newChat);
     this.emit('chat-created', newChat);
+    LoggingService.info('chat', 'public_chat_created', `Created public chat: ${name}`, { chatId: newChat.id });
     
     return newChat;
   }
@@ -272,6 +309,7 @@ class ChatService extends EventEmitter {
     );
     
     this.emit('messages-read', chatId);
+    LoggingService.info('chat', 'messages_marked_read', `Marked messages as read for chat ${chatId}`);
   }
 
   private handleSocketOpen(): void {
@@ -299,6 +337,7 @@ class ChatService extends EventEmitter {
     }
     
     this.emit('connected');
+    LoggingService.info('chat', 'connected', 'Connected to chat server');
   }
 
   private handleSocketMessage(event: MessageEvent): void {
@@ -319,10 +358,10 @@ class ChatService extends EventEmitter {
           this.emit('user-status', data.data);
           break;
         default:
-          console.log('Unhandled message type:', data.type);
+          LoggingService.warn('chat', 'unhandled_message_type', 'Unhandled WebSocket message type', { type: data.type });
       }
     } catch (error) {
-      console.error('Error handling WebSocket message:', error);
+      LoggingService.error('chat', 'message_handling_failed', 'Error handling WebSocket message', { error });
     }
   }
 
@@ -332,7 +371,7 @@ class ChatService extends EventEmitter {
     
     if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentUser) {
       const delay = Math.pow(2, this.reconnectAttempts) * 1000;
-      console.log(`Attempting to reconnect in ${delay}ms...`);
+      LoggingService.info('chat', 'reconnect_scheduled', `Attempting to reconnect in ${delay}ms`, { attempt: this.reconnectAttempts + 1, maxAttempts: this.maxReconnectAttempts });
       
       this.reconnectTimeout = setTimeout(() => {
         this.reconnectAttempts++;
@@ -340,11 +379,12 @@ class ChatService extends EventEmitter {
       }, delay);
     } else {
       this.emit('disconnected');
+      LoggingService.warn('chat', 'connection_closed', 'Connection to chat server closed', { code: event.code, reason: event.reason });
     }
   }
 
   private handleSocketError(event: Event): void {
-    console.error('WebSocket error:', event);
+    LoggingService.error('chat', 'websocket_error', 'WebSocket connection error', { event });
     this.emit('error', 'Connection error');
   }
 
@@ -354,11 +394,13 @@ class ChatService extends EventEmitter {
     this.updateChatWithMessage(message.chatId, message);
     
     this.emit('message', message);
+    LoggingService.info('chat', 'message_received', `Message received in chat ${message.chatId}`, { messageId: message.id });
   }
 
   private handleChatCreated(chat: Chat): void {
     this.chats.push(chat);
     this.emit('chat-created', chat);
+    LoggingService.info('chat', 'chat_received', `Chat created: ${chat.name || chat.id}`, { chatId: chat.id, chatType: chat.type });
   }
 
   private updateChatWithMessage(chatId: string, message: Message): void {

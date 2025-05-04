@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import ChatPanel from './ChatPanel';
 import { useFeatureFlag } from '@/hooks/use-feature-flag';
 import { getAnimationClass } from '@/lib/animation';
+import { useChat } from '@/hooks/use-chat';
+import LoggingService from '@/services/LoggingService';
 
 interface ChatButtonProps {
   className?: string;
@@ -14,9 +16,12 @@ interface ChatButtonProps {
 const ChatButton = ({ className }: ChatButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const isChatEnabled = useFeatureFlag('chat_system');
-  const [unreadCount, setUnreadCount] = useState(3);
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
+  const { chats } = useChat();
+  
+  // Calculate total unread count
+  const unreadCount = chats.reduce((total, chat) => total + chat.unreadCount, 0);
   
   // Simulate receiving new messages with a ping pong effect
   useEffect(() => {
@@ -57,9 +62,7 @@ const ChatButton = ({ className }: ChatButtonProps) => {
 
   const toggleChat = () => {
     setIsOpen(prev => !prev);
-    if (!isOpen) {
-      setUnreadCount(0);
-    }
+    LoggingService.info('chat', 'chat_panel_toggled', `Chat panel ${!isOpen ? 'opened' : 'closed'}`);
   };
 
   const buttonAnimation = hasNewMessage 

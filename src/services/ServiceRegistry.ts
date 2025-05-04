@@ -1,0 +1,81 @@
+
+import LoggingService from "./LoggingService";
+import AuthService from "./AuthService";
+import chatService from "./ChatService";
+import EnhancedApiService from "./EnhancedApiService";
+import ActivityTracking from "./ActivityTracking";
+
+/**
+ * Service Registry for centralized service management
+ * This allows for easy dependency injection and service discovery
+ */
+class ServiceRegistry {
+  private static instance: ServiceRegistry;
+  private services: Map<string, any> = new Map();
+  
+  private constructor() {
+    // Register core services
+    this.register('logging', LoggingService);
+    this.register('auth', AuthService);
+    this.register('chat', chatService);
+    this.register('api', EnhancedApiService);
+    this.register('activity', ActivityTracking);
+    
+    LoggingService.info('service', 'registry_initialized', 'Service Registry initialized');
+  }
+  
+  public static getInstance(): ServiceRegistry {
+    if (!ServiceRegistry.instance) {
+      ServiceRegistry.instance = new ServiceRegistry();
+    }
+    return ServiceRegistry.instance;
+  }
+  
+  /**
+   * Register a service with the registry
+   */
+  public register(name: string, service: any): void {
+    this.services.set(name, service);
+    LoggingService.debug('service', 'service_registered', `Service registered: ${name}`);
+  }
+  
+  /**
+   * Get a service by name
+   */
+  public get<T>(name: string): T {
+    const service = this.services.get(name);
+    if (!service) {
+      LoggingService.error('service', 'service_not_found', `Service not found: ${name}`);
+      throw new Error(`Service not found: ${name}`);
+    }
+    return service as T;
+  }
+  
+  /**
+   * Check if a service exists
+   */
+  public has(name: string): boolean {
+    return this.services.has(name);
+  }
+  
+  /**
+   * Get all registered service names
+   */
+  public getServiceNames(): string[] {
+    return Array.from(this.services.keys());
+  }
+  
+  /**
+   * Get all services as an object
+   */
+  public getAllServices(): Record<string, any> {
+    const services: Record<string, any> = {};
+    this.services.forEach((service, name) => {
+      services[name] = service;
+    });
+    return services;
+  }
+}
+
+// Export singleton instance
+export default ServiceRegistry.getInstance();

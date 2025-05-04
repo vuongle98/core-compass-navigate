@@ -1,4 +1,6 @@
+
 import AuthService from "./AuthService";
+import ActivityTracking from "./ActivityTracking";
 
 export type LogLevel = "info" | "warning" | "error" | "debug";
 
@@ -9,7 +11,7 @@ export type LogEvent = {
   action: string;
   message: string;
   data?: Record<string, unknown>;
-  userId?: number;
+  userId?: string;
 };
 
 export interface LoggerConfig {
@@ -19,6 +21,12 @@ export interface LoggerConfig {
   apiEndpoint?: string;
   batchSize?: number;
   flushInterval?: number;
+  enableActivityTracking?: boolean;
+}
+
+export interface LogTransport {
+  log: (event: LogEvent) => void;
+  flush: () => void;
 }
 
 /**
@@ -28,6 +36,7 @@ class LoggingService {
   private static instance: LoggingService;
   private logQueue: LogEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
+  private transports: LogTransport[] = [];
 
   private config: LoggerConfig = {
     minLevel: "info",
@@ -36,15 +45,26 @@ class LoggingService {
     apiEndpoint: "/api/logs",
     batchSize: 10,
     flushInterval: 30000, // 30 seconds
+    enableActivityTracking: true
   };
 
   private constructor() {
     this.setupFlushTimer();
 
+    // Register default transports
+    this.registerConsoleTransport();
+    this.registerApiTransport();
+
     // Flush logs on window unload
     window.addEventListener("beforeunload", () => {
       this.flush(true);
     });
+    
+    // Setup activity tracking if enabled
+    if (this.config.enableActivityTracking) {
+      ActivityTracking.trackClicks();
+      ActivityTracking.trackFormSubmissions();
+    }
   }
 
   public static getInstance(): LoggingService {
@@ -58,8 +78,60 @@ class LoggingService {
    * Configure logging service
    */
   public configure(config: Partial<LoggerConfig>): void {
+    const prevConfig = this.config;
     this.config = { ...this.config, ...config };
-    this.setupFlushTimer();
+    
+    // Reset flush timer if interval changed
+    if (prevConfig.flushInterval !== this.config.flushInterval) {
+      this.setupFlushTimer();
+    }
+    
+    // Update activity tracking if configuration changed
+    if (prevConfig.enableActivityTracking !== this.config.enableActivityTracking) {
+      if (this.config.enableActivityTracking) {
+        ActivityTracking.trackClicks();
+        ActivityTracking.trackFormSubmissions();
+      } else {
+        ActivityTracking.stopTrackingClicks();
+        ActivityTracking.stopTrackingForms();
+      }
+    }
+  }
+  
+  /**
+   * Register a custom log transport
+   */
+  public registerTransport(transport: LogTransport): void {
+    this.transports.push(transport);
+  }
+  
+  /**
+   * Register the default console transport
+   */
+  private registerConsoleTransport(): void {
+    this.registerTransport({
+      log: (event: LogEvent) => {
+        if (!this.config.enableConsole) return;
+        this.logToConsole(event);
+      },
+      flush: () => {} // Console logging doesn't need flushing
+    });
+  }
+  
+  /**
+   * Register the default API transport
+   */
+  private registerApiTransport(): void {
+    this.registerTransport({
+      log: (event: LogEvent) => {
+        if (!this.config.enableApi) return;
+        this.queueLog(event);
+      },
+      flush: () => {
+        if (!this.config.enableApi) return;
+        this.sendLogsToApi();
+      }
+    });
   }
 
   /**
@@ -106,6 +178,14 @@ class LoggingService {
       message: `API ${method} ${url} - ${duration}ms - Status: ${status}`,
       data: { url, method, status, responseData: data, duration },
     });
+    
+    // Track API response as user activity for non-GET requests that modify data
+    if (method !== 'GET' && this.config.enableActivityTracking) {
+      ActivityTracking.logActivity('api', method.toLowerCase(), url, {
+        status,
+        duration
+      });
+    }
   }
 
   /**
@@ -135,6 +215,15 @@ class LoggingService {
         duration,
       },
     });
+    
+    // Track API errors as user activity
+    if (this.config.enableActivityTracking) {
+      ActivityTracking.logActivity('error', 'api_error', url, {
+        method,
+        error: error instanceof Error ? error.message : String(error),
+        duration
+      });
+    }
   }
 
   /**
@@ -153,6 +242,11 @@ class LoggingService {
       message,
       data,
     });
+    
+    // Also record as user activity
+    if (this.config.enableActivityTracking) {
+      ActivityTracking.logActivity('user_action', action, module, data as Record<string, any>);
+    }
   }
 
   /**
@@ -173,15 +267,10 @@ class LoggingService {
       return;
     }
 
-    // Console logging
-    if (this.config.enableConsole) {
-      this.logToConsole(logEvent);
-    }
-
-    // Queue for API logging
-    if (this.config.enableApi) {
-      this.queueLog(logEvent);
-    }
+    // Send to all registered transports
+    this.transports.forEach(transport => {
+      transport.log(logEvent);
+    });
   }
 
   /**
@@ -292,10 +381,10 @@ class LoggingService {
   }
 
   /**
-   * Flush logged events to API
+   * Send logs to API endpoint
    */
-  public flush(force: boolean = false): void {
-    if (!this.config.enableApi || (!force && this.logQueue.length === 0)) {
+  private sendLogsToApi(): void {
+    if (this.logQueue.length === 0 || !this.config.apiEndpoint) {
       return;
     }
 
@@ -321,6 +410,25 @@ class LoggingService {
       // Re-queue failed logs
       this.logQueue = [...logs, ...this.logQueue];
     });
+  }
+
+  /**
+   * Flush logged events to all transports
+   */
+  public flush(force: boolean = false): void {
+    if (!force && this.logQueue.length === 0) {
+      return;
+    }
+
+    // Call flush on all transports
+    this.transports.forEach(transport => {
+      transport.flush();
+    });
+    
+    // Also flush activity tracking
+    if (this.config.enableActivityTracking) {
+      ActivityTracking.flush(force);
+    }
   }
 }
 

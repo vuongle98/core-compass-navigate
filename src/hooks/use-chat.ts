@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import chatService, { Chat, Message } from '@/services/ChatService';
 import { useAuth } from '@/contexts/AuthContext';
+import LoggingService from '@/services/LoggingService';
 
 interface UseChatReturn {
   chats: Chat[];
@@ -12,6 +13,7 @@ interface UseChatReturn {
   selectChat: (chatId: string) => void;
   createPrivateChat: (userId: string, userName: string, userAvatar?: string) => void;
   createGroupChat: (name: string, participantIds: string[]) => void;
+  createPublicChat: (name: string) => void;
 }
 
 export function useChat(): UseChatReturn {
@@ -30,6 +32,7 @@ export function useChat(): UseChatReturn {
       // For demo, just fetch chats
       setChats(chatService.getChats());
       setIsConnected(true);
+      LoggingService.info('chat', 'initialized', 'Chat hook initialized');
     }
 
     // Event listeners
@@ -51,6 +54,7 @@ export function useChat(): UseChatReturn {
       
       // Disconnect from service
       // chatService.disconnect();
+      LoggingService.info('chat', 'disconnected', 'Chat hook cleanup');
     };
   }, [user]);
 
@@ -62,6 +66,7 @@ export function useChat(): UseChatReturn {
       
       // Mark messages as read
       chatService.markAsRead(activeChat.id);
+      LoggingService.info('chat', 'messages_loaded', `Loaded ${chatMessages.length} messages for chat ${activeChat.id}`);
     } else {
       setMessages([]);
     }
@@ -71,15 +76,18 @@ export function useChat(): UseChatReturn {
   const handleConnected = () => {
     setIsConnected(true);
     setChats(chatService.getChats());
+    LoggingService.info('chat', 'connection_established', 'Chat connection established');
   };
 
   const handleDisconnected = () => {
     setIsConnected(false);
+    LoggingService.info('chat', 'connection_closed', 'Chat connection closed');
   };
 
   const handleNewMessage = (message: Message) => {
     if (activeChat && activeChat.id === message.chatId) {
       setMessages(prevMessages => [...prevMessages, message]);
+      LoggingService.info('chat', 'new_message_received', 'New message received for active chat');
     }
   };
 
@@ -93,14 +101,16 @@ export function useChat(): UseChatReturn {
         setActiveChat(updatedActiveChat);
       }
     }
+    LoggingService.info('chat', 'chats_updated', `Chats list updated, now has ${updatedChats.length} chats`);
   };
 
   const handleChatCreated = (chat: Chat) => {
     setChats(prevChats => [...prevChats, chat]);
+    LoggingService.info('chat', 'chat_created_event', `New chat created: ${chat.name || chat.id}`);
   };
 
   const handleError = (error: string) => {
-    console.error('Chat error:', error);
+    LoggingService.error('chat', 'error', 'Chat error:', { error });
     // In a real app, show toast notification
   };
 
@@ -111,6 +121,7 @@ export function useChat(): UseChatReturn {
     }
     
     chatService.sendMessage(activeChat.id, text, type);
+    LoggingService.info('chat', 'message_sent', `Message sent to chat ${activeChat.id}`);
   };
 
   const selectChat = (chatId: string) => {
@@ -118,17 +129,26 @@ export function useChat(): UseChatReturn {
     if (chat) {
       setActiveChat(chat);
       chatService.markAsRead(chatId);
+      LoggingService.info('chat', 'chat_selected', `Selected chat ${chatId}`);
     }
   };
 
   const createPrivateChat = (userId: string, userName: string, userAvatar?: string) => {
     const chat = chatService.createPrivateChat(userId, userName, userAvatar);
     setActiveChat(chat);
+    LoggingService.info('chat', 'private_chat_created', `Created private chat with user ${userName}`);
   };
 
   const createGroupChat = (name: string, participantIds: string[]) => {
     const chat = chatService.createGroupChat(name, participantIds);
     setActiveChat(chat);
+    LoggingService.info('chat', 'group_chat_created', `Created group chat ${name}`);
+  };
+  
+  const createPublicChat = (name: string) => {
+    const chat = chatService.createPublicChat(name);
+    setActiveChat(chat);
+    LoggingService.info('chat', 'public_chat_created', `Created public chat ${name}`);
   };
 
   return {
@@ -139,6 +159,7 @@ export function useChat(): UseChatReturn {
     sendMessage,
     selectChat,
     createPrivateChat,
-    createGroupChat
+    createGroupChat,
+    createPublicChat
   };
 }
