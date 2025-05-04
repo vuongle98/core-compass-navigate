@@ -1,21 +1,19 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { useApiQuery } from "@/hooks/use-api-query";
-import LoggingService from "@/services/LoggingService";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar, CalendarCell, CalendarGrid, CalendarHeadCell, CalendarHeader, CalendarItem } from "@/components/ui/calendar";
+import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import useApiQuery from "@/hooks/use-api-query";
 
 interface UserRequest {
   id: number;

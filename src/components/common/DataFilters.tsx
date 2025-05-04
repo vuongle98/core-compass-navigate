@@ -1,22 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, X } from "lucide-react";
-import { ApiQueryFilters } from "@/hooks/use-api-query";
-import ErrorBoundary from "./ErrorBoundary";
+import { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { SearchIcon, XIcon } from 'lucide-react';
+import { ApiQueryFilters } from '@/hooks/use-api-query';
 
 export interface FilterOption {
   id: string;
   label: string;
-  options?: { value: string; label: string }[];
-  type: "select" | "search" | "dateRange";
+  type: 'text' | 'select' | 'search';
+  options?: { value: string; label: string; }[];
   placeholder?: string;
 }
 
@@ -28,134 +21,89 @@ interface DataFiltersProps {
   className?: string;
 }
 
-export function DataFilters({
-  filters,
-  options,
-  onChange,
-  onReset,
-  className = "",
-}: DataFiltersProps) {
-  const [searchInputs, setSearchInputs] = useState<Record<string, string>>({});
-  const [debouncedSearchInputs, setDebouncedSearchInputs] = useState<Record<string, string>>({});
+export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onChange, onReset, className }) => {
+  const [localFilters, setLocalFilters] = useState(filters);
 
-  // Set initial search values
   useEffect(() => {
-    const initialSearchValues: Record<string, string> = {};
-    options.forEach(option => {
-      if (option.type === "search" && filters[option.id]) {
-        initialSearchValues[option.id] = filters[option.id]?.toString() || "";
-      }
-    });
-    setSearchInputs(initialSearchValues);
-  }, []);
+    setLocalFilters(filters);
+  }, [filters]);
 
-  // Debounce search inputs
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchInputs(searchInputs);
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchInputs]);
-
-  // Update filters when debounced search inputs change
-  useEffect(() => {
-    const updatedFilters = { ...filters };
-    let hasChanges = false;
-
-    Object.entries(debouncedSearchInputs).forEach(([key, value]) => {
-      if (updatedFilters[key]?.toString() !== value) {
-        updatedFilters[key] = value;
-        hasChanges = true;
-      }
-    });
-
-    if (hasChanges) {
-      onChange(updatedFilters);
-    }
-  }, [debouncedSearchInputs]);
-
-  const updateFilter = (id: string, value: string) => {
-    // For select filters, convert "all" value to empty string
-    if (options.find(opt => opt.id === id)?.type === "select") {
-      const newValue = value === "all" ? "" : value;
-      onChange({ ...filters, [id]: newValue });
-    } else if (options.find(opt => opt.id === id)?.type === "search") {
-      // For search filters, update the local state first (debounce will handle the actual filter update)
-      setSearchInputs(prev => ({ ...prev, [id]: value }));
-    } else {
-      onChange({ ...filters, [id]: value });
-    }
+  const handleFilterChange = (id: string, value: string) => {
+    const newFilters = { ...localFilters, [id]: value };
+    setLocalFilters(newFilters);
+    onChange(newFilters);
   };
 
-  const hasActiveFilters = Object.values(filters).some(
-    (value) => value !== undefined && value !== ""
-  );
+  const handleReset = () => {
+    setLocalFilters({});
+    onReset();
+  };
 
   return (
-    <ErrorBoundary>
-      <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-        {options.map((option) => {
-          if (option.type === "search") {
-            return (
-              <div className="relative" key={option.id}>
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchInputs[option.id] || ""}
-                  onChange={(e) => updateFilter(option.id, e.target.value)}
-                  placeholder={option.placeholder || "Search..."}
-                  className="pl-8 w-[150px] md:w-[200px]"
-                />
-                {searchInputs[option.id] && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1.5 h-6 w-6 p-0"
-                    onClick={() => {
-                      updateFilter(option.id, "");
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            );
-          }
+    <div className={`grid grid-cols-1 gap-4 md:grid-cols-4 ${className || ''}`}>
+      {options.map(option => (
+        <div key={option.id}>
+          {option.type === 'text' && (
+            <div>
+              <label htmlFor={option.id} className="block text-sm font-medium text-gray-700">{option.label}</label>
+              <Input
+                type="text"
+                id={option.id}
+                value={localFilters[option.id] || ''}
+                onChange={(e) => handleFilterChange(option.id, e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          )}
 
-          if (option.type === "select" && option.options) {
-            return (
-              <Select
-                key={option.id}
-                value={filters[option.id]?.toString() || "all"}
-                onValueChange={(value) => updateFilter(option.id, value)}
-              >
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder={option.label} />
+          {option.type === 'search' && (
+            <div className="relative">
+              <Input
+                type="search"
+                id={option.id}
+                placeholder={option.placeholder || `Search ${option.label.toLowerCase()}...`}
+                value={localFilters[option.id] || ''}
+                onChange={(e) => handleFilterChange(option.id, e.target.value)}
+                className="pl-10"
+              />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+              {localFilters[option.id] && (
+                <button
+                  className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  onClick={() => handleFilterChange(option.id, '')}
+                >
+                  <XIcon className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {option.type === 'select' && (
+            <div>
+              <label htmlFor={option.id} className="block text-sm font-medium text-gray-700">{option.label}</label>
+              <Select onValueChange={(value) => handleFilterChange(option.id, value)}>
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} defaultValue={filters[option.id]?.toString()} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All {option.label}</SelectItem>
-                  {option.options.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
+                  {option.options?.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            );
-          }
+            </div>
+          )}
+        </div>
+      ))}
 
-          return null;
-        })}
-
-        {hasActiveFilters && (
-          <Button variant="ghost" onClick={onReset}>
-            <X className="mr-2 h-4 w-4" />
-            Clear Filters
-          </Button>
-        )}
+      {/* Reset Button */}
+      <div>
+        <Button variant="ghost" onClick={handleReset}>
+          Reset Filters
+        </Button>
       </div>
-    </ErrorBoundary>
+    </div>
   );
-}
+};

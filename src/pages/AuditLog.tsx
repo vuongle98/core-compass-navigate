@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -13,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import { useApiQuery } from "@/hooks/use-api-query";
+import useApiQuery, { ApiQueryFilters } from "@/hooks/use-api-query";
 import LoggingService from "@/services/LoggingService";
 import { Skeleton } from "@/components/ui/skeleton";
 import useDebounce from "@/hooks/use-debounce";

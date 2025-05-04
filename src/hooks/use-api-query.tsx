@@ -25,7 +25,7 @@ interface UseApiQueryProps<T> {
 
 interface PaginatedResponse<T> extends PaginatedData<T> {}
 
-function useApiQuery<T>({
+export function useApiQuery<T>({
   endpoint,
   queryKey,
   initialPage = 0,
