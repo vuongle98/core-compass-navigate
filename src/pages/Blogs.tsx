@@ -8,7 +8,7 @@ import { ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { DataFilters } from "@/components/common/DataFilters";
+import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Define the Blog interface
@@ -78,7 +78,7 @@ const Blogs = () => {
     },
   });
 
-  const filterOptions = [
+  const filterOptions: FilterOption[] = [
     {
       id: "search",
       label: "Search",
@@ -121,6 +121,10 @@ const Blogs = () => {
   const cancelDelete = () => {
     setIsDialogOpen(false);
     setSelectedBlog(null);
+  };
+
+  const handleAddBlog = () => {
+    navigate("/blogs/new");
   };
 
   const columns = [
@@ -193,7 +197,7 @@ const Blogs = () => {
           title="Blogs"
           description="Manage blog posts"
           showAddButton={true}
-          onAdd={() => navigate("/blogs/new")}
+          onAddClick={handleAddBlog}
         >
           <DataFilters
             filters={filters}

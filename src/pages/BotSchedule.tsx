@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ const BotSchedule = () => {
     queryFn: async () => {
       if (!id) throw new Error("Bot ID is required");
       const response = await EnhancedApiService.get<Bot>(`/api/bots/${id}`);
-      return response.data;
+      return response;
     },
   });
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +29,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
     setLocalFilters(filters);
   }, [filters]);
 
-  const handleFilterChange = (id: string, value: string) => {
+  const handleFilterChange = (id: string, value: string | number | undefined) => {
     const newFilters = { ...localFilters, [id]: value };
     setLocalFilters(newFilters);
     onChange(newFilters);

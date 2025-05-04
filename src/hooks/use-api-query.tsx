@@ -66,6 +66,11 @@ export function useApiQuery<T>({
     setPage(0);
   }, [persistFilters, setPersistedFilters]);
 
+  // Helper to set search term
+  const setSearch = useCallback((searchTerm: string) => {
+    setFilters({ ...filters, search: searchTerm });
+  }, [filters, setFilters]);
+
   // Reset filters to initial state
   const resetFilters = useCallback(() => {
     setFiltersState(initialFilters);
@@ -115,7 +120,10 @@ export function useApiQuery<T>({
   });
 
   // Total items count
-  const totalItems = data?.totalElements || 0;
+  const totalItems = data?.totalElements ||
+  
+
+  0;
   const totalPages = data?.totalPages || 0;
   const isError = !!error;
 
@@ -137,6 +145,7 @@ export function useApiQuery<T>({
     totalPages,
     filters,
     setFilters,
+    setSearch,
     resetFilters,
     refresh,
   };
