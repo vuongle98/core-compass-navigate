@@ -31,10 +31,7 @@ class FeatureFlagService {
   async getAllFlags(): Promise<FeatureFlag[]> {
     try {
       const response = await axios.get<FeatureFlagResponse>('/api/feature-flags');
-      if (response.data && response.data.success) {
-        return response.data.data;
-      }
-      return [];
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching feature flags:', error);
       return [];
@@ -45,9 +42,26 @@ class FeatureFlagService {
     return this.flags.find(flag => flag.id === flagId);
   }
 
-  isFeatureEnabled(flagId: string): boolean {
+  isFeatureEnabled(flagId: string, environment?: string, roles?: string[]): boolean {
     const flag = this.getFlag(flagId);
-    return flag ? flag.enabled : false; // Default to false if flag not found
+    
+    // If flag doesn't exist, it's disabled
+    if (!flag) return false;
+    
+    // Check if the flag is globally enabled
+    if (!flag.enabled) return false;
+    
+    // Check environment restrictions if applicable
+    if (environment && flag.audience === environment) return true;
+    
+    // Check role restrictions if applicable
+    if (roles && roles.length > 0 && flag.audience) {
+      // If flag audience is specific to a role, check if user has that role
+      return roles.some(role => flag.audience === role);
+    }
+    
+    // If no specific restrictions, respect the enabled flag
+    return flag.enabled;
   }
 
   async createFlag(flag: Omit<FeatureFlag, 'id'>): Promise<FeatureFlag | null> {
@@ -127,6 +141,11 @@ class FeatureFlagService {
     }
   }
 
+  // Add static method for refreshFlags
+  static async refreshFlags(): Promise<boolean> {
+    return FeatureFlagService.getInstance().refreshFlags();
+  }
+
   // Add the refreshFlags method
   async refreshFlags(): Promise<boolean> {
     try {
@@ -138,6 +157,11 @@ class FeatureFlagService {
       console.error('Error refreshing feature flags:', error);
       return false;
     }
+  }
+
+  // Static method for isFeatureEnabled
+  static isFeatureEnabled(flagId: string, environment?: string, roles?: string[]): boolean {
+    return FeatureFlagService.getInstance().isFeatureEnabled(flagId, environment, roles);
   }
 }
 

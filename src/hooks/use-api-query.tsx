@@ -1,8 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient, QueryKey } from '@tanstack/react-query';
-import EnhancedApiService from '@/services/EnhancedApiService';
-import { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService';
+import EnhancedApiService, { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService';
 import { toast } from 'sonner';
 import useLocalStorage from './use-local-storage';
 
@@ -22,8 +21,6 @@ interface UseApiQueryProps<T> {
   mockData?: PaginatedData<T>;
   onError?: (error: Error) => void;
 }
-
-interface PaginatedResponse<T> extends PaginatedData<T> {}
 
 export function useApiQuery<T>({
   endpoint,
@@ -120,10 +117,7 @@ export function useApiQuery<T>({
   });
 
   // Total items count
-  const totalItems = data?.totalElements ||
-  
-
-  0;
+  const totalItems = data?.totalElements || 0;
   const totalPages = data?.totalPages || 0;
   const isError = !!error;
 

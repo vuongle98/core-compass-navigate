@@ -12,16 +12,16 @@ interface ApiException {
 }
 
 export interface PaginatedData<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+  content: T[];
+  totalElements: number;
   totalPages: number;
+  number: number;
+  size: number;
 }
 
 export interface PaginationOptions {
   page?: number;
-  pageSize?: number;
+  size?: number;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   search?: string;
@@ -166,7 +166,7 @@ class EnhancedApiService {
     delete EnhancedApiService.axiosInstance.defaults.headers.common[header];
   }
   
-  // Add logUserAction method for Files.tsx
+  // Add logUserAction method
   static async logUserAction(action: string, details?: any): Promise<void> {
     try {
       await this.post('/api/logs/user-action', {

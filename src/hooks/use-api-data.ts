@@ -1,9 +1,10 @@
 
 import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import EnhancedApiService, { PaginatedData } from "@/services/EnhancedApiService";
 import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
 import { debounce } from "lodash";
+import { AxiosRequestHeaders } from "axios";
 
 export interface ApiDataOptions<T> {
   endpoint: string;
@@ -47,7 +48,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
         { params }
       );
 
-      const response = await EnhancedApiService.get<T>(options.endpoint, params, options.mockData);
+      const response = await EnhancedApiService.get<T>(options.endpoint, params);
       
       // Apply transform function if provided
       const transformedData = options.transform ? options.transform(response) : response;

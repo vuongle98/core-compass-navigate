@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import featureFlagService from '@/services/FeatureFlagService';
+import FeatureFlagService from '@/services/FeatureFlagService';
 import { Role } from '@/types/Auth';
 
 // Hook to check if a feature is enabled for the current user
@@ -29,7 +29,7 @@ export function useFeatureFlag(featureName: string): boolean {
     const environment = process.env.NODE_ENV === 'production' ? 'Production' : 'Development';
     
     // Check if feature is enabled
-    const enabled = featureFlagService.isFeatureEnabled(
+    const enabled = FeatureFlagService.isFeatureEnabled(
       featureName,
       environment,
       userRoles
