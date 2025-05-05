@@ -131,15 +131,13 @@ class EnhancedApiService {
   public static async post<T, D = unknown>(
     url: string,
     data?: D,
-    headers?: Record<string, string>
+    config?: AxiosRequestConfig
   ): Promise<T> {
     this.initialize();
     LoggingService.info("api", "post", `POST ${url}`);
 
     try {
-      const response = await this.instance.post<ApiResponse<T>>(url, data, {
-        headers,
-      });
+      const response = await this.instance.post<ApiResponse<T>>(url, data, config);
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "post_failed", `POST ${url} failed`, error);
@@ -175,15 +173,13 @@ class EnhancedApiService {
   public static async patch<T, D = unknown>(
     url: string,
     data?: D,
-    headers?: Record<string, string>
+    config?: AxiosRequestConfig
   ): Promise<T> {
     this.initialize();
     LoggingService.info("api", "patch", `PATCH ${url}`);
 
     try {
-      const response = await this.instance.patch<ApiResponse<T>>(url, data, {
-        headers,
-      });
+      const response = await this.instance.patch<ApiResponse<T>>(url, data, config);
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "patch_failed", `PATCH ${url} failed`, error);

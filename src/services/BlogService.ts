@@ -319,7 +319,7 @@ class BlogService {
       const formData = new FormData();
       formData.append('image', file);
       
-      // Upload the image
+      // Upload the image - fix the headers type issue
       const response = await EnhancedApiService.post<{ url: string }>(`${this.BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
