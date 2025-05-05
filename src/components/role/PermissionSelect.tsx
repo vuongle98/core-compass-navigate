@@ -55,8 +55,11 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
 
         // Transform permissions to options format
         const permissionOptions = permissions.map((permission: Permission) => {
-          // Ensure permission.id is defined and converted to string
-          const value = permission.id ? permission.id.toString() : `permission-${Date.now()}`;
+          // Generate a safe value - ensure it's never empty
+          const value = permission.id ? 
+            permission.id.toString() : 
+            `permission-${permission.name || 'unnamed'}-${Date.now()}`;
+            
           return {
             value,
             label: (
@@ -115,8 +118,11 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
 
   // Convert current value to options format
   const selectedOptions = value.map((permission) => {
-    // Ensure permission.id is defined and converted to string
-    const value = permission.id ? permission.id.toString() : `permission-${Date.now()}`;
+    // Generate a safe value - ensure it's never empty
+    const value = permission.id ? 
+      permission.id.toString() : 
+      `permission-${permission.name || 'unnamed'}-${Date.now()}`;
+      
     return {
       value,
       label: (

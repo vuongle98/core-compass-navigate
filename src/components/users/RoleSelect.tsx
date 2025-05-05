@@ -45,8 +45,11 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 
         // Transform roles to options format
         const roleOptions = roles.map((role: Role) => {
-          // Ensure role.id is defined and converted to string
-          const value = role.id ? role.id.toString() : `role-${Date.now()}`;
+          // Generate a safe value - ensure it's never empty
+          const value = role.id ? 
+            role.id.toString() : 
+            `role-${role.name || 'unnamed'}-${Date.now()}`;
+          
           return {
             value,
             label: (
@@ -103,8 +106,11 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 
   // Convert current value to options format
   const selectedOptions = value.map((role) => {
-    // Ensure role.id is defined and converted to string
-    const value = role.id ? role.id.toString() : `role-${Date.now()}`;
+    // Generate a safe value - ensure it's never empty
+    const value = role.id ? 
+      role.id.toString() : 
+      `role-${role.name || 'unnamed'}-${Date.now()}`;
+    
     return {
       value,
       label: (
