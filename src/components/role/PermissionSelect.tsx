@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService, {
@@ -53,18 +54,22 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
         const permissions = response.content || [];
 
         // Transform permissions to options format
-        const permissionOptions = permissions.map((permission: Permission) => ({
-          value: permission.id.toString(),
-          label: (
-            <div>
-              <div className="font-semibold">{permission.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {permission.description}
+        const permissionOptions = permissions.map((permission: Permission) => {
+          // Ensure permission.id is defined and converted to string
+          const value = permission.id ? permission.id.toString() : `permission-${Date.now()}`;
+          return {
+            value,
+            label: (
+              <div>
+                <div className="font-semibold">{permission.name || "Unnamed Permission"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {permission.description || "No description"}
+                </div>
               </div>
-            </div>
-          ),
-          original: permission,
-        }));
+            ),
+            original: permission,
+          };
+        });
 
         setOptions(permissionOptions);
       } catch (error) {
@@ -109,18 +114,22 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   }, [value, initialLoaded]);
 
   // Convert current value to options format
-  const selectedOptions = value.map((permission) => ({
-    value: permission.id.toString(),
-    label: (
-      <div>
-        <div className="font-semibold">{permission.name}</div>
-        <div className="text-xs text-muted-foreground">
-          {permission.description}
+  const selectedOptions = value.map((permission) => {
+    // Ensure permission.id is defined and converted to string
+    const value = permission.id ? permission.id.toString() : `permission-${Date.now()}`;
+    return {
+      value,
+      label: (
+        <div>
+          <div className="font-semibold">{permission.name || "Unnamed Permission"}</div>
+          <div className="text-xs text-muted-foreground">
+            {permission.description || "No description"}
+          </div>
         </div>
-      </div>
-    ),
-    original: permission,
-  }));
+      ),
+      original: permission,
+    };
+  });
 
   // Handle selection change
   const handleChange = (selected: Option[] | null) => {
@@ -165,6 +174,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
         showSelectedTags={true}
         onSearch={handleSearch}
         isLoading={isLoading}
+        emptyMessage="No permissions found"
       />
     </div>
   );

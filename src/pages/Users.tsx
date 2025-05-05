@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -124,6 +125,7 @@ const Users = () => {
         { value: "ADMIN", label: "ADMIN" },
         { value: "MANAGE", label: "MANAGE" },
         { value: "USER", label: "USER" },
+        { value: "VIEWER", label: "VIEWER" },
       ],
     },
   ];
@@ -264,12 +266,12 @@ const Users = () => {
                 <ul className="space-y-1">
                   {user.roles.map((role) => (
                     <li
-                      key={role.id}
+                      key={role.id || `role-${Math.random()}`}
                       className="border rounded px-2 py-1 bg-muted/40"
                     >
-                      <div className="font-semibold text-xs">{role.name}</div>
+                      <div className="font-semibold text-xs">{role.name || "Unnamed Role"}</div>
                       <div className="text-xs text-muted-foreground">
-                        {role.description}
+                        {role.description || "No description"}
                       </div>
                     </li>
                   ))}

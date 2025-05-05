@@ -44,18 +44,22 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
         const roles = response.content || [];
 
         // Transform roles to options format
-        const roleOptions = roles.map((role: Role) => ({
-          value: role.id.toString(), // Ensure this is never empty
-          label: (
-            <div>
-              <div className="font-semibold">{role.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {role.description}
+        const roleOptions = roles.map((role: Role) => {
+          // Ensure role.id is defined and converted to string
+          const value = role.id ? role.id.toString() : `role-${Date.now()}`;
+          return {
+            value,
+            label: (
+              <div>
+                <div className="font-semibold">{role.name || "Unnamed Role"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {role.description || "No description"}
+                </div>
               </div>
-            </div>
-          ),
-          original: role,
-        }));
+            ),
+            original: role,
+          };
+        });
 
         setOptions(roleOptions);
       } catch (error) {
@@ -98,16 +102,20 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   }, [value, initialLoaded]);
 
   // Convert current value to options format
-  const selectedOptions = value.map((role) => ({
-    value: role.id.toString(),
-    label: (
-      <div>
-        <div className="font-semibold">{role.name}</div>
-        <div className="text-xs text-muted-foreground">{role.description}</div>
-      </div>
-    ),
-    original: role,
-  }));
+  const selectedOptions = value.map((role) => {
+    // Ensure role.id is defined and converted to string
+    const value = role.id ? role.id.toString() : `role-${Date.now()}`;
+    return {
+      value,
+      label: (
+        <div>
+          <div className="font-semibold">{role.name || "Unnamed Role"}</div>
+          <div className="text-xs text-muted-foreground">{role.description || "No description"}</div>
+        </div>
+      ),
+      original: role,
+    };
+  });
 
   // Handle selection change
   const handleChange = (selected: Option[] | null) => {
