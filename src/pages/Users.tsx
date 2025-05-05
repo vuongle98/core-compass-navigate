@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -13,38 +12,12 @@ import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { Permission } from "@/types/Auth";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-// Define Role interface here to avoid circular imports
-interface Role {
-  id: number;
-  code?: string;
-  name: string;
-  description: string;
-  userCount?: number;
-}
-
-export interface UserProfile {
-  id: number;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  address?: string;
-  avatarUrl?: string;
-}
-
-export interface UserInfo {
-  id: number;
-  username: string;
-  email: string;
-  roles: Role[];
-  permissions?: Permission[];
-  locked?: boolean;
-  profile?: UserProfile;
-  lastLogin?: string;
-  createdAt?: string;
-}
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { User } from "@/types/Auth";
 
 const Users = () => {
   // Mock data with state management
@@ -60,7 +33,7 @@ const Users = () => {
           name: "Admin",
           description: "Full system access",
           userCount: 5,
-        }
+        },
       ],
       locked: false,
     },
@@ -75,7 +48,7 @@ const Users = () => {
           name: "Manager",
           description: "Department management",
           userCount: 8,
-        }
+        },
       ],
       locked: false,
     },
@@ -90,7 +63,7 @@ const Users = () => {
           name: "Viewer",
           description: "Read-only access",
           userCount: 45,
-        }
+        },
       ],
       locked: true,
     },
@@ -105,7 +78,7 @@ const Users = () => {
           name: "User",
           description: "Regular user access",
           userCount: 8,
-        }
+        },
       ],
       locked: false,
     },
@@ -122,7 +95,7 @@ const Users = () => {
     isModalOpen: isProfileOpen,
     openDetail: openUserProfile,
     closeModal: closeUserProfile,
-  } = useDetailView<UserInfo>({
+  } = useDetailView<User>({
     modalThreshold: 15,
     detailRoute: "/users",
   });
@@ -168,7 +141,7 @@ const Users = () => {
     totalItems,
     refresh,
     error,
-  } = useApiQuery<UserInfo>({
+  } = useApiQuery<User>({
     endpoint: "/api/user",
     queryKey: ["users", debouncedSearchTerm],
     initialPage: 0,
@@ -189,7 +162,7 @@ const Users = () => {
     },
   });
 
-  const handleAddUser = async (newUser: Omit<UserInfo, "id">) => {
+  const handleAddUser = async (newUser: Omit<User, "id">) => {
     try {
       await EnhancedApiService.post("/api/user", newUser);
       toast.success("User added successfully");
@@ -216,29 +189,29 @@ const Users = () => {
     }
   };
 
-  const handleViewUser = (user: UserInfo) => {
+  const handleViewUser = (user: User) => {
     openUserProfile(user);
   };
 
-  const getActionItems = (user: UserInfo) => {
+  const getActionItems = (user: User) => {
     const actions: {
       type: ActionType;
       label: string;
       onClick: () => void;
       disabled?: boolean;
     }[] = [
-        {
-          type: "view",
-          label: "View Profile",
-          onClick: () => handleViewUser(user),
-        },
-        {
-          type: "delete",
-          label: "Delete User",
-          onClick: () => handleDeleteUser(user.id),
-          disabled: user.roles.some(role => role.name === "SUPER_ADMIN"),
-        },
-      ];
+      {
+        type: "view",
+        label: "View Profile",
+        onClick: () => handleViewUser(user),
+      },
+      {
+        type: "delete",
+        label: "Delete User",
+        onClick: () => handleDeleteUser(user.id),
+        disabled: user.roles.some((role) => role.name === "SUPER_ADMIN"),
+      },
+    ];
     return actions;
   };
 
@@ -246,7 +219,7 @@ const Users = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: UserInfo) => (
+      cell: (item: User) => (
         <span className="text-muted-foreground">{item.id}</span>
       ),
       sortable: true,
@@ -268,14 +241,18 @@ const Users = () => {
       accessorKey: "roles" as const,
       sortable: true,
       filterable: true,
-      cell: (user: UserInfo) => {
+      cell: (user: User) => {
         return (
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 className="px-2 py-0.5 rounded-full border bg-muted/40 text-xs font-semibold text-gray-200 hover:bg-muted/70 cursor-pointer"
-                title={user.roles && user.roles.length > 0 ? `${user.roles.length} roles` : "No roles"}
+                title={
+                  user.roles && user.roles.length > 0
+                    ? `${user.roles.length} roles`
+                    : "No roles"
+                }
                 style={{ minWidth: 32 }}
               >
                 {user.roles?.length || 0} roles
@@ -286,18 +263,25 @@ const Users = () => {
               {user.roles && user.roles.length > 0 ? (
                 <ul className="space-y-1">
                   {user.roles.map((role) => (
-                    <li key={role.id} className="border rounded px-2 py-1 bg-muted/40">
+                    <li
+                      key={role.id}
+                      className="border rounded px-2 py-1 bg-muted/40"
+                    >
                       <div className="font-semibold text-xs">{role.name}</div>
-                      <div className="text-xs text-muted-foreground">{role.description}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {role.description}
+                      </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <div className="text-xs text-muted-foreground">No roles assigned</div>
+                <div className="text-xs text-muted-foreground">
+                  No roles assigned
+                </div>
               )}
             </PopoverContent>
           </Popover>
-        )
+        );
       },
     },
     {
@@ -305,12 +289,13 @@ const Users = () => {
       accessorKey: "locked" as const,
       sortable: true,
       filterable: true,
-      cell: (user: UserInfo) => (
+      cell: (user: User) => (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.locked === true
-            ? "bg-green-100 text-green-800"
-            : "bg-gray-100 text-gray-800"
-            }`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            user.locked === true
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
         >
           {user.locked ? "Locked" : "Active"}
         </span>
@@ -319,7 +304,7 @@ const Users = () => {
     {
       header: "Actions",
       accessorKey: "actions" as const,
-      cell: (user: UserInfo) => <ActionsMenu actions={getActionItems(user)} />,
+      cell: (user: User) => <ActionsMenu actions={getActionItems(user)} />,
     },
   ];
 

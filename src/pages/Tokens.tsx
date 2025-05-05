@@ -1,38 +1,16 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
-import LoggingService from "@/services/LoggingService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { useDetailView } from "@/hooks/use-detail-view";
-
-// Define User interface compatible with the data structure
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  name: string;
-  role: string;
-  roles?: Array<{ id: number; name: string; description: string }>;
-}
-
-interface Token {
-  id: number;
-  token: string;
-  issuedAt: string;
-  expireAt: string;
-  blacklisted: boolean;
-  user: User;
-}
+import { Token } from "@/types/Token";
 
 const Tokens = () => {
   // Mock data
@@ -46,9 +24,17 @@ const Tokens = () => {
       user: {
         id: 1,
         username: "johndoe",
-        name: "John Doe",
-        role: "admin",
-        roles: [{ id: 1, name: "admin", description: "Administrator" }],
+        roles: [
+          { id: 1, name: "admin", code: "ADMIN", description: "Administrator" },
+        ],
+        profile: {
+          id: 1,
+          firstName: "John",
+          lastName: "Doe",
+          phone: "1234567890",
+          address: "123 Main St",
+          avatarUrl: "https://example.com/avatar.jpg",
+        },
       },
     },
     {
@@ -61,9 +47,17 @@ const Tokens = () => {
         id: 1,
         username: "johndoe",
         email: "",
-        name: "John Doe",
-        role: "admin",
-        roles: [{ id: 1, name: "admin", description: "Administrator" }],
+        roles: [
+          { id: 1, name: "admin", code: "ADMIN", description: "Administrator" },
+        ],
+        profile: {
+          id: 1,
+          firstName: "John",
+          lastName: "Doe",
+          phone: "1234567890",
+          address: "123 Main St",
+          avatarUrl: "https://example.com/avatar.jpg",
+        },
       },
     },
     {
@@ -76,9 +70,17 @@ const Tokens = () => {
         id: 1,
         username: "johndoe",
         email: "",
-        name: "John Doe",
-        role: "admin",
-        roles: [{ id: 1, name: "admin", description: "Administrator" }],
+        roles: [
+          { id: 1, name: "admin", code: "ADMIN", description: "Administrator" },
+        ],
+        profile: {
+          id: 1,
+          firstName: "John",
+          lastName: "Doe",
+          phone: "1234567890",
+          address: "123 Main St",
+          avatarUrl: "https://example.com/avatar.jpg",
+        },
       },
     },
   ]);
@@ -121,7 +123,8 @@ const Tokens = () => {
       console.error("Failed to fetch tokens:", err);
       toast({
         title: "Error",
-        description: "Failed to load tokens, using cached data. Could not connect to the server. Please try again later.",
+        description:
+          "Failed to load tokens, using cached data. Could not connect to the server. Please try again later.",
         variant: "destructive",
       });
     },
@@ -157,7 +160,7 @@ const Tokens = () => {
       type: "select",
       options: [
         { value: "ACCESS", label: "Access" },
-        { value: "REFRESH", label: "Refresh" }
+        { value: "REFRESH", label: "Refresh" },
       ],
     },
     {

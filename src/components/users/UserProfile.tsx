@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -36,10 +35,9 @@ import {
   User,
 } from "lucide-react";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { UserInfo } from "@/pages/Users";
 import { useQuery } from "@tanstack/react-query";
 import RoleSelect from "./RoleSelect";
-import { Role } from "@/types/Auth";
+import { Role, User as UserInfo } from "@/types/Auth";
 
 interface UserProfileProps {
   userId: number;
@@ -58,7 +56,7 @@ const profileFormSchema = z.object({
 });
 
 const roleFormSchema = z.object({
-  roleIds: z.array(z.number()).optional()
+  roleIds: z.array(z.number()).optional(),
 });
 type RoleFormValues = z.infer<typeof roleFormSchema>;
 
@@ -67,8 +65,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 const securityFormSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z
-      .string(),
+    newPassword: z.string(),
     // .min(8, "Password must be at least 8 characters")
     // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     // .regex(/[a-z]/, "Password must contain at least one lowercase letter")
@@ -120,7 +117,7 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
   const roleForm = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
     defaultValues: {
-      roleIds: []
+      roleIds: [],
     },
   });
 
@@ -194,12 +191,9 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
       });
   };
 
-  const onSelectRoleChange = (rawValue: any[], numericIds: number[]) => {
+  const onSelectRoleChange = (rawValue: Role[], numericIds: number[]) => {
     console.log("Selected roles:", rawValue, numericIds);
-    roleForm.setValue(
-      "roleIds",
-      numericIds
-    );
+    roleForm.setValue("roleIds", numericIds);
     roleForm.trigger("roleIds");
   };
 
@@ -573,7 +567,7 @@ export function UserProfile({ userId, isOpen, onClose }: UserProfileProps) {
                             <FormControl>
                               <RoleSelect
                                 value={(field.value || []).map(
-                                  (id) => ({ id } as any)
+                                  (id) => ({ id } as Role)
                                 )}
                                 onChange={onSelectRoleChange}
                               />

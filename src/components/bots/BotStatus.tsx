@@ -1,21 +1,11 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot } from "@/pages/Bots";
-
-export interface BotStatusData {
-  id: number;
-  botId: number;
-  newStatus: string;
-  previousStatus: string;
-  timestamp: string;
-  notes: string;
-}
+import { Bot, BotHistory } from "@/types/Bot";
 
 interface BotStatusProps {
-  botStatus: BotStatusData | null;
+  botStatus: BotHistory | null;
   bot: Bot;
   isLoading: boolean;
 }
@@ -36,23 +26,37 @@ export function BotStatus({ botStatus, bot, isLoading }: BotStatusProps) {
         ) : botStatus ? (
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Current Status</dt>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Current Status
+              </dt>
               <dd className="mt-1">
-                <Badge variant={botStatus.newStatus === "RUNNING" ? "default" : "secondary"}>
+                <Badge
+                  variant={
+                    botStatus.newStatus === "RUNNING" ? "default" : "secondary"
+                  }
+                >
                   {botStatus.newStatus}
                 </Badge>
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Previous Status</dt>
-              <dd className="mt-1 text-sm">{botStatus.previousStatus || "N/A"}</dd>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Previous Status
+              </dt>
+              <dd className="mt-1 text-sm">
+                {botStatus.previousStatus || "N/A"}
+              </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Timestamp</dt>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Timestamp
+              </dt>
               <dd className="mt-1 text-sm">{botStatus.timestamp || "N/A"}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-muted-foreground">Notes</dt>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Notes
+              </dt>
               <dd className="mt-1 text-sm">{botStatus.notes || "N/A"}</dd>
             </div>
             {/* {bot.type === "LONG_POLLING" && bot.last_polling_time && (

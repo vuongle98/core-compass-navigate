@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,10 +14,11 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { BotInfo } from "./BotInfo";
-import { BotStatus, BotStatusData } from "./BotStatus";
+import { BotStatus } from "./BotStatus";
 import { BotScheduledMessages } from "./BotScheduledMessages";
-import { Bot } from "@/pages/Bots";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import { Bot, BotCommand, BotScheduledMessage } from "@/types/Bot";
+import BotService from "@/services/BotService";
+import { BotCommands } from "./BotCommands";
 
 interface BotDetailProps {
   bot: Bot;
@@ -31,7 +31,8 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
 
   const handleBotAction = async (action: string) => {
     try {
-      await EnhancedApiService.post(`/api/v1/bots/${bot.id}/${action}`, {});
+      await BotService.handleBotAction(bot.id, action);
+
       toast.success(`Bot ${action} action completed`);
       onRefresh();
     } catch (error) {
@@ -48,36 +49,57 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     queryKey: ["botScheduledMessages", bot.id],
     queryFn: async () => {
       try {
-        const response = await EnhancedApiService.get<ScheduledMessage[]>(
-          `/api/v1/bots/${bot.id}/scheduled-messages`
-        );
-        return response || [];
+        return BotService.getScheduledMessages(bot.id);
       } catch (error) {
         console.error("Failed to fetch scheduled messages:", error);
         return [];
       }
-    }
+    },
   });
-
 
   const {
-    isLoading: isLoadingRefresh,
-    refetch: refetchRefresh,
+    data: commands,
+    isLoading: isLoadingCommands,
+    refetch: refetchCommands,
   } = useQuery({
-    queryKey: ["fetchRefresh", bot.id],
+    queryKey: ["botCommands", bot.id],
     queryFn: async () => {
       try {
-        const response = await EnhancedApiService.post(
-          `/api/v1/bots/${bot.id}/refresh`,
-          {}
-        );
-        return response;
+        return BotService.getBotCommand(bot.id);
       } catch (error) {
-        console.error("Failed to fetch refresh:", error);
-        return null;
+        console.error("Failed to fetch scheduled messages:", error);
+        return [];
       }
-    }
+    },
   });
+
+  // const { isLoading: isLoadingRefresh, refetch: refetchRefresh } = useQuery({
+  //   queryKey: ["fetchRefresh", bot.id],
+  //   queryFn: async () => {
+  //     try {
+  //       await BotService.refreshBotStatus(bot.id);
+  //     } catch (error) {
+  //       console.error("Failed to fetch refresh:", error);
+  //       return null;
+  //     }
+  //   },
+  // });
+
+  // const {
+  //   data: botInfo,
+  //   isLoading: isLoadingBotDetail,
+  //   refetch: refetchBotDetail,
+  // } = useQuery({
+  //   queryKey: ["getBotDetail", bot.id],
+  //   queryFn: async () => {
+  //     try {
+  //       return await BotService.getBot(bot.id);
+  //     } catch (error) {
+  //       console.error("Failed to fetch refresh:", error);
+  //       return null;
+  //     }
+  //   },
+  // });
 
   const {
     data: botStatus,
@@ -87,26 +109,50 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
     queryKey: ["botStatus", bot.id],
     queryFn: async () => {
       try {
-        const response = await EnhancedApiService.get<BotStatusData[]>(`/api/v1/bots/${bot.id}/history`);
-        return response || [];
+        return BotService.getBotStatusHistory(bot.id);
       } catch (error) {
         console.error("Failed to fetch bot status:", error);
         return [];
       }
-    }
+    },
   });
+
+  const handleEditCommand = async (
+    botId: number,
+    commandName: string,
+    data: Partial<BotCommand>
+  ) => {
+    await BotService.updateBotCommand(botId, commandName, data);
+    refreshData();
+  };
+
+  const handleCreateCommand = async (
+    botId: number,
+    data: Partial<BotCommand>
+  ) => {
+    await BotService.createBotCommand(botId, data);
+    refreshData();
+  };
 
   const refreshData = () => {
     refetchMessages();
     refetchStatus();
+    refetchCommands();
     // refetchRefresh();
     onRefresh();
+  };
+
+  const handleScheduleMessage = async (
+    botId: number,
+    data: Partial<BotScheduledMessage>
+  ) => {
+    await BotService.scheduleMessage(botId, data);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Bot Details</h3>
+        <h3 className="text-lg font-medium"></h3>
         <Button variant="outline" size="sm" onClick={refreshData}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh
@@ -114,13 +160,14 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
       </div>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="info">Information</TabsTrigger>
           <TabsTrigger value="status">History Status</TabsTrigger>
           <TabsTrigger value="messages">
             {/* disabled={!bot.scheduled}> */}
             Scheduled Messages
           </TabsTrigger>
+          <TabsTrigger value="commands">Commands</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">
@@ -129,7 +176,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
 
         <TabsContent value="status">
           <div className="max-h-80 overflow-y-auto space-y-4">
-            {botStatus && (
+            {botStatus &&
               botStatus.map((status) => (
                 <BotStatus
                   key={status.id}
@@ -137,8 +184,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
                   bot={bot}
                   isLoading={isLoadingStatus}
                 />
-              ))
-            )}
+              ))}
           </div>
         </TabsContent>
 
@@ -148,13 +194,28 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
               messages={scheduledMessages}
               isLoading={isLoadingMessages}
               botId={bot.id}
+              handleScheduleMessage={handleScheduleMessage}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="commands">
+          <div className="max-h-80 overflow-y-auto space-y-4">
+            <BotCommands
+              commands={commands}
+              isLoading={isLoadingCommands}
+              botId={bot.id}
+              handleCreate={handleCreateCommand}
+              handleEdit={handleEditCommand}
             />
           </div>
         </TabsContent>
       </Tabs>
 
       <div className="flex flex-wrap gap-3">
-        {(bot.status === "STOPPED" || bot.status === "CREATED" || bot.status === "ERRORED") && (
+        {(bot.status === "STOPPED" ||
+          bot.status === "CREATED" ||
+          bot.status === "ERRORED") && (
           <Button onClick={() => handleBotAction("start")}>
             <Play className="mr-2 h-4 w-4" />
             Start Bot
@@ -168,12 +229,19 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
           </Button>
         )}
 
-        {!bot.scheduled && (
+        {bot.status === "RUNNING" && (
+          <Button variant="outline" onClick={() => handleBotAction("restart")}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Restart Bot
+          </Button>
+        )}
+
+        {/* {!bot.scheduled && (
           <Button variant="outline" onClick={() => handleBotAction("schedule")}>
             <Calendar className="mr-2 h-4 w-4" />
             Schedule Messages
           </Button>
-        )}
+        )} */}
 
         {bot.scheduled && (
           <Button variant="outline" onClick={() => handleBotAction("cancel")}>
@@ -192,26 +260,4 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
       </div>
     </div>
   );
-}
-
-interface BotStatus {
-  bot_id: number;
-  is_running: boolean;
-  memory_usage?: string;
-  cpu_usage?: string;
-  uptime?: string;
-}
-
-interface ScheduledMessage {
-  id: number;
-  botId: number;
-  chatId: string;
-  messageText: string;
-  isRecurring: boolean;
-  recurrencePattern: string;
-  isSent: boolean;
-  scheduledTime: string;
-  sentAt: string;
-  isCancelled: boolean;
-  createdAt: string;
 }

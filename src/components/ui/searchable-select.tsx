@@ -22,7 +22,7 @@ import useDebounce from "@/hooks/use-debounce";
 export interface Option {
   value: string;
   label: string | React.ReactNode;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface SearchableSelectProps {
@@ -69,22 +69,30 @@ export function SearchableSelect({
   }, [debouncedSearchQuery, onSearch]);
 
   // Filter options locally if no external search is provided
-  const filteredOptions = !onSearch && debouncedSearchQuery
-    ? options.filter(option => 
-        String(option.label).toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || 
-        option.value.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-      )
-    : options;
+  const filteredOptions =
+    !onSearch && debouncedSearchQuery
+      ? options.filter(
+          (option) =>
+            String(option.label)
+              .toLowerCase()
+              .includes(debouncedSearchQuery.toLowerCase()) ||
+            option.value
+              .toLowerCase()
+              .includes(debouncedSearchQuery.toLowerCase())
+        )
+      : options;
 
   // Handle selection
   const handleSelect = (option: Option) => {
     if (multiple) {
       const currentValues = Array.isArray(value) ? value : [];
-      const isSelected = currentValues.some(item => item.value === option.value);
+      const isSelected = currentValues.some(
+        (item) => item.value === option.value
+      );
 
       onChange(
         isSelected
-          ? currentValues.filter(item => item.value !== option.value)
+          ? currentValues.filter((item) => item.value !== option.value)
           : [...currentValues, option]
       );
 
@@ -102,7 +110,7 @@ export function SearchableSelect({
   const handleRemove = (e: React.MouseEvent, optionValue: string) => {
     e.stopPropagation();
     const currentValues = Array.isArray(value) ? value : [];
-    onChange(currentValues.filter(item => item.value !== optionValue));
+    onChange(currentValues.filter((item) => item.value !== optionValue));
   };
 
   // Clear selection
@@ -116,11 +124,11 @@ export function SearchableSelect({
 
     if (multiple && Array.isArray(value)) {
       if (value.length === 0) return placeholder;
-      
+
       if (!showSelectedTags) {
         return `${value.length} item${value.length !== 1 ? "s" : ""} selected`;
       }
-      
+
       // Don't return anything here as we'll show the tags below the button
       return placeholder;
     }
@@ -145,20 +153,29 @@ export function SearchableSelect({
           >
             <span className="truncate">{selectedDisplay()}</span>
             <div className="flex items-center">
-              {value && !disabled && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 rounded-full ml-1 mr-1 hover:bg-muted"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClear();
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                  <span className="sr-only">Clear</span>
-                </Button>
-              )}
+              {value &&
+                Array.isArray(value) &&
+                value.length > 0 &&
+                !disabled && (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="h-4 w-4 rounded-full ml-1 mr-1 hover:bg-muted flex items-center justify-center"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClear();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.stopPropagation();
+                        handleClear();
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Clear</span>
+                  </div>
+                )}
               <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </div>
           </Button>
@@ -183,7 +200,7 @@ export function SearchableSelect({
                   <CommandEmpty>{emptyMessage}</CommandEmpty>
                 ) : (
                   <CommandGroup>
-                    {filteredOptions.map(option => (
+                    {filteredOptions.map((option) => (
                       <CommandItem
                         key={option.value}
                         value={option.value}
@@ -194,20 +211,25 @@ export function SearchableSelect({
                           <div
                             className={cn(
                               "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                              Array.isArray(value) && value.some(v => v.value === option.value)
+                              Array.isArray(value) &&
+                                value.some((v) => v.value === option.value)
                                 ? "bg-primary text-primary-foreground"
                                 : "opacity-50"
                             )}
                           >
-                            {Array.isArray(value) && value.some(v => v.value === option.value) && (
-                              <Check className="h-3 w-3" />
-                            )}
+                            {Array.isArray(value) &&
+                              value.some((v) => v.value === option.value) && (
+                                <Check className="h-3 w-3" />
+                              )}
                           </div>
                         )}
                         <span>{option.label}</span>
-                        {!multiple && value && !Array.isArray(value) && value.value === option.value && (
-                          <Check className="ml-auto h-4 w-4" />
-                        )}
+                        {!multiple &&
+                          value &&
+                          !Array.isArray(value) &&
+                          value.value === option.value && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -219,26 +241,33 @@ export function SearchableSelect({
       </Popover>
 
       {/* Show selected tags if in multiple mode and showSelectedTags is true */}
-      {multiple && showSelectedTags && Array.isArray(value) && value.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {value.map(item => (
-            <Badge key={item.value} variant="secondary" className="max-w-full">
-              <span className="truncate mr-1">{item.label}</span>
-              {!disabled && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-4 w-4 rounded-full p-0 hover:bg-muted"
-                  onClick={(e) => handleRemove(e, item.value)}
-                >
-                  <X className="h-3 w-3" />
-                  <span className="sr-only">Remove</span>
-                </Button>
-              )}
-            </Badge>
-          ))}
-        </div>
-      )}
+      {multiple &&
+        showSelectedTags &&
+        Array.isArray(value) &&
+        value.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {value.map((item) => (
+              <Badge
+                key={item.value}
+                variant="secondary"
+                className="max-w-full"
+              >
+                <span className="truncate mr-1">{item.label}</span>
+                {!disabled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 rounded-full p-0 hover:bg-muted"
+                    onClick={(e) => handleRemove(e, item.value)}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Remove</span>
+                  </Button>
+                )}
+              </Badge>
+            ))}
+          </div>
+        )}
     </div>
   );
 }

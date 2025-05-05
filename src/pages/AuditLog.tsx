@@ -12,19 +12,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
-import useApiQuery, { ApiQueryFilters } from "@/hooks/use-api-query";
+import useApiQuery from "@/hooks/use-api-query";
 import LoggingService from "@/services/LoggingService";
 import { Skeleton } from "@/components/ui/skeleton";
 import useDebounce from "@/hooks/use-debounce";
-
-interface AuditLogItem {
-  id: number;
-  action: string;
-  user: string;
-  timestamp: string;
-  details: string;
-  ip: string;
-}
+import { AuditLogItem } from "@/types/Logging";
 
 // Mock data for audit logs
 const mockLogs: AuditLogItem[] = [
@@ -74,7 +66,7 @@ const AuditLog = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Debounce the search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -84,7 +76,7 @@ const AuditLog = () => {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search actions, users..."
+      placeholder: "Search actions, users...",
     },
     {
       id: "action",
@@ -96,7 +88,7 @@ const AuditLog = () => {
         { value: "Config Changed", label: "Config Changed" },
         { value: "Login Failed", label: "Login Failed" },
         { value: "Data Exported", label: "Data Exported" },
-      ]
+      ],
     },
     {
       id: "user",
@@ -107,8 +99,8 @@ const AuditLog = () => {
         { value: "System", label: "System" },
         { value: "Manager", label: "Manager" },
         { value: "Unknown", label: "Unknown" },
-      ]
-    }
+      ],
+    },
   ];
 
   // Use our custom API query hook
@@ -123,7 +115,7 @@ const AuditLog = () => {
     pageSize,
     setPageSize,
     totalItems,
-    error
+    error,
   } = useApiQuery<AuditLogItem>({
     endpoint: "/api/audit-logs",
     queryKey: ["audit-logs", debouncedSearchTerm],
@@ -134,16 +126,16 @@ const AuditLog = () => {
       totalElements: mockLogs.length,
       totalPages: 1,
       number: 0,
-      size: 10
+      size: 10,
     },
     onError: (err) => {
       console.error("Failed to fetch audit logs:", err);
       toast.error("Failed to load audit logs, using cached data", {
-        description: "Could not connect to the server. Please try again later."
+        description: "Could not connect to the server. Please try again later.",
       });
-    }
+    },
   });
-  
+
   // Handle search input
   const handleSearchInput = (value: string) => {
     setSearchTerm(value);
@@ -153,11 +145,11 @@ const AuditLog = () => {
   const viewDetails = (log: AuditLogItem) => {
     setSelectedLog(log);
     setDetailsOpen(true);
-    
+
     // Log user action
     LoggingService.logUserAction(
-      "audit_log", 
-      "view_details", 
+      "audit_log",
+      "view_details",
       `Viewed details for audit log ID ${log.id}`,
       { logId: log.id }
     );
@@ -178,11 +170,11 @@ const AuditLog = () => {
     URL.revokeObjectURL(url);
 
     toast.success("Log entry exported");
-    
+
     // Log user action
     LoggingService.logUserAction(
-      "audit_log", 
-      "export_log", 
+      "audit_log",
+      "export_log",
       `Exported log for audit log ID ${log.id}`,
       { logId: log.id }
     );
@@ -197,16 +189,21 @@ const AuditLog = () => {
       ),
       sortable: true,
     },
-    { 
-      header: "Action", 
+    {
+      header: "Action",
       accessorKey: "action",
       cell: (item: AuditLogItem) => (
-        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-          item.action.includes('Created') ? 'bg-green-100 text-green-800' :
-          item.action.includes('Modified') ? 'bg-yellow-100 text-yellow-800' :
-          item.action.includes('Failed') ? 'bg-red-100 text-red-800' :
-          'bg-blue-100 text-blue-800'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-md text-xs font-medium ${
+            item.action.includes("Created")
+              ? "bg-green-100 text-green-800"
+              : item.action.includes("Modified")
+              ? "bg-yellow-100 text-yellow-800"
+              : item.action.includes("Failed")
+              ? "bg-red-100 text-red-800"
+              : "bg-blue-100 text-blue-800"
+          }`}
+        >
           {item.action}
         </span>
       ),
@@ -243,11 +240,11 @@ const AuditLog = () => {
               onClick: () => {
                 navigator.clipboard.writeText(item.id.toString());
                 toast.success("Log ID copied to clipboard");
-                
+
                 // Log user action
                 LoggingService.logUserAction(
-                  "audit_log", 
-                  "copy_id", 
+                  "audit_log",
+                  "copy_id",
                   `Copied ID ${item.id} to clipboard`,
                   { logId: item.id }
                 );
@@ -340,17 +337,23 @@ const AuditLog = () => {
                   <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900">
                     {selectedLog.details}
                   </div>
-                  
-                  <div className="font-semibold col-span-2">Associated Data:</div>
+
+                  <div className="font-semibold col-span-2">
+                    Associated Data:
+                  </div>
                   <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
-                    {JSON.stringify({
-                      module: "users",
-                      objectId: 123,
-                      changes: {
-                        before: { name: "Old Name", role: "User" },
-                        after: { name: "New Name", role: "Admin" }
-                      }
-                    }, null, 2)}
+                    {JSON.stringify(
+                      {
+                        module: "users",
+                        objectId: 123,
+                        changes: {
+                          before: { name: "Old Name", role: "User" },
+                          after: { name: "New Name", role: "Admin" },
+                        },
+                      },
+                      null,
+                      2
+                    )}
                   </div>
                 </div>
               </div>

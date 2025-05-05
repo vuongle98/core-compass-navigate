@@ -10,14 +10,7 @@ import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-
-interface EndpointSecure {
-  id: number;
-  endpointPattern: string;
-  method: string;
-  authority: string;
-  isRole: boolean;
-}
+import { EndpointSecure } from "@/types/Configuration";
 
 const EndpointSecures = () => {
   // Mock data
@@ -57,7 +50,7 @@ const EndpointSecures = () => {
     openDetail: openEndpointDetail,
     closeModal: closeEndpointDetail,
   } = useDetailView<EndpointSecure>({
-    modalThreshold: 15
+    modalThreshold: 15,
   });
 
   const {

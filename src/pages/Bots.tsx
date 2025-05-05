@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -7,23 +6,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  PlusCircle,
-  Bot,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Trash2,
-  Archive,
-  Download,
-  UploadCloud,
-  MoreHorizontal,
-  Play,
-  Square,
-  X,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Trash2, Archive, Download, Play, Square } from "lucide-react";
 import { ActionType, ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
@@ -32,49 +15,11 @@ import { BotDetail } from "@/components/bots/BotDetail";
 import { BotForm } from "@/components/bots/BotForm";
 import { BotStatsCards } from "@/components/bots/BotStatsCards";
 import { BotBulkActions } from "@/components/bots/BotBulkActions";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import EnhancedApiService from "@/services/EnhancedApiService";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-
-export interface BotConfiguration {
-  webhookUrl?: string;
-  pollingInterval?: number;
-  allowedUpdates?: string[];
-  maxConnections?: number;
-  ipAddress?: string;
-  secretToken?: string;
-  dropPendingUpdates?: boolean;
-  maxThreads?: number;
-  updateMethod?: "LONG_POLLING" | "WEBHOOK";
-}
-export interface Bot {
-  id: number;
-  name: string;
-  apiToken?: string;
-  status: "RUNNING" | "STOPPED" | "ERRORED" | "CREATED"; // STARTING, RUNNING, STOPPING, STOPPED, ERRORED
-  pollingInterval?: number;
-  configuration?: BotConfiguration;
-  description?: string;
-  scheduled?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface Column {
-  header: string;
-  accessorKey: string;
-  id?: string;
-  cell?: (item: Bot) => JSX.Element;
-  sortable?: boolean;
-  filterable?: boolean;
-}
+import { Bot } from "@/types/Bot";
+import { Column } from "@/types/Common";
+import BotService from "@/services/BotService";
 
 const mockBots: Bot[] = [
   {
@@ -191,11 +136,8 @@ const Bots = () => {
   const handleCreateBot = async (
     data: Omit<Bot, "id" | "created_at" | "updated_at" | "status">
   ) => {
-
-    console.log(data)
     try {
-      await EnhancedApiService.post(`/api/v1/bots`, data);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await BotService.createBot(data);
 
       toast.success("Bot created successfully");
       setIsCreateModalOpen(false);
@@ -207,17 +149,14 @@ const Bots = () => {
   };
 
   const handleBotAction = async (botId: number, action: string) => {
-    try {
-      await EnhancedApiService.post(`/api/v1/bots/${botId}/${action}`, {}).catch(() => {
-        return new Promise((resolve) => setTimeout(resolve, 500));
+    await BotService.handleBotAction(botId, action)
+      .catch((error) => {
+        console.error("Failed to perform bot action:", error);
+        toast.error(`Failed to ${action} bot`);
+      })
+      .finally(() => {
+        refresh();
       });
-
-      toast.success(`Bot ${action} action completed`);
-      refresh();
-    } catch (error) {
-      toast.error(`Failed to ${action} bot`);
-      console.error(error);
-    }
   };
 
   const handleBulkAction = async (action: string) => {
@@ -355,7 +294,7 @@ const Bots = () => {
     }
   };
 
-  const columns: Column[] = [
+  const columns: Column<Bot>[] = [
     {
       header: "#",
       accessorKey: "id",

@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   ),
   server: {
     host: "::",
-    port: 8080,
+    port: 8082,
     proxy: {
       // Proxy API requests
       "/api/v1/bots": {

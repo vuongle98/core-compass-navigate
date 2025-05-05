@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
@@ -7,7 +6,7 @@ import useDebounce from "@/hooks/use-debounce";
 
 interface RoleSelectProps {
   value: Role[];
-  onChange: (rawValue: Role[], value: any[]) => void;
+  onChange: (rawValue: Role[], value: number[]) => void;
   disabled?: boolean;
   /**
    * Optional field name for form submission.
@@ -29,7 +28,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   const [options, setOptions] = useState<Option[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Fetch roles with search
@@ -37,24 +36,26 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     const fetchRoles = async () => {
       try {
         setIsLoading(true);
-        const response = await EnhancedApiService.get('/api/role', {
-          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {}
+        const response = await EnhancedApiService.getPaginated("/api/role", {
+          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {},
         });
-        
-        const roles = response.content || response || [];
-        
+
+        const roles = response.content || [];
+
         // Transform roles to options format
         const roleOptions = roles.map((role: Role) => ({
           value: role.id.toString(),
           label: (
             <div>
               <div className="font-semibold">{role.name}</div>
-              <div className="text-xs text-muted-foreground">{role.description}</div>
+              <div className="text-xs text-muted-foreground">
+                {role.description}
+              </div>
             </div>
           ),
-          original: role
+          original: role,
         }));
-        
+
         setOptions(roleOptions);
       } catch (error) {
         console.error("Failed to fetch roles:", error);
@@ -96,7 +97,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   }, [value, initialLoaded]);
 
   // Convert current value to options format
-  const selectedOptions = value.map(role => ({
+  const selectedOptions = value.map((role) => ({
     value: role.id.toString(),
     label: (
       <div>
@@ -104,17 +105,19 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
         <div className="text-xs text-muted-foreground">{role.description}</div>
       </div>
     ),
-    original: role
+    original: role,
   }));
 
   // Handle selection change
   const handleChange = (selected: Option[] | null) => {
     if (!selected) return;
-    
+
     // Convert selected options back to Role objects
-    const selectedRoles = selected.map(option => option.original as Role);
+    const selectedRoles = selected.map((option) => option.original as Role);
     // Convert to numbers if they're not already
-    const numericValues = selectedRoles.map(v => typeof v.id === 'string' ? parseInt(v.id as string, 10) : v.id);
+    const numericValues = selectedRoles.map((v) =>
+      typeof v.id === "string" ? parseInt(v.id as string, 10) : v.id
+    );
     onChange(selectedRoles, numericValues);
   };
 
@@ -127,9 +130,13 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     <div className="role-select-wrapper mb-4">
       <h3 className="text-base font-semibold mb-1">Roles</h3>
       <SearchableSelect
-        options={[...options, ...selectedOptions.filter(
-          selected => !options.some(option => option.value === selected.value)
-        )]}
+        options={[
+          ...options,
+          ...selectedOptions.filter(
+            (selected) =>
+              !options.some((option) => option.value === selected.value)
+          ),
+        ]}
         value={selectedOptions}
         onChange={handleChange}
         placeholder={initialLoaded ? "Select roles..." : "Loading roles..."}

@@ -1,16 +1,16 @@
-
 export interface Role {
-  id: string;
+  id: number;
   code: string;
   name: string;
   description?: string;
   permissions?: Permission[];
   isActive?: boolean;
   createdAt?: string;
+  permissionIds?: number[];
 }
 
 export interface Permission {
-  id: string;
+  id: number;
   code: string;
   name: string;
   description?: string;
@@ -27,17 +27,28 @@ export interface PermissionData extends Permission {
   code: string; // Making this required to match Permission
 }
 
+export interface UserProfile {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  avatarUrl?: string;
+}
+
 export interface User {
-  id: string;
-  name: string;
-  email: string;
+  id: number;
+  email?: string;
   roles: Role[];
-  role?: string;
   joinDate?: string;
   lastLogin?: string;
   isActive?: boolean;
   avatar?: string;
   username?: string; // Adding username property
+  profile?: UserProfile;
+  locked?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserPermissions {
@@ -48,8 +59,8 @@ export interface UserPermissions {
 }
 
 export const DEFAULT_ROLES = {
-  ADMIN: 'admin',
-  USER: 'user',
-  MANAGER: 'manager',
-  GUEST: 'guest'
+  ADMIN: "admin",
+  USER: "user",
+  MANAGER: "manager",
+  GUEST: "guest",
 };

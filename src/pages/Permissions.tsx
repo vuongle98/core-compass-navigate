@@ -21,13 +21,13 @@ import useApiQuery from "@/hooks/use-api-query";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
-import { Permission, PermissionData } from "@/types/Auth";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import { PermissionData } from "@/types/Auth";
+import PermissionService from "@/services/PermissionService";
 
 const Permissions = () => {
   const [permissions, setPermissions] = useState<PermissionData[]>([
     {
-      id: "1",
+      id: 1,
       code: "user:read",
       name: "Read Users",
       description: "View user information",
@@ -37,7 +37,7 @@ const Permissions = () => {
       updatedAt: "2023-01-01",
     },
     {
-      id: "2",
+      id: 2,
       code: "user:write",
       name: "Write Users",
       description: "Create and update user information",
@@ -47,7 +47,7 @@ const Permissions = () => {
       updatedAt: "2023-01-01",
     },
     {
-      id: "3",
+      id: 3,
       code: "user:delete",
       name: "Delete Users",
       description: "Delete user accounts",
@@ -57,7 +57,7 @@ const Permissions = () => {
       updatedAt: "2023-01-01",
     },
     {
-      id: "4",
+      id: 4,
       code: "role:read",
       name: "Read Roles",
       description: "View role information",
@@ -67,7 +67,7 @@ const Permissions = () => {
       updatedAt: "2023-01-01",
     },
     {
-      id: "5",
+      id: 5,
       code: "role:write",
       name: "Write Roles",
       description: "Create and update roles",
@@ -76,61 +76,12 @@ const Permissions = () => {
       createdAt: "2023-01-01",
       updatedAt: "2023-01-01",
     },
-    {
-      id: "6",
-      code: "role:delete",
-      name: "Delete Roles",
-      description: "Delete roles",
-      module: "Roles",
-      isActive: true,
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
-    {
-      id: "7",
-      code: "permission:read",
-      name: "Read Permissions",
-      description: "View permission information",
-      module: "Permissions",
-      isActive: true,
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
-    {
-      id: "8",
-      code: "permission:write",
-      name: "Write Permissions",
-      description: "Create and update permissions",
-      module: "Permissions",
-      isActive: true,
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
-    {
-      id: "9",
-      code: "permission:delete",
-      name: "Delete Permissions",
-      description: "Delete permissions",
-      module: "Permissions",
-      isActive: false,
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
-    {
-      id: "10",
-      code: "feature:flags",
-      name: "Feature Flags",
-      description: "Manage feature flags",
-      module: "System",
-      isActive: true,
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
   ]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<PermissionData | null>(null);
+  const [editingPermission, setEditingPermission] =
+    useState<PermissionData | null>(null);
   const [formData, setFormData] = useState<Partial<PermissionData>>({
     code: "",
     name: "",
@@ -261,7 +212,10 @@ const Permissions = () => {
 
     try {
       if (editingPermission) {
-        await EnhancedApiService.put(`/api/permission/${editingPermission.id}`, formData);
+        await PermissionService.updatePermission(
+          editingPermission.id,
+          formData as Partial<PermissionData>
+        );
 
         setPermissions((prev) =>
           prev.map((permission) =>
@@ -273,20 +227,11 @@ const Permissions = () => {
 
         toast.success("Permission updated successfully");
       } else {
-        const response = await EnhancedApiService.post("/api/permission", formData);
+        const newPermission = await PermissionService.createPermission(
+          formData as Partial<PermissionData>
+        );
 
-        const newPermission: PermissionData = {
-          id: Date.now().toString(),
-          code: formData.code || "",
-          name: formData.name || "",
-          description: formData.description || "",
-          module: formData.module || "",
-          isActive: formData.isActive || false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        setPermissions((prev) => [...prev, newPermission]);
+        setPermissions((prev) => [...prev, newPermission as PermissionData]);
 
         toast.success("Permission created successfully");
       }
@@ -295,18 +240,22 @@ const Permissions = () => {
     } catch (error) {
       console.error("Permission operation failed:", error);
       toast.error(
-        editingPermission ? "Failed to update permission" : "Failed to create permission"
+        editingPermission
+          ? "Failed to update permission"
+          : "Failed to create permission"
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
-      await EnhancedApiService.delete(`/api/permission/${id}`);
+      await PermissionService.deletePermission(id);
 
-      setPermissions((prev) => prev.filter((permission) => permission.id !== id));
+      setPermissions((prev) =>
+        prev.filter((permission) => permission.id !== id)
+      );
 
       toast.success("Permission deleted successfully");
     } catch (error) {
@@ -327,7 +276,9 @@ const Permissions = () => {
     {
       header: "Name",
       accessorKey: "name",
-      cell: (item: PermissionData) => <span className="font-medium">{item.name}</span>,
+      cell: (item: PermissionData) => (
+        <span className="font-medium">{item.name}</span>
+      ),
       sortable: true,
     },
     { header: "Code", accessorKey: "code", sortable: true },
@@ -380,10 +331,7 @@ const Permissions = () => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs />
-        <PageHeader
-          title="Permissions"
-          description="Manage system permissions"
-        >
+        <PageHeader title="Permissions" description="Manage system permissions">
           <DataFilters
             filters={filters}
             options={filterOptions}
@@ -462,7 +410,9 @@ const Permissions = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingPermission ? "Edit Permission" : "Create New Permission"}
+                {editingPermission
+                  ? "Edit Permission"
+                  : "Create New Permission"}
               </DialogTitle>
               <DialogDescription>
                 {editingPermission

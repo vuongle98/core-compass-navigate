@@ -23,9 +23,11 @@ import { Loader2, Pencil } from "lucide-react";
 import EnhancedApiService from "@/services/EnhancedApiService";
 
 const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
   email: z.string().email("Invalid email address"),
-  role: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -38,9 +40,11 @@ const Profile = () => {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
+      firstName: user?.profile?.firstName || "",
+      lastName: user?.profile?.lastName || "",
+      phone: user?.profile?.phone || "",
+      address: user?.profile?.address || "",
       email: user?.email || "",
-      role: user?.role || "",
     },
   });
 
@@ -75,11 +79,11 @@ const Profile = () => {
                 <Avatar className="h-16 w-16">
                   <AvatarImage src="https://github.com/shadcn.png" alt="User" />
                   <AvatarFallback>
-                    {user?.name?.substring(0, 2) || "U"}
+                    {user?.username?.substring(0, 2) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle>{user?.name || "User"}</CardTitle>
+                  <CardTitle>{user?.username || "User"}</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {user?.email || ""}
                   </p>
@@ -105,10 +109,23 @@ const Profile = () => {
                   >
                     <FormField
                       control={form.control}
-                      name="name"
+                      name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -131,10 +148,23 @@ const Profile = () => {
                     />
                     <FormField
                       control={form.control}
-                      name="role"
+                      name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Role</FormLabel>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
                           <FormControl>
                             <Input {...field} disabled />
                           </FormControl>
@@ -166,9 +196,9 @@ const Profile = () => {
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
-                    <Label>Name</Label>
+                    <Label>Username</Label>
                     <p className="text-sm text-muted-foreground">
-                      {user?.name || ""}
+                      {user?.username || ""}
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -180,7 +210,7 @@ const Profile = () => {
                   <div className="space-y-1">
                     <Label>Role</Label>
                     <p className="text-sm text-muted-foreground">
-                      {user?.role || ""}
+                      {user?.roles.map((role) => role.code).join(", ") || ""}
                     </p>
                   </div>
                   <div className="space-y-1">

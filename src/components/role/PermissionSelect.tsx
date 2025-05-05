@@ -1,7 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import EnhancedApiService, {
+  ApiResponse,
+  PaginatedData,
+} from "@/services/EnhancedApiService";
 import { Permission } from "@/types/Auth";
 import useDebounce from "@/hooks/use-debounce";
 
@@ -10,7 +12,7 @@ interface PermissionSelectProps {
   onChange: (rawValue: Permission[], value: number[]) => void;
   disabled?: boolean;
   /**
-   * Optional field name for form submission. 
+   * Optional field name for form submission.
    * If provided, onChange will return an object with this field as key and the selected IDs as value.
    * If not provided, onChange will return just the array of IDs.
    * Example: { permissionIds: [1, 2, 3] } vs [1, 2, 3]
@@ -22,14 +24,16 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   value,
   onChange,
   disabled,
-  formField // No default - only structure as object if explicitly requested
+  formField, // No default - only structure as object if explicitly requested
 }) => {
-  const [initialPermissions, setInitialPermissions] = useState<Permission[]>([]);
+  const [initialPermissions, setInitialPermissions] = useState<Permission[]>(
+    []
+  );
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Fetch permissions with search
@@ -37,24 +41,31 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     const fetchPermissions = async () => {
       try {
         setIsLoading(true);
-        const response = await EnhancedApiService.get('/api/permission', {
-          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {}
-        });
-        
-        const permissions = response.content || response || [];
-        
+        const response = await EnhancedApiService.getPaginated<Permission>(
+          "/api/permission",
+          {
+            params: debouncedSearchQuery
+              ? { search: debouncedSearchQuery }
+              : {},
+          }
+        );
+
+        const permissions = response.content || [];
+
         // Transform permissions to options format
         const permissionOptions = permissions.map((permission: Permission) => ({
           value: permission.id.toString(),
           label: (
             <div>
               <div className="font-semibold">{permission.name}</div>
-              <div className="text-xs text-muted-foreground">{permission.description}</div>
+              <div className="text-xs text-muted-foreground">
+                {permission.description}
+              </div>
             </div>
           ),
-          original: permission
+          original: permission,
         }));
-        
+
         setOptions(permissionOptions);
       } catch (error) {
         console.error("Failed to fetch permissions:", error);
@@ -71,13 +82,17 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     if (value && value.length > 0 && !initialLoaded) {
       const fetchInitialPermissions = async () => {
         try {
-          if (typeof value[0] === 'number') {
+          if (typeof value[0] === "number") {
             // For each permission ID, fetch the corresponding permission object
-            const promises = value.map(id => EnhancedApiService.get<Permission>(`/api/permission/${id}`));
+            const promises = value.map((id) =>
+              EnhancedApiService.get<Permission>(`/api/permission/${id}`)
+            );
             const responses = await Promise.all(promises);
-            const permissions = responses.map(response => response) as Permission[];
+            const permissions = responses.map(
+              (response) => response
+            ) as Permission[];
             setInitialPermissions(permissions);
-          } else if (typeof value[0] === 'object') {
+          } else if (typeof value[0] === "object") {
             setInitialPermissions(value as Permission[]);
           }
         } catch (error) {
@@ -94,25 +109,31 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   }, [value, initialLoaded]);
 
   // Convert current value to options format
-  const selectedOptions = value.map(permission => ({
+  const selectedOptions = value.map((permission) => ({
     value: permission.id.toString(),
     label: (
       <div>
         <div className="font-semibold">{permission.name}</div>
-        <div className="text-xs text-muted-foreground">{permission.description}</div>
+        <div className="text-xs text-muted-foreground">
+          {permission.description}
+        </div>
       </div>
     ),
-    original: permission
+    original: permission,
   }));
 
   // Handle selection change
   const handleChange = (selected: Option[] | null) => {
     if (!selected) return;
-    
+
     // Convert selected options back to Permission objects
-    const selectedPermissions = selected.map(option => option.original as Permission);
+    const selectedPermissions = selected.map(
+      (option) => option.original as Permission
+    );
     // Convert to numbers if they're not already
-    const numericValues = selectedPermissions.map(v => typeof v.id === 'string' ? parseInt(v.id, 10) : v.id as number);
+    const numericValues = selectedPermissions.map((v) =>
+      typeof v.id === "string" ? parseInt(v.id, 10) : (v.id as number)
+    );
     onChange(selectedPermissions, numericValues);
   };
 
@@ -125,12 +146,18 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     <div className="permission-select-wrapper mb-4">
       <h3 className="text-base font-semibold mb-1">Permissions</h3>
       <SearchableSelect
-        options={[...options, ...selectedOptions.filter(
-          selected => !options.some(option => option.value === selected.value)
-        )]}
+        options={[
+          ...options,
+          ...selectedOptions.filter(
+            (selected) =>
+              !options.some((option) => option.value === selected.value)
+          ),
+        ]}
         value={selectedOptions}
         onChange={handleChange}
-        placeholder={initialLoaded ? "Select permissions..." : "Loading permissions..."}
+        placeholder={
+          initialLoaded ? "Select permissions..." : "Loading permissions..."
+        }
         searchPlaceholder="Search permissions..."
         multiple={true}
         disabled={disabled || !initialLoaded}

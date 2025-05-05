@@ -8,17 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { AlertTriangle, Download, RefreshCcw, Trash } from "lucide-react";
-
-interface Event {
-  id: number;
-  event: string;
-  source: string;
-  level: string;
-  timestamp: string;
-  message: string;
-  user?: string;
-  details?: string;
-}
+import { Event } from "@/types/Logging";
 
 const EventLog = () => {
   // Initial static events data for fallback

@@ -1,32 +1,21 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectValue, SelectTrigger, SelectItem, SelectContent, Select } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Calendar } from "@/components/ui/calendar";
-import { PopoverTrigger, PopoverContent, Popover } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
 import useApiQuery from "@/hooks/use-api-query";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoggingService from "@/services/LoggingService";
-
-interface UserRequest {
-  id: number;
-  endpoint: string;
-  method: string;
-  user: string;
-  timestamp: string;
-  status: number;
-  duration: string;
-}
+import { UserRequest } from "@/types/Logging";
 
 // Mock data for user requests
 const mockRequests: UserRequest[] = [
@@ -87,7 +76,7 @@ const UserRequestLog = () => {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search endpoints, users..."
+      placeholder: "Search endpoints, users...",
     },
     {
       id: "method",
@@ -98,7 +87,7 @@ const UserRequestLog = () => {
         { value: "POST", label: "POST" },
         { value: "PUT", label: "PUT" },
         { value: "DELETE", label: "DELETE" },
-      ]
+      ],
     },
     {
       id: "status",
@@ -111,8 +100,8 @@ const UserRequestLog = () => {
         { value: "401", label: "401 Unauthorized" },
         { value: "404", label: "404 Not Found" },
         { value: "500", label: "500 Server Error" },
-      ]
-    }
+      ],
+    },
   ];
 
   // Use our custom API query hook
@@ -126,7 +115,7 @@ const UserRequestLog = () => {
     setPage,
     pageSize,
     setPageSize,
-    totalItems
+    totalItems,
   } = useApiQuery<UserRequest>({
     endpoint: "/api/logs/requests",
     queryKey: ["user-requests"], // Fix: Changed string to array for QueryKey
@@ -137,18 +126,18 @@ const UserRequestLog = () => {
       totalElements: mockRequests.length,
       totalPages: 1,
       number: 0,
-      size: 10
-    }
+      size: 10,
+    },
   });
 
   const viewDetails = (log: UserRequest) => {
     setSelectedLog(log);
     setDetailsOpen(true);
-    
+
     // Log user action with corrected parameter order
     LoggingService.logUserAction(
-      "user_requests", 
-      "view_details", 
+      "user_requests",
+      "view_details",
       `Viewed details for request ID ${log.id}`,
       { requestId: log.id }
     );
@@ -169,11 +158,11 @@ const UserRequestLog = () => {
     URL.revokeObjectURL(url);
 
     toast.success("Log entry exported");
-    
+
     // Log user action with corrected parameter order
     LoggingService.logUserAction(
-      "user_requests", 
-      "export_log", 
+      "user_requests",
+      "export_log",
       `Exported log for request ID ${log.id}`,
       { requestId: log.id }
     );
@@ -202,11 +191,11 @@ const UserRequestLog = () => {
         onClick: () => {
           navigator.clipboard.writeText(item.id.toString());
           toast.success("Log ID copied to clipboard");
-          
+
           // Log user action with corrected parameter order
           LoggingService.logUserAction(
-            "user_requests", 
-            "copy_id", 
+            "user_requests",
+            "copy_id",
             `Copied ID ${item.id} to clipboard`,
             { requestId: item.id }
           );
@@ -226,33 +215,44 @@ const UserRequestLog = () => {
       sortable: true,
     },
     { header: "Endpoint", accessorKey: "endpoint" as const },
-    { 
-      header: "Method", 
+    {
+      header: "Method",
       accessorKey: "method" as const,
       cell: (item: UserRequest) => (
-        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-          item.method === 'GET' ? 'bg-blue-100 text-blue-800' :
-          item.method === 'POST' ? 'bg-green-100 text-green-800' :
-          item.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' :
-          item.method === 'DELETE' ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-md text-xs font-medium ${
+            item.method === "GET"
+              ? "bg-blue-100 text-blue-800"
+              : item.method === "POST"
+              ? "bg-green-100 text-green-800"
+              : item.method === "PUT"
+              ? "bg-yellow-100 text-yellow-800"
+              : item.method === "DELETE"
+              ? "bg-red-100 text-red-800"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
           {item.method}
         </span>
       ),
     },
     { header: "User", accessorKey: "user" as const },
     { header: "Timestamp", accessorKey: "timestamp" as const },
-    { 
-      header: "Status", 
+    {
+      header: "Status",
       accessorKey: "status" as const,
       cell: (item: UserRequest) => (
-        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-          item.status < 300 ? 'bg-green-100 text-green-800' :
-          item.status < 400 ? 'bg-blue-100 text-blue-800' :
-          item.status < 500 ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
+        <span
+          className={`px-2 py-1 rounded-md text-xs font-medium ${
+            item.status < 300
+              ? "bg-green-100 text-green-800"
+              : item.status < 400
+              ? "bg-blue-100 text-blue-800"
+              : item.status < 500
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
           {item.status}
         </span>
       ),
@@ -325,7 +325,7 @@ const UserRequestLog = () => {
 
                   <div className="font-semibold">Endpoint:</div>
                   <div>{selectedLog.endpoint}</div>
-                  
+
                   <div className="font-semibold">Method:</div>
                   <div>{selectedLog.method}</div>
 
@@ -334,29 +334,35 @@ const UserRequestLog = () => {
 
                   <div className="font-semibold">Timestamp:</div>
                   <div>{selectedLog.timestamp}</div>
-                  
+
                   <div className="font-semibold">Status:</div>
                   <div>{selectedLog.status}</div>
-                  
+
                   <div className="font-semibold">Duration:</div>
                   <div>{selectedLog.duration}</div>
 
-                  <div className="font-semibold col-span-2">Request Headers:</div>
-                  <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
-                    {JSON.stringify({
-                      "Content-Type": "application/json",
-                      "Authorization": "Bearer [redacted]",
-                      "User-Agent": "Mozilla/5.0"
-                    }, null, 2)}
+                  <div className="font-semibold col-span-2">
+                    Request Headers:
                   </div>
-                  
+                  <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
+                    {JSON.stringify(
+                      {
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer [redacted]",
+                        "User-Agent": "Mozilla/5.0",
+                      },
+                      null,
+                      2
+                    )}
+                  </div>
+
                   <div className="font-semibold col-span-2">Request Body:</div>
                   <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
-                    {selectedLog.method !== 'GET' 
+                    {selectedLog.method !== "GET"
                       ? JSON.stringify({ example: "request data" }, null, 2)
                       : "N/A"}
                   </div>
-                  
+
                   <div className="font-semibold col-span-2">Response Body:</div>
                   <div className="col-span-2 border rounded p-2 bg-gray-50 dark:bg-gray-900 font-mono text-xs">
                     {JSON.stringify({ example: "response data" }, null, 2)}

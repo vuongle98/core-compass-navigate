@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bot } from "@/pages/Bots";
+import { Bot } from "@/types/Bot";
 
 // Define the form schema with conditional fields based on bot type
 const botFormSchema = z.object({
@@ -51,7 +51,9 @@ export function BotForm({
   isLoading = false,
 }: BotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [botType, setBotType] = useState(initialData?.configuration?.updateMethod || "WEBHOOK");
+  const [botType, setBotType] = useState(
+    initialData?.configuration?.updateMethod || "WEBHOOK"
+  );
 
   const form = useForm<Bot>({
     resolver: zodResolver(botFormSchema),

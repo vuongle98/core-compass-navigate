@@ -6,62 +6,57 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BotScheduleItem } from "@/pages/BotSchedule";
+import { Bot, BotScheduledMessage } from "@/types/Bot";
 
 // Define the form schema
 const scheduleFormSchema = z.object({
-  schedule_type: z.enum(["daily", "weekly", "custom"]),
-  time: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
-  days: z.array(z.string()).optional(),
-  custom_cron: z.string().optional(),
-  send_notification: z.boolean().default(false),
+  botId: z.number().min(1, "Bot ID is required"),
+  chatId: z.string().min(1, "Chat ID is required"),
+  messageText: z.string().min(1, "Message text is required"),
+  description: z.string().optional(),
+  isRecurring: z.boolean(),
+  recurrencePattern: z.string().optional(),
+  isSent: z.boolean(),
+  scheduledTime: z.string().min(1, "Scheduled date and time is required"),
 });
 
 interface BotScheduleFormProps {
-  onSubmit: (data: BotScheduleItem) => Promise<void> | void;
+  onSubmit: (data: Partial<BotScheduledMessage>) => Promise<void> | void;
   isLoading?: boolean;
+  botInfo: Bot;
 }
 
 export function BotScheduleForm({
   onSubmit,
   isLoading = false,
+  botInfo,
 }: BotScheduleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<BotScheduleItem>({
+  const form = useForm({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
-      name: "",
-      scheduled: false,
+      botId: botInfo.id,
+      chatId: "",
+      messageText: "",
       description: "",
-      type: "daily",
-      time: "00:00",
-      days: [],
-      custom_cron: "",
-      sendNotification: false,
+      isRecurring: false,
+      recurrencePattern: "",
+      isSent: false,
+      scheduledTime: "",
     },
   });
 
-  const scheduleType = form.watch("type");
+  const isRecurring = form.watch("isRecurring");
 
-  const handleSubmit = async (data: BotScheduleItem) => {
+  const handleSubmit = async (data: Partial<BotScheduledMessage>) => {
     setIsSubmitting(true);
     try {
       await onSubmit(data);
@@ -70,141 +65,81 @@ export function BotScheduleForm({
     }
   };
 
-  const weekdayOptions = [
-    { value: "monday", label: "Monday" },
-    { value: "tuesday", label: "Tuesday" },
-    { value: "wednesday", label: "Wednesday" },
-    { value: "thursday", label: "Thursday" },
-    { value: "friday", label: "Friday" },
-    { value: "saturday", label: "Saturday" },
-    { value: "sunday", label: "Sunday" },
-  ];
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="type"
+          name="botId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Schedule Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a schedule type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>How often should this bot run</FormDescription>
+              <FormLabel>Bot Info</FormLabel>
+              <FormControl>
+                <div className="p-2 border rounded-md">
+                  <p>
+                    <strong>ID:</strong> {botInfo.id}
+                  </p>
+                  <p>
+                    <strong>Name:</strong> {botInfo.name}
+                  </p>
+                  <p>
+                    <strong>Description:</strong> {botInfo.description || "N/A"}
+                  </p>
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {scheduleType !== "custom" && (
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Time to run the bot (24-hour format)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {scheduleType === "weekly" && (
-          <FormField
-            control={form.control}
-            name="days"
-            render={() => (
-              <FormItem>
-                <div className="mb-2">
-                  <FormLabel>Days of the Week</FormLabel>
-                  <FormDescription>
-                    Select which days to run the bot
-                  </FormDescription>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {weekdayOptions.map((day) => (
-                    <FormField
-                      key={day.value}
-                      control={form.control}
-                      name="days"
-                      render={({ field }) => (
-                        <FormItem
-                          key={day.value}
-                          className="flex flex-row items-center space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(day.value)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  const newValue = [
-                                    ...(field.value || []),
-                                    day.value,
-                                  ];
-                                  field.onChange(newValue);
-                                } else {
-                                  const newValue = field.value?.filter(
-                                    (value) => value !== day.value
-                                  );
-                                  field.onChange(newValue);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            {day.label}
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {scheduleType === "custom" && (
-          <FormField
-            control={form.control}
-            name="custom_cron"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Custom Cron Expression</FormLabel>
-                <FormControl>
-                  <Input placeholder="* * * * *" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Enter a valid cron expression (e.g., "0 12 * * 1-5" for
-                  weekdays at noon)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="chatId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Chat ID</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter Chat ID" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
-          name="sendNotification"
+          name="messageText"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message Text</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter message text" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Optional description for the message"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isRecurring"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
               <FormControl>
@@ -213,12 +148,44 @@ export function BotScheduleForm({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Send Notifications</FormLabel>
-                <FormDescription>
-                  Receive notifications when the scheduled task runs
-                </FormDescription>
-              </div>
+              <FormLabel>Is Recurring</FormLabel>
+            </FormItem>
+          )}
+        />
+
+        {isRecurring && (
+          <FormField
+            control={form.control}
+            name="recurrencePattern"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Recurrence Pattern</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter recurrence pattern (e.g., daily, weekly)"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="scheduledTime"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Scheduled Date & Time</FormLabel>
+              <FormControl>
+                <Input
+                  type="datetime-local"
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />

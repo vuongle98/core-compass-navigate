@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -8,8 +7,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { BotForm } from "@/components/bots/BotForm";
 import { ArrowLeft } from "lucide-react";
-import EnhancedApiService from "@/services/EnhancedApiService";
-import { Bot } from "./Bots";
+import { Bot } from "@/types/Bot";
+import BotService from "@/services/BotService";
 
 // Mock data in case API fails
 const mockBots = [
@@ -67,8 +66,7 @@ const BotEdit = () => {
     queryFn: async () => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        const response = await EnhancedApiService.get<Bot>(`/api/v1/bots/${id}`);
-        return response;
+        return await BotService.getBot(parseInt(id));
       } catch (error) {
         console.error(
           "Failed to fetch bot data from API, using mock data:",
@@ -88,7 +86,7 @@ const BotEdit = () => {
     mutationFn: async (data: Partial<Bot>) => {
       if (!id) throw new Error("Bot ID is required");
       try {
-        return await EnhancedApiService.put(`/api/v1/bots/${id}`, data);
+        return await BotService.updateBot(parseInt(id), data);
       } catch (error) {
         console.error(
           "Failed to update bot via API, simulating success:",

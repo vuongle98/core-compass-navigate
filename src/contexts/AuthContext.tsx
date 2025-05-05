@@ -1,10 +1,15 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AuthService from '@/services/AuthService';
-import { toast } from 'sonner';
-import featureFlagService from '@/services/FeatureFlagService';
-import { User } from '@/types/Auth';
-import ServiceRegistry from '@/services/ServiceRegistry';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import AuthService from "@/services/AuthService";
+import { toast } from "sonner";
+import featureFlagService from "@/services/FeatureFlagService";
+import { User } from "@/types/Auth";
+import ServiceRegistry from "@/services/ServiceRegistry";
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +19,10 @@ interface AuthContextType {
   logout: () => void;
   updateUserProfile: (data: Partial<User>) => void;
   resetPassword: (username: string) => Promise<boolean>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,15 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Get user info from the token or stored user data
           const currentUser = AuthService.getCurrentUser();
           setUser(currentUser);
-          
+
           // Update the user in ServiceRegistry
           ServiceRegistry.updateCurrentUser(currentUser);
-          
+
           // Refresh feature flags after login
           await featureFlagService.refreshFlags();
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
         // If there's an error, ensure user is logged out
         AuthService.logout();
       } finally {
@@ -51,27 +59,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<boolean> => {
     setIsLoading(true);
     try {
       // Call the login method from AuthService
       const userData = await AuthService.login(username, password);
       if (userData) {
         setUser(userData);
-        
+
         // Update the user in ServiceRegistry
         ServiceRegistry.updateCurrentUser(userData);
-        
+
         // Refresh feature flags after login
         await featureFlagService.refreshFlags();
-        
+
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       toast.error("Login failed", {
-        description: "Please check your credentials and try again."
+        description: "Please check your credentials and try again.",
       });
       return false;
     } finally {
@@ -82,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     AuthService.logout();
     setUser(null);
-    
+
     // Update the user in ServiceRegistry
     ServiceRegistry.updateCurrentUser(null);
   };
@@ -91,10 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-      
+
       // Update stored user data in AuthService
       AuthService.updateCurrentUser(updatedUser);
-      
+
       // Update the user in ServiceRegistry
       ServiceRegistry.updateCurrentUser(updatedUser);
     }
@@ -104,33 +115,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await AuthService.resetPassword(username);
       toast.success("Password reset email sent", {
-        description: "Please check your inbox for instructions"
+        description: "Please check your inbox for instructions",
       });
       return true;
     } catch (error) {
-      console.error('Reset password error:', error);
+      console.error("Reset password error:", error);
       toast.error("Failed to send reset email", {
-        description: "Please try again later"
+        description: "Please try again later",
       });
       return false;
     }
   };
 
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<boolean> => {
     try {
-      const data = { 
-        currentPassword, 
-        newPassword, 
-        confirmPassword: newPassword 
+      const data = {
+        currentPassword,
+        newPassword,
+        confirmPassword: newPassword,
       };
-      
+
       await AuthService.changePassword(data);
       toast.success("Password changed successfully");
       return true;
     } catch (error) {
-      console.error('Change password error:', error);
+      console.error("Change password error:", error);
       toast.error("Failed to change password", {
-        description: "Please check your current password and try again"
+        description: "Please check your current password and try again",
       });
       return false;
     }
@@ -146,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateUserProfile,
         resetPassword,
-        changePassword
+        changePassword,
       }}
     >
       {children}
@@ -157,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

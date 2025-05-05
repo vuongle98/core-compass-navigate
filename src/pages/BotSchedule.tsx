@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -9,20 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BotScheduleForm } from "@/components/bots/BotScheduleForm";
 import { ArrowLeft } from "lucide-react";
 import EnhancedApiService from "@/services/EnhancedApiService";
-import { Bot } from "./Bots";
-
-export interface BotScheduleItem {
-  id: string;
-  name: string;
-  scheduled?: boolean;
-  description?: string;
-  type?: string;
-  recussion?: boolean;
-  time?: string;
-  days?: string[];
-  custom_cron?: string;
-  sendNotification?: boolean;
-}
+import { Bot, BotScheduledMessage } from "@/types/Bot";
 
 const BotSchedule = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,17 +25,20 @@ const BotSchedule = () => {
     queryKey: ["bot-basic", id],
     queryFn: async () => {
       if (!id) throw new Error("Bot ID is required");
-      const response = await EnhancedApiService.get<Bot>(`/api/bots/${id}`);
+      const response = await EnhancedApiService.get<Bot>(`/api/v1/bots/${id}`);
       return response;
     },
   });
 
-  const handleSubmit = async (scheduleData: BotScheduleItem) => {
+  const handleSubmit = async (scheduleData: BotScheduledMessage) => {
     if (!id) return;
 
     setIsSubmitting(true);
     try {
-      await EnhancedApiService.post(`/api/bots/${id}/schedule`, scheduleData);
+      await EnhancedApiService.post(
+        `/api/v1/bots/${id}/schedule`,
+        scheduleData
+      );
       toast.success("Bot scheduled successfully");
       navigate(`/bots`);
     } catch (err) {
@@ -93,7 +82,7 @@ const BotSchedule = () => {
               Failed to load bot data. Please try again.
             </div>
           ) : (
-            <BotScheduleForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+            <BotScheduleForm botInfo={bot} onSubmit={handleSubmit} isLoading={isSubmitting} />
           )}
         </div>
       </main>

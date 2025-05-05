@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -8,14 +7,7 @@ import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
-import { File as LucideFile, Download, Eye, Trash2, Share2 } from "lucide-react";
-import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { File as LucideFile } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,15 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import LoggingService from "@/services/LoggingService";
-
-interface FileItem {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadDate: string;
-  url: string;
-}
+import { FileItem } from "@/types/Storage";
 
 // Define a type for filter values
 interface QueryFilters {
@@ -107,7 +91,12 @@ const Files = () => {
           // Simulate API call to upload file
           // In a real app, you'd send the file to your server here
           // await apiService.uploadFile(file);
-          LoggingService.logUserAction('files', 'upload', 'File uploaded successfully', { filename, size: uploadedFile.size });
+          LoggingService.logUserAction(
+            "files",
+            "upload",
+            "File uploaded successfully",
+            { filename, size: uploadedFile.size }
+          );
         } catch (error) {
           console.error("File upload error:", error);
           toast.error(`Failed to upload ${filename}`);
@@ -174,7 +163,12 @@ const Files = () => {
       // Simulate API call to delete file
       // In a real app, you'd call your API to delete the file from the server
       // await apiService.deleteFile(file.id);
-      LoggingService.logUserAction('files', 'delete', 'File deleted successfully', { id: file.id, name: file.name });
+      LoggingService.logUserAction(
+        "files",
+        "delete",
+        "File deleted successfully",
+        { id: file.id, name: file.name }
+      );
     } catch (error) {
       console.error("File delete error:", error);
       toast.error(`Failed to delete ${file.name}`);
@@ -188,7 +182,10 @@ const Files = () => {
       // Simulate API call to view file
       // In a real app, you'd open the file in a new tab or display it in a viewer
       // await apiService.viewFile(file.id);
-      LoggingService.logUserAction('files', 'view', 'File viewed', { id: file.id, name: file.name });
+      LoggingService.logUserAction("files", "view", "File viewed", {
+        id: file.id,
+        name: file.name,
+      });
     } catch (error) {
       console.error("File view error:", error);
       toast.error(`Failed to view ${file.name}`);
@@ -202,7 +199,10 @@ const Files = () => {
       // Simulate API call to download file
       // In a real app, you'd trigger a download from your server
       // const blob = await apiService.downloadFile(file.id);
-      LoggingService.logUserAction('files', 'download', 'File downloaded', { id: file.id, name: file.name });
+      LoggingService.logUserAction("files", "download", "File downloaded", {
+        id: file.id,
+        name: file.name,
+      });
 
       // Create a temporary URL for the blob and trigger the download
       // const url = window.URL.createObjectURL(new Blob([blob.data]));
@@ -235,7 +235,11 @@ const Files = () => {
       // Simulate API call to share file
       // In a real app, you'd call your API to share the file with the selected options
       // await apiService.shareFile(selectedFile.id, shareType);
-      LoggingService.logUserAction('files', 'share', 'File shared', { id: selectedFile.id, name: selectedFile.name, shareType });
+      LoggingService.logUserAction("files", "share", "File shared", {
+        id: selectedFile.id,
+        name: selectedFile.name,
+        shareType,
+      });
     } catch (error) {
       console.error("File share error:", error);
       toast.error(`Failed to share ${selectedFile.name}`);
@@ -273,9 +277,7 @@ const Files = () => {
     {
       header: "Actions",
       accessorKey: "actions",
-      cell: (file: FileItem) => (
-        <ActionsMenu actions={getActionItems(file)} />
-      ),
+      cell: (file: FileItem) => <ActionsMenu actions={getActionItems(file)} />,
     },
   ];
 
@@ -347,7 +349,11 @@ const Files = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setIsShareDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setIsShareDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" onClick={handleShareConfirm}>

@@ -36,18 +36,7 @@ import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-
-interface Notification {
-  id: number;
-  title: string;
-  channel: string;
-  audience: string;
-  scheduledFor: string;
-  status: string;
-  selected?: boolean;
-  content?: string;
-  priority?: "low" | "medium" | "high";
-}
+import { Notification } from "@/types/Notification";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Array<Notification>>([
