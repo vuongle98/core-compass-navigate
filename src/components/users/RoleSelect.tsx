@@ -45,7 +45,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 
         // Transform roles to options format
         const roleOptions = roles.map((role: Role) => ({
-          value: role.id.toString(),
+          value: role.id.toString(), // Ensure this is never empty
           label: (
             <div>
               <div className="font-semibold">{role.name}</div>

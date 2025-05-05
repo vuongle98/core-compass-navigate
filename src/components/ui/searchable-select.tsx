@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -72,13 +73,20 @@ export function SearchableSelect({
   const filteredOptions =
     !onSearch && debouncedSearchQuery
       ? options.filter(
-          (option) =>
-            String(option.label)
+          (option) => {
+            // Ensure we're not working with empty values
+            if (!option.value) {
+              console.warn("SearchableSelect received an option with empty value");
+              return false;
+            }
+            
+            return String(option.label)
               .toLowerCase()
               .includes(debouncedSearchQuery.toLowerCase()) ||
             option.value
               .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase())
+              .includes(debouncedSearchQuery.toLowerCase());
+          }
         )
       : options;
 
