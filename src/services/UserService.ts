@@ -107,11 +107,12 @@ class UserService {
    * @returns The updated user profile
    * @throws Error if the update fails
    */
-  static async updateProfile(id: number, profileData: Partial<UserProfile>): Promise<UserProfile> {
+  static async updateProfile(id: number | string, profileData: Partial<UserProfile>): Promise<UserProfile> {
     try {
-      LoggingService.info("user_service", "update_profile", `Updating profile for user ${id}`);
+      const userId = typeof id === 'number' ? id : parseInt(id);
+      LoggingService.info("user_service", "update_profile", `Updating profile for user ${userId}`);
       return await EnhancedApiService.put<UserProfile>(
-        `${this.API_ENDPOINT}/${id}/profile`,
+        `${this.API_ENDPOINT}/${userId}/profile`,
         profileData
       );
     } catch (error) {

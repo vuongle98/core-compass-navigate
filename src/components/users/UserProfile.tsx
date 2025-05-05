@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -245,7 +244,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
               <TabsContent value="roles">
                 <div className="space-y-4">
-                  <UserRoleAssignment userId={user.id} initialRoles={user.roles} />
+                  <UserRoleAssignment userId={userId.toString()} initialRoles={user.roles} />
                 </div>
               </TabsContent>
             </Tabs>
