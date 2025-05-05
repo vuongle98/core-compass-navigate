@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { User } from "@/types/Auth";
+import { Role, User } from "@/types/Auth";
 import RoleSelect from "./RoleSelect";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -39,7 +39,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   onClose,
   onCreate,
 }) => {
-  const [roles, setRoles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateUserFormValues>({

@@ -1,6 +1,4 @@
-
-import React from "react";
-import { Bot, CheckCircle2, Calendar, Clock } from "lucide-react";
+import { Bot, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,11 +14,11 @@ interface BotStatsCardsProps {
   totalMessages?: number;
 }
 
-export function BotStatsCards({ 
-  totalBots, 
-  activeBots, 
-  totalUsers, 
-  totalMessages 
+export function BotStatsCards({
+  totalBots,
+  activeBots,
+  totalUsers,
+  totalMessages,
 }: BotStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
@@ -36,7 +34,7 @@ export function BotStatsCards({
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Active Bots</CardTitle>
@@ -49,7 +47,7 @@ export function BotStatsCards({
           </div>
         </CardContent>
       </Card>
-      
+
       {/* <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Total Users</CardTitle>

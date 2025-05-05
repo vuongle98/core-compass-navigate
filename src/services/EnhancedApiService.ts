@@ -137,7 +137,11 @@ class EnhancedApiService {
     LoggingService.info("api", "post", `POST ${url}`);
 
     try {
-      const response = await this.instance.post<ApiResponse<T>>(url, data, config);
+      const response = await this.instance.post<ApiResponse<T>>(
+        url,
+        data,
+        config
+      );
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "post_failed", `POST ${url} failed`, error);
@@ -179,7 +183,11 @@ class EnhancedApiService {
     LoggingService.info("api", "patch", `PATCH ${url}`);
 
     try {
-      const response = await this.instance.patch<ApiResponse<T>>(url, data, config);
+      const response = await this.instance.patch<ApiResponse<T>>(
+        url,
+        data,
+        config
+      );
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "patch_failed", `PATCH ${url} failed`, error);

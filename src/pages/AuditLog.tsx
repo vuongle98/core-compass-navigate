@@ -220,7 +220,7 @@ const AuditLog = () => {
     { header: "IP Address", accessorKey: "ip" },
     {
       header: "Actions",
-      accessorKey: "id" as keyof AuditLogItem,
+      accessorKey: "actions" as keyof AuditLogItem,
       cell: (item: AuditLogItem) => (
         <ActionsMenu
           actions={[

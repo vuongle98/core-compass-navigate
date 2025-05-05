@@ -1,4 +1,3 @@
-
 import { ChangeEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -30,35 +29,37 @@ export function FileUploader({
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setError(null);
-    
+
     if (!e.target.files || e.target.files.length === 0) {
       return;
     }
-    
+
     const selectedFile = e.target.files[0];
-    
+
     // Check file type
     if (allowedTypes.length > 0 && !allowedTypes.includes(selectedFile.type)) {
-      setError(`File type not supported. Please upload: ${allowedTypes.join(", ")}`);
+      setError(
+        `File type not supported. Please upload: ${allowedTypes.join(", ")}`
+      );
       return;
     }
-    
+
     // Check file size
     const fileSizeInMB = selectedFile.size / (1024 * 1024);
     if (fileSizeInMB > maxSizeMB) {
       setError(`File too large. Maximum size: ${maxSizeMB}MB`);
       return;
     }
-    
+
     setFile(selectedFile);
   };
 
   const handleUpload = async () => {
     if (!file) return;
-    
+
     setIsUploading(true);
     setProgress(0);
-    
+
     // Simulate upload progress
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -70,17 +71,17 @@ export function FileUploader({
         return newProgress;
       });
     }, 300);
-    
+
     try {
       // Replace with actual upload logic
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       // Call the callback function with the file
       onFileUpload(file);
-      
+
       toast.success("File uploaded successfully");
       setProgress(100);
-      
+
       // Reset after successful upload
       setTimeout(() => {
         setFile(null);
@@ -114,7 +115,8 @@ export function FileUploader({
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <FileUp className="w-10 h-10 mb-3 text-gray-400" />
               <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Click to upload</span> or drag and drop
+                <span className="font-semibold">Click to upload</span> or drag
+                and drop
               </p>
               <p className="text-xs text-gray-500">
                 {allowedTypes.join(", ")} (Max: {maxSizeMB}MB)
@@ -172,7 +174,7 @@ export function FileUploader({
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {progress > 0 && (
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs text-gray-500">
@@ -182,17 +184,13 @@ export function FileUploader({
               <Progress value={progress} className="h-1" />
             </div>
           )}
-          
+
           {!isUploading && progress === 0 && (
-            <Button
-              size="sm"
-              className="w-full mt-2"
-              onClick={handleUpload}
-            >
+            <Button size="sm" className="w-full mt-2" onClick={handleUpload}>
               Upload
             </Button>
           )}
-          
+
           {progress === 100 && (
             <div className="flex items-center text-green-600 text-sm mt-2">
               <CheckCircle className="h-4 w-4 mr-1" />

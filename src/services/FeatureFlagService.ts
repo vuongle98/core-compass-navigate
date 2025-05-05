@@ -1,4 +1,3 @@
-
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 import { FeatureFlag } from "@/types/FeatureFlag";
@@ -7,7 +6,7 @@ import { FeatureFlag } from "@/types/FeatureFlag";
  * Service for feature flags operations
  */
 class FeatureFlagService {
-  private static API_ENDPOINT = "/api/feature-flags";
+  private static API_ENDPOINT = "/api/featureFlag";
   private static cachedFlags: Record<string, boolean> = {};
 
   /**
@@ -16,8 +15,14 @@ class FeatureFlagService {
    */
   static async getAll(): Promise<FeatureFlag[]> {
     try {
-      LoggingService.info("feature_flags", "get_all", "Fetching all feature flags");
-      return await EnhancedApiService.get<FeatureFlag[]>(this.API_ENDPOINT);
+      LoggingService.info(
+        "feature_flags",
+        "get_all",
+        "Fetching all feature flags"
+      );
+      return (
+        await EnhancedApiService.getPaginated<FeatureFlag>(this.API_ENDPOINT)
+      ).content;
     } catch (error) {
       LoggingService.error(
         "feature_flags",
@@ -36,8 +41,14 @@ class FeatureFlagService {
    */
   static async getByKey(key: string): Promise<FeatureFlag | undefined> {
     try {
-      LoggingService.info("feature_flags", "get_by_key", `Fetching feature flag with key: ${key}`);
-      return await EnhancedApiService.get<FeatureFlag>(`${this.API_ENDPOINT}/${key}`);
+      LoggingService.info(
+        "feature_flags",
+        "get_by_key",
+        `Fetching feature flag with key: ${key}`
+      );
+      return await EnhancedApiService.get<FeatureFlag>(
+        `${this.API_ENDPOINT}/${key}`
+      );
     } catch (error) {
       LoggingService.error(
         "feature_flags",
@@ -76,12 +87,16 @@ class FeatureFlagService {
    * @param roles User roles
    * @returns Whether the feature is enabled
    */
-  static isFeatureEnabled(key: string, environment: string, roles: string[]): boolean {
+  static isFeatureEnabled(
+    key: string,
+    environment: string,
+    roles: string[]
+  ): boolean {
     // Check cached flags first
     if (this.cachedFlags[key] !== undefined) {
       return this.cachedFlags[key];
     }
-    
+
     // Default to false if not found
     return false;
   }
@@ -92,13 +107,17 @@ class FeatureFlagService {
   static async refreshFlags(): Promise<void> {
     try {
       const flags = await this.getAll();
-      
+
       // Update cache
-      flags.forEach(flag => {
+      flags.forEach((flag) => {
         this.cachedFlags[flag.key] = flag.isActive;
       });
-      
-      LoggingService.info("feature_flags", "refresh_flags", "Refreshed feature flags");
+
+      LoggingService.info(
+        "feature_flags",
+        "refresh_flags",
+        "Refreshed feature flags"
+      );
     } catch (error) {
       LoggingService.error(
         "feature_flags",
@@ -115,10 +134,20 @@ class FeatureFlagService {
    * @param isActive True to enable, false to disable
    * @returns The updated feature flag
    */
-  static async toggle(id: number, isActive: boolean): Promise<FeatureFlag | undefined> {
+  static async toggle(
+    id: number,
+    isActive: boolean
+  ): Promise<FeatureFlag | undefined> {
     try {
-      LoggingService.info("feature_flags", "toggle", `Toggling feature flag ${id} to ${isActive}`);
-      return await EnhancedApiService.put<FeatureFlag>(`${this.API_ENDPOINT}/${id}/toggle`, { isActive });
+      LoggingService.info(
+        "feature_flags",
+        "toggle",
+        `Toggling feature flag ${id} to ${isActive}`
+      );
+      return await EnhancedApiService.put<FeatureFlag>(
+        `${this.API_ENDPOINT}/${id}/toggle`,
+        { isActive }
+      );
     } catch (error) {
       LoggingService.error(
         "feature_flags",

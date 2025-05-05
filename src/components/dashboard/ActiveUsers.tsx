@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,10 @@ export function ActiveUsers({ users, className }: ActiveUsersProps) {
                 <Avatar>
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback>
-                    {user.name.split(" ").map(n => n[0]).join("")}
+                    {user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -40,19 +42,24 @@ export function ActiveUsers({ users, className }: ActiveUsersProps) {
                 </div>
               </div>
               <div className="flex items-center">
-                <span 
+                <span
                   className={cn(
                     "h-2 w-2 rounded-full mr-2",
-                    user.status === "online" ? "bg-green-500" : 
-                    user.status === "idle" ? "bg-yellow-500" : "bg-gray-300"
-                  )} 
+                    user.status === "online"
+                      ? "bg-green-500"
+                      : user.status === "idle"
+                      ? "bg-yellow-500"
+                      : "bg-gray-300"
+                  )}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {user.status === "online" 
-                    ? "Online" 
-                    : user.status === "idle" 
-                    ? "Idle" 
-                    : user.lastActive ? `Last seen ${user.lastActive}` : "Offline"}
+                  {user.status === "online"
+                    ? "Online"
+                    : user.status === "idle"
+                    ? "Idle"
+                    : user.lastActive
+                    ? `Last seen ${user.lastActive}`
+                    : "Offline"}
                 </span>
               </div>
             </li>

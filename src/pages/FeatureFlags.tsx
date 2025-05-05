@@ -204,10 +204,10 @@ const FeatureFlags = () => {
         );
       },
     },
-    { 
-      header: "Last Updated", 
+    {
+      header: "Last Updated",
       accessorKey: "lastUpdated",
-      cell: (item: FeatureFlag) => item.lastUpdated || "N/A"
+      cell: (item: FeatureFlag) => item.lastUpdated || "N/A",
     },
   ];
 
@@ -268,7 +268,9 @@ const FeatureFlags = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-xl font-bold">
                     {
-                      featureFlags.filter((f) => f.environments?.includes("All")).length
+                      featureFlags.filter((f) =>
+                        f.environments?.includes("All")
+                      ).length
                     }
                   </span>
                   <span className="text-xs text-muted-foreground">All</span>
@@ -276,7 +278,7 @@ const FeatureFlags = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-xl font-bold">
                     {
-                      featureFlags.filter((f) => 
+                      featureFlags.filter((f) =>
                         f.environments?.includes("Production")
                       ).length
                     }

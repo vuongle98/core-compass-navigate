@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -72,23 +71,23 @@ export function RecentLoginsWidget({ className }: RecentLoginsWidgetProps) {
     const loginTime = new Date(timestamp);
     const diffMs = now.getTime() - loginTime.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return "just now";
     if (diffMins < 60) return `${diffMins} min ago`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} hr ago`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   }
 
   function getDeviceIcon(device: string) {
     switch (device) {
-      case 'mobile':
-      case 'tablet':
+      case "mobile":
+      case "tablet":
         return <Smartphone className="h-4 w-4 text-muted-foreground" />;
-      case 'desktop':
+      case "desktop":
       default:
         return <Laptop className="h-4 w-4 text-muted-foreground" />;
     }
@@ -106,7 +105,10 @@ export function RecentLoginsWidget({ className }: RecentLoginsWidgetProps) {
               <Avatar>
                 <AvatarImage src={login.userAvatar} />
                 <AvatarFallback>
-                  {login.userName.split(" ").map(n => n[0]).join("")}
+                  {login.userName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +65,7 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
   function formatEventTime(event: Event): string {
     const start = new Date(event.startTime);
     const startFormatted = format(start, "MMM d, h:mm a");
-    
+
     if (event.endTime) {
       const end = new Date(event.endTime);
       // If same day, only show time for end
@@ -76,7 +75,7 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
         return `${startFormatted} - ${format(end, "MMM d, h:mm a")}`;
       }
     }
-    
+
     return startFormatted;
   }
 
@@ -85,25 +84,25 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
     const now = new Date();
     const diffMs = eventTime.getTime() - now.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 60) return `in ${diffMins} min`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `in ${diffHours} hr`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
-    return `in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+    return `in ${diffDays} day${diffDays > 1 ? "s" : ""}`;
   }
 
   function getPriorityBadge(priority?: EventPriority) {
     if (!priority) return null;
-    
+
     const classes = {
       high: "bg-red-100 text-red-800 border-red-200",
       medium: "bg-amber-100 text-amber-800 border-amber-200",
       low: "bg-green-100 text-green-800 border-green-200",
     };
-    
+
     return (
       <Badge variant="outline" className={cn(classes[priority])}>
         {priority}
@@ -113,14 +112,14 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
 
   function getStatusBadge(status?: EventStatus) {
     if (!status) return null;
-    
+
     const classes = {
-      "pending": "bg-blue-100 text-blue-800 border-blue-200",
+      pending: "bg-blue-100 text-blue-800 border-blue-200",
       "in-progress": "bg-purple-100 text-purple-800 border-purple-200",
-      "completed": "bg-green-100 text-green-800 border-green-200",
-      "cancelled": "bg-gray-100 text-gray-800 border-gray-200",
+      completed: "bg-green-100 text-green-800 border-green-200",
+      cancelled: "bg-gray-100 text-gray-800 border-gray-200",
     };
-    
+
     return (
       <Badge variant="outline" className={cn(classes[status])}>
         {status}
@@ -156,12 +155,16 @@ export function UpcomingEventsWidget({ className }: UpcomingEventsWidgetProps) {
                     </div>
                   </div>
                   {event.description && (
-                    <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {event.description}
+                    </p>
                   )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     <span>{formatEventTime(event)}</span>
-                    <span className="font-medium">({getEventTimeFromNow(event.startTime)})</span>
+                    <span className="font-medium">
+                      ({getEventTimeFromNow(event.startTime)})
+                    </span>
                   </div>
                 </div>
               </div>

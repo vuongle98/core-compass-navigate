@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
-import EnhancedApiService, {
-  ApiResponse,
-  PaginatedData,
-} from "@/services/EnhancedApiService";
+import EnhancedApiService from "@/services/EnhancedApiService";
 import { Permission } from "@/types/Auth";
 import useDebounce from "@/hooks/use-debounce";
+import useApiQuery from "@/hooks/use-api-query";
 
 interface PermissionSelectProps {
   value: Permission[];
@@ -30,11 +28,36 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     []
   );
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [options, setOptions] = useState<Option[]>([]);
+  const [options, setOptions] = useState<Option<Permission>[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
+  const {
+    data: logs,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalItems,
+    error,
+  } = useApiQuery<Permission>({
+    endpoint: "/api/permission",
+    queryKey: ["permission-select"],
+    initialPageSize: 10,
+    persistFilters: true,
+
+    onError: (err) => {
+      console.error("Failed to fetch audit logs:", err);
+      // toast.error("Failed to load audit logs, using cached data", {
+      //   description: "Could not connect to the server. Please try again later.",
+      // });
+    },
+  });
 
   // Fetch permissions with search
   useEffect(() => {
@@ -55,15 +78,17 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
         // Transform permissions to options format - Ensure all values are non-empty strings
         const permissionOptions = permissions.map((permission: Permission) => {
           // Generate a safe value - ensure it's never empty
-          const value = permission.id ? 
-            permission.id.toString() : 
-            `permission-${permission.name || 'unnamed'}-${Date.now()}`;
-            
+          const value = permission.id
+            ? permission.id.toString()
+            : `permission-${permission.name || "unnamed"}-${Date.now()}`;
+
           return {
             value,
             label: (
               <div>
-                <div className="font-semibold">{permission.name || "Unnamed Permission"}</div>
+                <div className="font-semibold">
+                  {permission.name || "Unnamed Permission"}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {permission.description || "No description"}
                 </div>
@@ -118,15 +143,17 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   // Convert current value to options format - Ensure all values are non-empty strings
   const selectedOptions = value.map((permission) => {
     // Generate a safe value - ensure it's never empty
-    const value = permission.id ? 
-      permission.id.toString() : 
-      `permission-${permission.name || 'unnamed'}-${Date.now()}`;
-      
+    const value = permission.id
+      ? permission.id.toString()
+      : `permission-${permission.name || "unnamed"}-${Date.now()}`;
+
     return {
       value,
       label: (
         <div>
-          <div className="font-semibold">{permission.name || "Unnamed Permission"}</div>
+          <div className="font-semibold">
+            {permission.name || "Unnamed Permission"}
+          </div>
           <div className="text-xs text-muted-foreground">
             {permission.description || "No description"}
           </div>
@@ -137,13 +164,12 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   });
 
   // Handle selection change
-  const handleChange = (selected: Option[] | null) => {
+  const handleSelectChange = (selected: Option<Permission>[] | null) => {
     if (!selected) return;
 
     // Convert selected options back to Permission objects
-    const selectedPermissions = selected.map(
-      (option) => option.original as Permission
-    );
+    const selectedPermissions = selected.map((option) => option.original);
+
     // Convert to numbers if they're not already
     const numericValues = selectedPermissions.map((v) =>
       typeof v.id === "string" ? parseInt(v.id, 10) : (v.id as number)
@@ -154,6 +180,10 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
   // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+  };
+
+  const loadMorePermissions = () => {
+    console.log("load more perm");
   };
 
   return (
@@ -168,7 +198,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
           ),
         ]}
         value={selectedOptions}
-        onChange={handleChange}
+        onChange={handleSelectChange}
         placeholder={
           initialLoaded ? "Select permissions..." : "Loading permissions..."
         }
@@ -178,8 +208,11 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
         maxHeight={400}
         showSelectedTags={true}
         onSearch={handleSearch}
+        onLoadMore={loadMorePermissions}
         isLoading={isLoading}
+        hasMore={true}
         emptyMessage="No permissions found"
+        setPage={setPage}
       />
     </div>
   );

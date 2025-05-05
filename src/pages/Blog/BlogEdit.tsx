@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -80,7 +79,7 @@ const BlogEdit = () => {
           description="Update your blog post content and settings"
           showAddButton={false}
         />
-        
+
         {loading ? (
           <div className="mt-4 space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -89,9 +88,9 @@ const BlogEdit = () => {
           </div>
         ) : post ? (
           <div className="mt-4">
-            <BlogPostForm 
-              initialData={post} 
-              onSubmit={handleSubmit} 
+            <BlogPostForm
+              initialData={post}
+              onSubmit={handleSubmit}
               isLoading={isSubmitting}
             />
           </div>

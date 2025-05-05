@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
@@ -12,13 +11,13 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  description, 
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  description,
   change,
-  className 
+  className,
 }: StatCardProps) {
   return (
     <Card className={cn("overflow-hidden", className)}>
@@ -31,12 +30,19 @@ export function StatCard({
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}
-        {typeof change !== 'undefined' && (
-          <div className={cn(
-            "text-xs font-medium mt-1",
-            change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-muted-foreground"
-          )}>
-            {change > 0 ? "+" : ""}{change}% from last period
+        {typeof change !== "undefined" && (
+          <div
+            className={cn(
+              "text-xs font-medium mt-1",
+              change > 0
+                ? "text-green-500"
+                : change < 0
+                ? "text-red-500"
+                : "text-muted-foreground"
+            )}
+          >
+            {change > 0 ? "+" : ""}
+            {change}% from last period
           </div>
         )}
       </CardContent>

@@ -73,7 +73,7 @@ const Profile = () => {
     try {
       if (user?.id) {
         await EnhancedApiService.put(`/api/user/${user.id}/profile`, values);
-        
+
         // Update local user data
         if (updateUser && user) {
           updateUser({
@@ -85,10 +85,10 @@ const Profile = () => {
               lastName: values.lastName,
               phone: values.phone,
               address: values.address,
-            }
+            },
           });
         }
-        
+
         toast.success("Profile updated successfully");
         setIsEditing(false);
       } else {
@@ -102,7 +102,6 @@ const Profile = () => {
     }
   };
 
-  
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -120,7 +119,10 @@ const Profile = () => {
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <Avatar className="h-24 w-24 border-2 border-primary/10">
                     {avatarUrl ? (
-                      <AvatarImage src={avatarUrl} alt={user?.username || "User"} />
+                      <AvatarImage
+                        src={avatarUrl}
+                        alt={user?.username || "User"}
+                      />
                     ) : (
                       <AvatarFallback className="text-xl">
                         {user?.username?.substring(0, 2) || "U"}
@@ -128,25 +130,36 @@ const Profile = () => {
                     )}
                   </Avatar>
                   <div className="text-center">
-                    <h3 className="text-lg font-medium">{user?.username || "User"}</h3>
+                    <h3 className="text-lg font-medium">
+                      {user?.username || "User"}
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       {user?.email || ""}
                     </p>
                   </div>
-                  
+
                   <div className="w-full pt-3">
                     <div className="text-sm space-y-2">
                       <div className="flex justify-between py-1 border-b">
                         <span className="text-muted-foreground">Role</span>
-                        <span className="font-medium">{user?.roles.map((role) => role.name).join(", ") || ""}</span>
+                        <span className="font-medium">
+                          {user?.roles.map((role) => role.name).join(", ") ||
+                            ""}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1 border-b">
                         <span className="text-muted-foreground">Join Date</span>
-                        <span className="font-medium">{user?.joinDate || ""}</span>
+                        <span className="font-medium">
+                          {user?.joinDate || ""}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1 border-b">
-                        <span className="text-muted-foreground">Last Login</span>
-                        <span className="font-medium">{user?.lastLogin || ""}</span>
+                        <span className="text-muted-foreground">
+                          Last Login
+                        </span>
+                        <span className="font-medium">
+                          {user?.lastLogin || ""}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -154,7 +167,7 @@ const Profile = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="md:col-span-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
@@ -171,7 +184,6 @@ const Profile = () => {
                 )}
               </CardHeader>
               <CardContent>
-                
                 {isEditing ? (
                   <Form {...form}>
                     <form
@@ -206,7 +218,7 @@ const Profile = () => {
                           )}
                         />
                       </div>
-                      
+
                       <FormField
                         control={form.control}
                         name="email"
@@ -220,7 +232,7 @@ const Profile = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <div className="grid gap-4 md:grid-cols-2">
                         <FormField
                           control={form.control}
@@ -249,7 +261,7 @@ const Profile = () => {
                           )}
                         />
                       </div>
-                      
+
                       <div className="flex justify-end space-x-2 pt-4">
                         <Button
                           variant="outline"
@@ -278,26 +290,28 @@ const Profile = () => {
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">First Name</Label>
+                        <Label className="text-muted-foreground">
+                          First Name
+                        </Label>
                         <p className="font-medium">
                           {user?.profile?.firstName || "-"}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">Last Name</Label>
+                        <Label className="text-muted-foreground">
+                          Last Name
+                        </Label>
                         <p className="font-medium">
                           {user?.profile?.lastName || "-"}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-1">
                       <Label className="text-muted-foreground">Email</Label>
-                      <p className="font-medium">
-                        {user?.email || "-"}
-                      </p>
+                      <p className="font-medium">{user?.email || "-"}</p>
                     </div>
-                    
+
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">Phone</Label>

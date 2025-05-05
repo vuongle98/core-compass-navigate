@@ -3,6 +3,7 @@ import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import { Role } from "@/types/Auth";
 import useDebounce from "@/hooks/use-debounce";
+import RoleService from "@/services/RoleService";
 
 interface RoleSelectProps {
   value: Role[];
@@ -25,7 +26,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 }) => {
   const [initialRoles, setInitialRoles] = useState<Role[]>([]);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [options, setOptions] = useState<Option[]>([]);
+  const [options, setOptions] = useState<Option<Role>[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,24 +37,26 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     const fetchRoles = async () => {
       try {
         setIsLoading(true);
-        const response = await EnhancedApiService.getPaginated<Role>("/api/role", {
-          params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {},
-        });
+        const response = await RoleService.getRoles(
+          debouncedSearchQuery ? { search: debouncedSearchQuery } : {}
+        );
 
         const roles = response.content || [];
 
         // Transform roles to options format - Ensure all values are non-empty strings
         const roleOptions = roles.map((role: Role) => {
           // Generate a safe value - ensure it's never empty
-          const value = role.id ? 
-            role.id.toString() : 
-            `role-${role.name || 'unnamed'}-${Date.now()}`;
-          
+          const value = role.id
+            ? role.id.toString()
+            : `role-${role.name || "unnamed"}-${Date.now()}`;
+
           return {
             value,
             label: (
               <div>
-                <div className="font-semibold">{role.name || "Unnamed Role"}</div>
+                <div className="font-semibold">
+                  {role.name || "Unnamed Role"}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {role.description || "No description"}
                 </div>
@@ -106,16 +109,18 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   // Convert current value to options format - Ensure all values are non-empty strings
   const selectedOptions = value.map((role) => {
     // Generate a safe value - ensure it's never empty
-    const value = role.id ? 
-      role.id.toString() : 
-      `role-${role.name || 'unnamed'}-${Date.now()}`;
-    
+    const value = role.id
+      ? role.id.toString()
+      : `role-${role.name || "unnamed"}-${Date.now()}`;
+
     return {
       value,
       label: (
         <div>
           <div className="font-semibold">{role.name || "Unnamed Role"}</div>
-          <div className="text-xs text-muted-foreground">{role.description || "No description"}</div>
+          <div className="text-xs text-muted-foreground">
+            {role.description || "No description"}
+          </div>
         </div>
       ),
       original: role,
@@ -123,7 +128,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
   });
 
   // Handle selection change
-  const handleChange = (selected: Option[] | null) => {
+  const handleChange = (selected: Option<Role>[] | null) => {
     if (!selected) return;
 
     // Convert selected options back to Role objects
@@ -161,6 +166,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
         showSelectedTags={true}
         onSearch={handleSearch}
         isLoading={isLoading}
+        setPage={(page: number) => {}}
         emptyMessage="No roles found"
       />
     </div>

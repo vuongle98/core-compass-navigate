@@ -1,4 +1,3 @@
-
 export interface Role {
   id: number;
   code: string;
@@ -51,6 +50,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   name?: string; // Adding name property to User interface
+  roleIds?: number[];
 }
 
 export interface UserPermissions {

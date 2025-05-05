@@ -230,7 +230,7 @@ const EndpointSecures = () => {
               setSearchTerm("");
               refresh();
             }}
-            className="mt-2"
+            className="mt-4"
           />
         </PageHeader>
 

@@ -1,5 +1,3 @@
-
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bot } from "@/types/Bot";
@@ -18,7 +16,9 @@ export function BotInfo({ bot }: BotInfoProps) {
             <dd className="mt-1 text-lg">{bot.name}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-muted-foreground">Status</dt>
+            <dt className="text-sm font-medium text-muted-foreground">
+              Status
+            </dt>
             <dd className="mt-1">
               <Badge
                 variant={
@@ -39,18 +39,28 @@ export function BotInfo({ bot }: BotInfoProps) {
               <Badge variant="outline">{bot.configuration?.updateMethod}</Badge>
             </dd>
           </div>
-          {bot.configuration?.updateMethod === "WEBHOOK" && bot.configuration?.webhookUrl && (
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Webhook URL</dt>
-              <dd className="mt-1 text-sm break-all">{bot.configuration?.webhookUrl}</dd>
-            </div>
-          )}
-          {bot.configuration?.updateMethod === "LONG_POLLING" && bot.configuration.pollingInterval && (
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Polling Interval</dt>
-              <dd className="mt-1 text-sm">{bot.configuration.pollingInterval} seconds</dd>
-            </div>
-          )}
+          {bot.configuration?.updateMethod === "WEBHOOK" &&
+            bot.configuration?.webhookUrl && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Webhook URL
+                </dt>
+                <dd className="mt-1 text-sm break-all">
+                  {bot.configuration?.webhookUrl}
+                </dd>
+              </div>
+            )}
+          {bot.configuration?.updateMethod === "LONG_POLLING" &&
+            bot.configuration.pollingInterval && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  Polling Interval
+                </dt>
+                <dd className="mt-1 text-sm">
+                  {bot.configuration.pollingInterval} seconds
+                </dd>
+              </div>
+            )}
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Token</dt>
             <dd className="mt-1 text-sm">
@@ -60,22 +70,34 @@ export function BotInfo({ bot }: BotInfoProps) {
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-muted-foreground">Created At</dt>
-            <dd className="mt-1 text-sm">{new Date(bot.createdAt).toLocaleString()}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">
+              Created At
+            </dt>
+            <dd className="mt-1 text-sm">
+              {new Date(bot.createdAt).toLocaleString()}
+            </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-muted-foreground">Updated At</dt>
-            <dd className="mt-1 text-sm">{new Date(bot.updatedAt).toLocaleString()}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">
+              Updated At
+            </dt>
+            <dd className="mt-1 text-sm">
+              {new Date(bot.updatedAt).toLocaleString()}
+            </dd>
           </div>
           {bot.scheduled && (
             <div className="col-span-2">
-              <dt className="text-sm font-medium text-muted-foreground">Scheduled</dt>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Scheduled
+              </dt>
               <dd className="mt-1 text-sm">This bot has scheduled tasks</dd>
             </div>
           )}
           {bot.description && (
             <div className="col-span-2">
-              <dt className="text-sm font-medium text-muted-foreground">Description</dt>
+              <dt className="text-sm font-medium text-muted-foreground">
+                Description
+              </dt>
               <dd className="mt-1 text-sm">{bot.description}</dd>
             </div>
           )}

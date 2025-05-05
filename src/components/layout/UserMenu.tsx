@@ -82,10 +82,6 @@ export function UserMenu() {
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/table-demo')}>
-            <Table className="mr-2 h-4 w-4" />
-            <span>Table Demo</span>
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />

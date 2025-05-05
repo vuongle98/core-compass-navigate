@@ -1,5 +1,3 @@
-
-import React from "react";
 import { MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
@@ -10,7 +8,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 
-export type ActionType = "view" | "edit" | "delete" | "download" | "copy" | "play" | "square" | "calendar-clock" | "x" | "trash";
+export type ActionType =
+  | "view"
+  | "edit"
+  | "delete"
+  | "download"
+  | "copy"
+  | "play"
+  | "square"
+  | "calendar-clock"
+  | "x"
+  | "trash";
 
 export interface Action {
   label: string;
@@ -29,11 +37,7 @@ export const ActionsMenu = ({ actions, size = "sm" }: ActionsMenuProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size={size}
-          className="h-8 w-8 p-0"
-        >
+        <Button variant="ghost" size={size} className="h-8 w-8 p-0">
           <span className="sr-only">Open menu</span>
           <MoreVertical className="h-4 w-4" />
         </Button>
@@ -46,7 +50,9 @@ export const ActionsMenu = ({ actions, size = "sm" }: ActionsMenuProps) => {
               key={action.label}
               onClick={action.onClick}
               className={
-                action.destructive ? "text-destructive focus:text-destructive" : ""
+                action.destructive
+                  ? "text-destructive focus:text-destructive"
+                  : ""
               }
             >
               {Icon && <Icon className="mr-2 h-4 w-4" />}

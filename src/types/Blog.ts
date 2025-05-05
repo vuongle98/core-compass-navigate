@@ -1,5 +1,4 @@
-
-import { ReactElement } from 'react';
+import { User } from "./Auth";
 
 export interface BlogPost {
   id?: number;
@@ -12,7 +11,7 @@ export interface BlogPost {
   featuredImage?: string;
   isPublished?: boolean;
   slug?: string;
-  author?: any;
+  author?: User;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,6 +48,6 @@ export interface RichTextEditorProps {
 
 export interface BlogPostFormProps {
   initialData?: BlogPost;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: Partial<BlogPost>) => Promise<void>;
   isLoading?: boolean;
 }

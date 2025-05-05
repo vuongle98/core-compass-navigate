@@ -204,7 +204,7 @@ export function NotificationBell() {
             </div>
           </div>
           {unreadCount > 0 && (
-            <div className="mt-2">
+            <div className="mt-4">
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                 <span>Read progress</span>
                 <span>{Math.round((1 - unreadCount / notifications.length) * 100)}%</span>

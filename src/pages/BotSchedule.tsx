@@ -82,7 +82,11 @@ const BotSchedule = () => {
               Failed to load bot data. Please try again.
             </div>
           ) : (
-            <BotScheduleForm botInfo={bot} onSubmit={handleSubmit} isLoading={isSubmitting} />
+            <BotScheduleForm
+              botInfo={bot}
+              onSubmit={handleSubmit}
+              isLoading={isSubmitting}
+            />
           )}
         </div>
       </main>

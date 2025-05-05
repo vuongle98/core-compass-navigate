@@ -1,8 +1,7 @@
-
 /**
  * Service for handling authentication tokens
  */
-const TOKEN_KEY = 'token';
+const TOKEN_KEY = "token";
 
 /**
  * Get the access token from local storage
@@ -40,9 +39,11 @@ const TokenService = {
   isAuthenticated,
   refreshToken: async (): Promise<boolean> => {
     // This is a placeholder - actual implementation would depend on your auth flow
-    console.warn('TokenService.refreshToken() called but not fully implemented');
+    console.warn(
+      "TokenService.refreshToken() called but not fully implemented"
+    );
     return false;
-  }
+  },
 };
 
 export default TokenService;

@@ -1,10 +1,12 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useQueryClient, QueryKey } from '@tanstack/react-query';
-import EnhancedApiService, { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService';
-import { toast } from 'sonner';
-import useLocalStorage from './use-local-storage';
-import useDebounce from './use-debounce';
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient, QueryKey } from "@tanstack/react-query";
+import EnhancedApiService, {
+  PaginatedData,
+  PaginationOptions,
+} from "@/services/EnhancedApiService";
+import { toast } from "sonner";
+import useLocalStorage from "./use-local-storage";
+import useDebounce from "./use-debounce";
 
 export interface ApiQueryFilters {
   [key: string]: string | number | boolean | null | undefined;
@@ -37,20 +39,22 @@ export function useApiQuery<T>({
   onError,
   isPaginated = true,
 }: UseApiQueryProps<T>) {
-  const storageKey = persistKey || `filters-${endpoint.replace(/\//g, '-')}`;
-  const [filtersState, setFiltersState] = useState<ApiQueryFilters>(initialFilters);
+  const storageKey = persistKey || `filters-${endpoint.replace(/\//g, "-")}`;
+  const [filtersState, setFiltersState] =
+    useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const queryClient = useQueryClient();
-  
+
   // Use debounce for filter changes to prevent too many API calls
   const debouncedFilters = useDebounce(filtersState, debounceMs);
-  
+
   // Load persisted filters from localStorage if enabled
-  const [persistedFilters, setPersistedFilters] = useLocalStorage<ApiQueryFilters>(
-    persistFilters ? storageKey : '',
-    initialFilters
-  );
+  const [persistedFilters, setPersistedFilters] =
+    useLocalStorage<ApiQueryFilters>(
+      persistFilters ? storageKey : "",
+      initialFilters
+    );
 
   // Initialize filters from persisted if available
   useEffect(() => {
@@ -60,19 +64,25 @@ export function useApiQuery<T>({
   }, [persistFilters, persistedFilters]);
 
   // Update persisted filters when filters change
-  const setFilters = useCallback((newFilters: ApiQueryFilters) => {
-    setFiltersState(newFilters);
-    if (persistFilters) {
-      setPersistedFilters(newFilters);
-    }
-    // Reset to first page when filters change
-    setPage(0);
-  }, [persistFilters, setPersistedFilters]);
+  const setFilters = useCallback(
+    (newFilters: ApiQueryFilters) => {
+      setFiltersState(newFilters);
+      if (persistFilters) {
+        setPersistedFilters(newFilters);
+      }
+      // Reset to first page when filters change
+      // setPage(0);
+    },
+    [persistFilters, setPersistedFilters]
+  );
 
   // Helper to set search term
-  const setSearch = useCallback((searchTerm: string) => {
-    setFilters({ ...filtersState, search: searchTerm });
-  }, [filtersState, setFilters]);
+  const setSearch = useCallback(
+    (searchTerm: string) => {
+      setFilters({ ...filtersState, search: searchTerm });
+    },
+    [filtersState, setFilters]
+  );
 
   // Reset filters to initial state
   const resetFilters = useCallback(() => {
@@ -84,21 +94,24 @@ export function useApiQuery<T>({
   }, [initialFilters, persistFilters, setPersistedFilters]);
 
   // Convert filters to query params
-  const buildQueryParams = useCallback((currentFilters: ApiQueryFilters): PaginationOptions => {
-    const params: PaginationOptions = { 
-      page, 
-      size: pageSize 
-    };
-    
-    // Add valid filter values to query params
-    Object.entries(currentFilters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        params[key] = value;
-      }
-    });
-    
-    return params;
-  }, [page, pageSize]);
+  const buildQueryParams = useCallback(
+    (currentFilters: ApiQueryFilters): PaginationOptions => {
+      const params: PaginationOptions = {
+        page,
+        size: pageSize,
+      };
+
+      // Add valid filter values to query params
+      Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          params[key] = value;
+        }
+      });
+
+      return params;
+    },
+    [page, pageSize]
+  );
 
   // API query with pagination and filters
   const { data, isLoading, error, refetch } = useQuery({
@@ -106,9 +119,12 @@ export function useApiQuery<T>({
     queryFn: async () => {
       try {
         const params = buildQueryParams(debouncedFilters);
-        
+
         if (isPaginated) {
-          const response = await EnhancedApiService.getPaginated<T>(endpoint, params);
+          const response = await EnhancedApiService.getPaginated<T>(
+            endpoint,
+            params
+          );
           return response;
         } else {
           // For non-paginated endpoints
@@ -119,21 +135,21 @@ export function useApiQuery<T>({
             totalElements: response.length,
             totalPages: 1,
             number: 0,
-            size: response.length
+            size: response.length,
           } as PaginatedData<T>;
         }
       } catch (err) {
         // Handle mock data for testing or development
         if (mockData) {
-          console.warn('Using mock data for', endpoint);
+          console.warn("Using mock data for", endpoint);
           return mockData;
         }
         throw err;
       }
     },
     meta: {
-      onError: onError
-    }
+      onError: onError,
+    },
   });
 
   // Force refetch when page or pageSize changes

@@ -166,7 +166,7 @@ const Blogs = () => {
     },
     {
       header: "Actions",
-      accessorKey: "id" as keyof Blog,
+      accessorKey: "actions" as keyof Blog,
       cell: (item: Blog) => (
         <ActionsMenu
           actions={[

@@ -1,12 +1,9 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -19,10 +16,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
-import { Loader2, Mail, Bell, Shield, Eye, Save } from "lucide-react";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import { Loader2, Bell, Shield, Eye, Save } from "lucide-react";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 
 const notificationSchema = z.object({
@@ -34,15 +29,21 @@ const notificationSchema = z.object({
 });
 
 const privacySchema = z.object({
-  profileVisibility: z.enum(["public", "private", "contacts"]).default("public"),
-  activityVisibility: z.enum(["public", "private", "contacts"]).default("contacts"),
+  profileVisibility: z
+    .enum(["public", "private", "contacts"])
+    .default("public"),
+  activityVisibility: z
+    .enum(["public", "private", "contacts"])
+    .default("contacts"),
   allowDataCollection: z.boolean().default(true),
 });
 
 const securitySchema = z.object({
   twoFactorAuth: z.boolean().default(false),
   rememberDevices: z.boolean().default(true),
-  sessionTimeout: z.enum(["30m", "1h", "2h", "4h", "8h", "always"]).default("4h"),
+  sessionTimeout: z
+    .enum(["30m", "1h", "2h", "4h", "8h", "always"])
+    .default("4h"),
 });
 
 type NotificationFormValues = z.infer<typeof notificationSchema>;
@@ -63,7 +64,7 @@ const UserSettings = () => {
       marketingEmails: false,
       newFeatures: true,
       securityAlerts: true,
-    }
+    },
   });
 
   // Privacy settings form
@@ -73,7 +74,7 @@ const UserSettings = () => {
       profileVisibility: "public",
       activityVisibility: "contacts",
       allowDataCollection: true,
-    }
+    },
   });
 
   // Security settings form
@@ -82,15 +83,15 @@ const UserSettings = () => {
     defaultValues: {
       twoFactorAuth: false,
       rememberDevices: true,
-      sessionTimeout: "4h"
-    }
+      sessionTimeout: "4h",
+    },
   });
 
   const onSubmitNotifications = async (values: NotificationFormValues) => {
     setIsSubmitting(true);
     try {
       // Mock API call - replace with actual endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Notification settings updated successfully");
     } catch (error) {
       console.error("Failed to update notification settings:", error);
@@ -104,7 +105,7 @@ const UserSettings = () => {
     setIsSubmitting(true);
     try {
       // Mock API call - replace with actual endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Privacy settings updated successfully");
     } catch (error) {
       console.error("Failed to update privacy settings:", error);
@@ -118,7 +119,7 @@ const UserSettings = () => {
     setIsSubmitting(true);
     try {
       // Mock API call - replace with actual endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Security settings updated successfully");
     } catch (error) {
       console.error("Failed to update security settings:", error);
@@ -141,7 +142,10 @@ const UserSettings = () => {
         <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <TabsTrigger
+                value="notifications"
+                className="flex items-center gap-2"
+              >
                 <Bell className="h-4 w-4" />
                 <span className="hidden sm:inline">Notifications</span>
               </TabsTrigger>
@@ -154,7 +158,7 @@ const UserSettings = () => {
                 <span className="hidden sm:inline">Security</span>
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="notifications" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -165,8 +169,10 @@ const UserSettings = () => {
                 </CardHeader>
                 <CardContent>
                   <Form {...notificationForm}>
-                    <form 
-                      onSubmit={notificationForm.handleSubmit(onSubmitNotifications)} 
+                    <form
+                      onSubmit={notificationForm.handleSubmit(
+                        onSubmitNotifications
+                      )}
                       className="space-y-6"
                     >
                       <FormField
@@ -175,105 +181,116 @@ const UserSettings = () => {
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Email Notifications</FormLabel>
+                              <FormLabel className="text-base">
+                                Email Notifications
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
                                 Receive updates and alerts via email
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={notificationForm.control}
                         name="pushNotifications"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Push Notifications</FormLabel>
+                              <FormLabel className="text-base">
+                                Push Notifications
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
-                                Receive updates and alerts via push notifications
+                                Receive updates and alerts via push
+                                notifications
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={notificationForm.control}
                         name="marketingEmails"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Marketing Emails</FormLabel>
+                              <FormLabel className="text-base">
+                                Marketing Emails
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
                                 Receive marketing and promotional emails
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={notificationForm.control}
                         name="newFeatures"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">New Features</FormLabel>
+                              <FormLabel className="text-base">
+                                New Features
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
                                 Get notified about new features and updates
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={notificationForm.control}
                         name="securityAlerts"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Security Alerts</FormLabel>
+                              <FormLabel className="text-base">
+                                Security Alerts
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
                                 Get notified about security-related events
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <Button
                         type="submit"
                         className="flex items-center gap-2"
@@ -291,7 +308,7 @@ const UserSettings = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="privacy" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -302,8 +319,8 @@ const UserSettings = () => {
                 </CardHeader>
                 <CardContent>
                   <Form {...privacyForm}>
-                    <form 
-                      onSubmit={privacyForm.handleSubmit(onSubmitPrivacy)} 
+                    <form
+                      onSubmit={privacyForm.handleSubmit(onSubmitPrivacy)}
                       className="space-y-6"
                     >
                       {/* Privacy settings fields */}
@@ -324,7 +341,7 @@ const UserSettings = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="security" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -335,8 +352,8 @@ const UserSettings = () => {
                 </CardHeader>
                 <CardContent>
                   <Form {...securityForm}>
-                    <form 
-                      onSubmit={securityForm.handleSubmit(onSubmitSecurity)} 
+                    <form
+                      onSubmit={securityForm.handleSubmit(onSubmitSecurity)}
                       className="space-y-6"
                     >
                       <FormField
@@ -345,21 +362,23 @@ const UserSettings = () => {
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base">Two-Factor Authentication</FormLabel>
+                              <FormLabel className="text-base">
+                                Two-Factor Authentication
+                              </FormLabel>
                               <p className="text-sm text-muted-foreground">
                                 Add an extra layer of security to your account
                               </p>
                             </div>
                             <FormControl>
-                              <Switch 
-                                checked={field.value} 
-                                onCheckedChange={field.onChange} 
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <Button
                         type="submit"
                         className="flex items-center gap-2"

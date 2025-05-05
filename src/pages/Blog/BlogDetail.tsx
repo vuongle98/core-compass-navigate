@@ -8,11 +8,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Calendar, Clock, Edit, Eye, MessageSquare, ThumbsUp, Trash } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Edit,
+  Eye,
+  MessageSquare,
+  ThumbsUp,
+  Trash,
+} from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { User } from "@/types/Auth";
 
 // Mock blog post data
 const mockPost = {
@@ -73,7 +92,7 @@ export default Greeting;</code></pre>
     username: "johndoe",
     email: "john@example.com",
     avatar: "/avatars/john.png",
-    roles: [] // Add empty roles array to match User type
+    roles: [], // Add empty roles array to match User type
   },
   publishedAt: "2023-05-15T10:30:00Z",
   updatedAt: "2023-05-16T14:20:00Z",
@@ -81,7 +100,7 @@ export default Greeting;</code></pre>
   views: 1245,
   likes: 87,
   comments: 23,
-  status: "published"
+  status: "published",
 };
 
 const BlogDetail = () => {
@@ -119,7 +138,7 @@ const BlogDetail = () => {
     return format(new Date(dateString), "MMMM d, yyyy");
   };
 
-  const formatAuthorName = (author: any) => {
+  const formatAuthorName = (author: User) => {
     if (!author) return "Unknown";
     return author.username || "Anonymous";
   };
@@ -183,10 +202,16 @@ const BlogDetail = () => {
               <div className="flex items-center space-x-4 mb-6">
                 <Avatar>
                   <AvatarImage src={post.author.avatar} />
-                  <AvatarFallback>{formatAuthorName(post.author).substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {formatAuthorName(post.author)
+                      .substring(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{formatAuthorName(post.author)}</div>
+                  <div className="font-medium">
+                    {formatAuthorName(post.author)}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {post.updatedAt !== post.publishedAt
                       ? `Updated on ${formatDate(post.updatedAt)}`
@@ -203,7 +228,10 @@ const BlogDetail = () => {
                 ))}
               </div>
 
-              <div className="prose prose-sm sm:prose lg:prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
+              <div
+                className="prose prose-sm sm:prose lg:prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
 
               <div className="flex items-center space-x-6 mt-8 pt-6 border-t">
                 <div className="flex items-center text-muted-foreground">
@@ -232,17 +260,24 @@ const BlogDetail = () => {
         </div>
       </main>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the blog post.
+              This action cannot be undone. This will permanently delete the
+              blog post.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

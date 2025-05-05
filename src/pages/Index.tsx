@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-import DashboardService, { DashboardMetric } from "@/services/DashboardService";
+import DashboardService from "@/services/DashboardService";
 import { LucideIcon } from "lucide-react";
 import {
   Users,
@@ -36,11 +36,8 @@ const Index = () => {
   });
 
   // Fetch metrics data
-  const { 
-    data: metricsData, 
-    isLoading: isLoadingMetrics 
-  } = useQuery({
-    queryKey: ['dashboard-metrics', dateRange],
+  const { data: metricsData, isLoading: isLoadingMetrics } = useQuery({
+    queryKey: ["dashboard-metrics", dateRange],
     queryFn: () => DashboardService.getMetrics(),
     meta: {
       onError: () => {
@@ -49,16 +46,13 @@ const Index = () => {
           description: "Could not load dashboard metrics. Using cached data.",
           variant: "destructive",
         });
-      }
-    }
+      },
+    },
   });
 
   // Fetch activity data
-  const { 
-    data: activityData, 
-    isLoading: isLoadingActivity 
-  } = useQuery({
-    queryKey: ['dashboard-activity', dateRange],
+  const { data: activityData, isLoading: isLoadingActivity } = useQuery({
+    queryKey: ["dashboard-activity", dateRange],
     queryFn: () => DashboardService.getActivityData(),
     meta: {
       onError: () => {
@@ -67,16 +61,13 @@ const Index = () => {
           description: "Could not load activity data. Using cached data.",
           variant: "destructive",
         });
-      }
-    }
+      },
+    },
   });
 
   // Fetch performance data
-  const { 
-    data: performanceData, 
-    isLoading: isLoadingPerformance 
-  } = useQuery({
-    queryKey: ['dashboard-performance', dateRange],
+  const { data: performanceData, isLoading: isLoadingPerformance } = useQuery({
+    queryKey: ["dashboard-performance", dateRange],
     queryFn: () => DashboardService.getPerformanceData(),
     meta: {
       onError: () => {
@@ -85,8 +76,8 @@ const Index = () => {
           description: "Could not load performance data. Using cached data.",
           variant: "destructive",
         });
-      }
-    }
+      },
+    },
   });
 
   // Map metric IDs to their appropriate icons
@@ -101,24 +92,24 @@ const Index = () => {
       flags: Flag,
       blogs: FileIcon,
     };
-    
+
     return iconMap[metricId] || Settings;
   };
 
   // Map metrics to their appropriate links
   const getLinkForMetric = (metricId: string) => {
     const linkMap: Record<string, string> = {
-      users: '/users',
-      roles: '/roles',
-      permissions: '/permissions',
-      files: '/files',
-      notifications: '/notifications',
-      configs: '/configuration',
-      flags: '/feature-flags',
-      blogs: '/blogs',
+      users: "/users",
+      roles: "/roles",
+      permissions: "/permissions",
+      files: "/files",
+      notifications: "/notifications",
+      configs: "/configuration",
+      flags: "/feature-flags",
+      blogs: "/blogs",
     };
-    
-    return linkMap[metricId] || '/';
+
+    return linkMap[metricId] || "/";
   };
 
   const metrics = metricsData || [];
@@ -180,23 +171,25 @@ const Index = () => {
         </PageHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-          {isLoadingMetrics ? (
-            Array(7).fill(0).map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))
-          ) : (
-            metrics.map((metric) => (
-              <Link key={metric.id} to={getLinkForMetric(metric.id)} className="block">
-                <StatCard
-                  title={metric.name}
-                  value={metric.value}
-                  icon={getIconForMetric(metric.id)}
-                  change={metric.change}
-                  className="transition-transform hover:scale-105 cursor-pointer"
-                />
-              </Link>
-            ))
-          )}
+          {isLoadingMetrics
+            ? Array(7)
+                .fill(0)
+                .map((_, i) => <Skeleton key={i} className="h-32" />)
+            : metrics.map((metric) => (
+                <Link
+                  key={metric.id}
+                  to={getLinkForMetric(metric.id)}
+                  className="block"
+                >
+                  <StatCard
+                    title={metric.name}
+                    value={metric.value}
+                    icon={getIconForMetric(metric.id)}
+                    change={metric.change}
+                    className="transition-transform hover:scale-105 cursor-pointer"
+                  />
+                </Link>
+              ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
@@ -215,7 +208,11 @@ const Index = () => {
               metrics={[
                 { key: "cpu", label: "CPU Usage (%)", color: "#8B5CF6" },
                 { key: "memory", label: "Memory Usage (%)", color: "#0EA5E9" },
-                { key: "responseTime", label: "Response Time (ms)", color: "#F97316" },
+                {
+                  key: "responseTime",
+                  label: "Response Time (ms)",
+                  color: "#F97316",
+                },
               ]}
             />
           )}
@@ -223,9 +220,9 @@ const Index = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           {isLoadingActivity ? (
-            Array(3).fill(0).map((_, i) => (
-              <Skeleton key={i} className="h-[250px]" />
-            ))
+            Array(3)
+              .fill(0)
+              .map((_, i) => <Skeleton key={i} className="h-[250px]" />)
           ) : (
             <>
               <Link to="/users" className="block">

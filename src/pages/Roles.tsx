@@ -23,7 +23,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import PermissionSelect from "@/components/role/PermissionSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Permission, Role } from "@/types/Auth";
-import EnhancedApiService from "@/services/EnhancedApiService";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
@@ -311,13 +310,13 @@ const Roles = () => {
           description="Manage user roles and permissions"
           showAddButton={false}
         />
-        
+
         <DataFilters
           filters={filters}
           options={filterOptions}
           onChange={setFilters}
           onReset={resetFilters}
-          className="mt-4 mb-5"
+          className="mt-4 mb-4"
         />
 
         <div className="mt-4">
@@ -385,7 +384,7 @@ const Roles = () => {
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent size="md">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>
                 {editingRole ? "Edit Role" : "Create New Role"}

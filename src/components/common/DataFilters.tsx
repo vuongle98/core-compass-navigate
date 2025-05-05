@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,10 +62,10 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
       acc[option.id] = option.type === "select" ? undefined : "";
       return acc;
     }, {} as ApiQueryFilters);
-    
+
     // Update local state first
     setLocalFilters(resetFilters);
-    
+
     // Call the parent reset function
     onReset();
   };
@@ -202,4 +201,4 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
       </div>
     </div>
   );
-}
+};

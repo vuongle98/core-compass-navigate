@@ -1,15 +1,33 @@
-
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserRoleAssignment } from "@/components/user/UserRoleAssignment";
 import { User, UserProfile as UserProfileType } from "@/types/Auth";
 import UserService from "@/services/UserService";
-import { Loader2, User as UserIcon, Mail, Calendar, Shield } from "lucide-react";
+import {
+  Loader2,
+  User as UserIcon,
+  Mail,
+  Calendar,
+  Shield,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,12 +48,16 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClose }) => {
+export const UserProfile: React.FC<UserProfileProps> = ({
+  userId,
+  isOpen,
+  onClose,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -48,6 +70,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
   useEffect(() => {
     if (isOpen && userId) {
+      console.log("ddodo");
       setIsLoading(true);
       UserService.getUser(userId)
         .then((data) => {
@@ -74,14 +97,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
   const handleSubmit = async (values: ProfileFormValues) => {
     if (!user) return;
-    
+
     setIsSubmitting(true);
     try {
       await UserService.updateProfile(user.id, values);
       toast.success("Profile updated successfully");
-      
+
       // Update local user data with new profile info
-      setUser(prev => {
+      setUser((prev) => {
         if (!prev) return null;
         return {
           ...prev,
@@ -89,7 +112,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
             ...(prev.profile || {}),
             ...values,
             id: prev.profile?.id || 0,
-          }
+          },
         };
       });
     } catch (error) {
@@ -115,9 +138,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">User Profile</DialogTitle>
-          <DialogDescription>
-            {user?.username || "Loading user details..."}
-          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -129,9 +149,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 {user.avatar ? (
-                  <AvatarImage src={user.avatar} alt={user.username || "User"} />
+                  <AvatarImage
+                    src={user.avatar}
+                    alt={user.username || "User"}
+                  />
                 ) : (
-                  <AvatarFallback className="text-lg">{getUserInitials()}</AvatarFallback>
+                  <AvatarFallback className="text-lg">
+                    {getUserInitials()}
+                  </AvatarFallback>
                 )}
               </Avatar>
               <div>
@@ -158,7 +183,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="profile" className="flex items-center gap-1">
+                <TabsTrigger
+                  value="profile"
+                  className="flex items-center gap-1"
+                >
                   <UserIcon className="h-4 w-4" />
                   <span>Profile Details</span>
                 </TabsTrigger>
@@ -170,7 +198,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
               <TabsContent value="profile">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={form.handleSubmit(handleSubmit)}
+                    className="space-y-4"
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -179,13 +210,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
                           <FormItem>
                             <FormLabel>First Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter first name" {...field} />
+                              <Input
+                                placeholder="Enter first name"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="lastName"
@@ -208,7 +242,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
                         <FormItem>
                           <FormLabel>Phone Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter phone number" {...field} />
+                            <Input
+                              placeholder="Enter phone number"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -228,14 +265,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="flex justify-end">
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         disabled={isSubmitting}
                         className="flex items-center gap-2"
                       >
-                        {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {isSubmitting && (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
                         Save Profile
                       </Button>
                     </div>
@@ -245,9 +284,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, isOpen, onClos
 
               <TabsContent value="roles">
                 <div className="space-y-4">
-                  <UserRoleAssignment 
-                    userId={userId.toString()} 
-                    currentRoles={user.roles.map(role => String(role.id))} 
+                  <UserRoleAssignment
+                    userId={userId}
+                    currentRoles={user.roles}
                   />
                 </div>
               </TabsContent>

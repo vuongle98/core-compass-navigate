@@ -332,7 +332,7 @@ const Bots = () => {
     {
       header: "Actions",
       id: "actions",
-      accessorKey: "id",
+      accessorKey: "actions",
       cell: (item: Bot) => <ActionsMenu actions={getActionItems(item)} />,
     },
   ];

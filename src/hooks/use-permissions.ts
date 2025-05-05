@@ -84,7 +84,7 @@ export function usePermissions(): UserPermissions {
       roles,
       permissions: uniquePermissions,
       hasPermission: (permission: string | Permission) => {
-        const permName = typeof permission === 'string' ? permission : permission.name;
+        const permName = typeof permission === 'string' ? permission : permission.code;
         return uniquePermissions.some(p => 
           (typeof p === 'string' && p === permName) || 
           (typeof p === 'object' && p.name === permName)

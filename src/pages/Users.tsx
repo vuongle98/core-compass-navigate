@@ -327,7 +327,7 @@ const Users = () => {
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <Breadcrumbs />
 
-        <div className="mb-6">
+        <div className="mb-4">
           <PageHeader
             title="Users"
             description="Manage your application users"
@@ -335,7 +335,7 @@ const Users = () => {
           />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <DataFilters
             filters={filters}
             options={filterOptions}

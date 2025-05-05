@@ -126,7 +126,7 @@ export function BlogPostForm({
       .toLowerCase()
       .replace(/[^\w\s]/gi, "")
       .replace(/\s+/g, "-");
-    
+
     form.setValue("slug", slug);
     setIsGeneratingSlug(false);
     toast.success("Slug generated");
@@ -330,12 +330,14 @@ export function BlogPostForm({
                   </p>
                   {initialData?.createdAt && (
                     <p className="text-sm text-muted-foreground">
-                      Created: {new Date(initialData.createdAt).toLocaleDateString()}
+                      Created:{" "}
+                      {new Date(initialData.createdAt).toLocaleDateString()}
                     </p>
                   )}
                   {initialData?.updatedAt && (
                     <p className="text-sm text-muted-foreground">
-                      Updated: {new Date(initialData.updatedAt).toLocaleDateString()}
+                      Updated:{" "}
+                      {new Date(initialData.updatedAt).toLocaleDateString()}
                     </p>
                   )}
                 </div>

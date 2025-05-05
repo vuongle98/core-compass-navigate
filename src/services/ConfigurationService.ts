@@ -1,4 +1,3 @@
-
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 import { toast } from "sonner";
@@ -25,8 +24,14 @@ class ConfigurationService {
    */
   static async getAll(): Promise<ConfigurationItem[]> {
     try {
-      LoggingService.info("configuration", "get_all", "Fetching all configuration items");
-      return await EnhancedApiService.get<ConfigurationItem[]>(this.API_ENDPOINT);
+      LoggingService.info(
+        "configuration",
+        "get_all",
+        "Fetching all configuration items"
+      );
+      return await EnhancedApiService.get<ConfigurationItem[]>(
+        this.API_ENDPOINT
+      );
     } catch (error) {
       LoggingService.error(
         "configuration",
@@ -46,8 +51,14 @@ class ConfigurationService {
    */
   static async getByKey(key: string): Promise<ConfigurationItem | undefined> {
     try {
-      LoggingService.info("configuration", "get_by_key", `Fetching configuration item with key: ${key}`);
-      return await EnhancedApiService.get<ConfigurationItem>(`${this.API_ENDPOINT}/${key}`);
+      LoggingService.info(
+        "configuration",
+        "get_by_key",
+        `Fetching configuration item with key: ${key}`
+      );
+      return await EnhancedApiService.get<ConfigurationItem>(
+        `${this.API_ENDPOINT}/${key}`
+      );
     } catch (error) {
       LoggingService.error(
         "configuration",
@@ -65,10 +76,20 @@ class ConfigurationService {
    * @param value The new value
    * @returns The updated configuration item
    */
-  static async update(id: number, value: string): Promise<ConfigurationItem | undefined> {
+  static async update(
+    id: number,
+    value: string
+  ): Promise<ConfigurationItem | undefined> {
     try {
-      LoggingService.info("configuration", "update", `Updating configuration item ${id} with value ${value}`);
-      return await EnhancedApiService.put<ConfigurationItem>(`${this.API_ENDPOINT}/${id}`, { value });
+      LoggingService.info(
+        "configuration",
+        "update",
+        `Updating configuration item ${id} with value ${value}`
+      );
+      return await EnhancedApiService.put<ConfigurationItem>(
+        `${this.API_ENDPOINT}/${id}`,
+        { value }
+      );
     } catch (error) {
       LoggingService.error(
         "configuration",
@@ -88,8 +109,14 @@ class ConfigurationService {
    */
   static async getByCategory(category: string): Promise<ConfigurationItem[]> {
     try {
-      LoggingService.info("configuration", "get_by_category", `Fetching configuration items for category: ${category}`);
-      return await EnhancedApiService.get<ConfigurationItem[]>(`${this.API_ENDPOINT}/category/${category}`);
+      LoggingService.info(
+        "configuration",
+        "get_by_category",
+        `Fetching configuration items for category: ${category}`
+      );
+      return await EnhancedApiService.get<ConfigurationItem[]>(
+        `${this.API_ENDPOINT}/category/${category}`
+      );
     } catch (error) {
       LoggingService.error(
         "configuration",

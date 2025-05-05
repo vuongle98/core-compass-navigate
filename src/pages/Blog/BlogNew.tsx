@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -46,10 +45,7 @@ const BlogNew = () => {
           showAddButton={false}
         />
         <div className="mt-4">
-          <BlogPostForm 
-            onSubmit={handleSubmit}
-            isLoading={isSubmitting}
-          />
+          <BlogPostForm onSubmit={handleSubmit} isLoading={isSubmitting} />
         </div>
       </main>
     </div>

@@ -24,12 +24,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-  Globe,
   Key,
   MailCheck,
   Settings,
   ToggleLeft,
-  Wrench,
+  Wrench
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,10 @@ interface BotBulkActionsProps {
   actions: BulkAction[];
 }
 
-export function BotBulkActions({ selectedCount, actions }: BotBulkActionsProps) {
+export function BotBulkActions({
+  selectedCount,
+  actions,
+}: BotBulkActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

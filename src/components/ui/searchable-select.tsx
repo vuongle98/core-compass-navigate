@@ -1,33 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Check, ChevronDown, Loader2, X } from "lucide-react";
+import { Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-export interface Option {
+export interface Option<T> {
   value: string;
   label: React.ReactNode;
-  original?: any;
+  original?: T;
   disabled?: boolean;
 }
 
-interface SearchableSelectProps {
-  options: Option[];
-  value: Option | Option[] | null;
-  onChange: (value: Option | Option[] | null) => void;
+interface SearchableSelectProps<T> {
+  options: Option<T>[];
+  value: Option<T>[] | null;
+  onChange: (value: Option<T> | Option<T>[] | null) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   disabled?: boolean;
@@ -36,15 +31,16 @@ interface SearchableSelectProps {
   className?: string;
   showSelectedTags?: boolean;
   emptyMessage?: string;
-  onSearch?: (query: string) => void;
   isLoading?: boolean;
   clearable?: boolean;
-  creatable?: boolean;
-  onScroll?: () => void; // Add optional onScroll callback for infinite scrolling
-  hasMore?: boolean; // Flag to indicate if more items are available to load
+  onLoadMore?: () => void; // Callback to load more options
+  hasMore?: boolean; // Indicates if more options are available
+  showCheckboxes?: boolean;
+  onSearch?: (query: string) => void; // Callback to handle search input
+  setPage?: (page: number) => void;
 }
 
-export const SearchableSelect: React.FC<SearchableSelectProps> = ({
+export const SearchableSelect = <T,>({
   options,
   value,
   onChange,
@@ -52,248 +48,287 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   searchPlaceholder = "Search...",
   disabled = false,
   multiple = false,
-  maxHeight = 300,
   className,
   showSelectedTags = false,
   emptyMessage = "No results found",
-  onSearch,
   isLoading = false,
   clearable = true,
-  creatable = false,
-  onScroll,
+  onLoadMore,
   hasMore = false,
-}) => {
-  const [open, setOpen] = useState(false);
+  showCheckboxes = true,
+  onSearch,
+  setPage,
+}: SearchableSelectProps<T>) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const commandRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const [throttleTimer, setThrottleTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isOpen, setIsOpen] = useState(false); // Manage dropdown open state
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Update search when popover opens/closes
-  useEffect(() => {
-    if (!open) {
-      setSearchQuery("");
-    }
-  }, [open]);
-
-  // Improved scroll handler with throttle for infinite scrolling
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!onScroll || !hasMore || isLoading) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const scrollThreshold = 50; // Load more when within 50px of bottom
-    
-    if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
-      // Use throttling to prevent multiple calls
-      if (throttleTimer) return;
-      
-      const timer = setTimeout(() => {
-        onScroll();
-        setThrottleTimer(null);
-      }, 300);
-      
-      setThrottleTimer(timer);
-    }
-  };
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (throttleTimer) clearTimeout(throttleTimer);
-    };
-  }, [throttleTimer]);
-
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    if (onSearch) onSearch(query);
-  };
+    const newSearch = e.target.value;
+    setSearchQuery(newSearch);
+    setPage(0); // Reset to first page on search
+    // apiSetSearch(newSearch);
 
-  // Handle option selection
-  const handleSelect = (selectedOption: Option) => {
-    if (multiple) {
-      // In multiple mode
-      const currentValue = (value as Option[]) || [];
-      const isSelected = currentValue.some(
-        (option) => option.value === selectedOption.value
-      );
-
-      if (isSelected) {
-        // If already selected, remove it
-        onChange(
-          currentValue.filter((option) => option.value !== selectedOption.value)
-        );
-      } else {
-        // If not selected, add it
-        onChange([...currentValue, selectedOption]);
-      }
-
-      // Keep the popover open in multiple mode
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    } else {
-      // In single mode
-      onChange(selectedOption);
-      setOpen(false);
+    if (onSearch) {
+      onSearch(newSearch);
     }
   };
 
-  // Handle clear all selections
-  const handleClearAll = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onChange(multiple ? [] : null);
-  };
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
 
-  // Check if an option is selected
-  const isOptionSelected = (option: Option) => {
-    if (!value) return false;
-    if (Array.isArray(value)) {
-      return value.some((v) => v.value === option.value);
+    const scrollThreshold = 50;
+
+    if (
+      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+      hasMore && onLoadMore && !isLoading
+    ) {
+      onLoadMore();
     }
-    return value.value === option.value;
   };
 
-  // Remove a selected tag (for multiple mode)
-  const removeSelectedTag = (e: React.MouseEvent, optionValue: string) => {
-    e.stopPropagation();
+  const filteredOptions = options.filter((option) =>
+    option.label.toString().toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelect = (option: Option<T>) => {
+    if (!multiple) {
+      onChange([option]);
+      setIsOpen(false);
+      return;
+    }
+
+    const newValues = value.some((o) => o.value === option.value)
+      ? value.filter((o) => o.value !== option.value)
+      : [...value, option];
+
+    onChange(newValues);
+  };
+
+  const removeSelectedTag = (optionValue: string) => {
     if (!multiple || !Array.isArray(value)) return;
     onChange(value.filter((option) => option.value !== optionValue));
   };
 
-  // Display value in the trigger button
-  const displayValue = () => {
-    if (!value) return placeholder;
-
-    if (multiple && Array.isArray(value)) {
-      if (value.length === 0) return placeholder;
-      if (!showSelectedTags) return `${value.length} selected`;
-
-      // For multiple with tags visible in the trigger
-      return (
-        <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
-          {value.map((option) => (
-            <Badge
-              key={option.value}
-              variant="secondary"
-              className="mr-1 mb-1"
-            >
-              {typeof option.label === "string" ? option.label : "Selected"}
-              <button
-                className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => removeSelectedTag(e, option.value)}
-              >
-                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                <span className="sr-only">Remove</span>
-              </button>
-            </Badge>
-          ))}
-          {value.length > 3 && (
-            <Badge variant="secondary">+{value.length - 3} more</Badge>
-          )}
-        </div>
-      );
-    }
-
-    // For single select
-    return typeof (value as Option).label === "string"
-      ? (value as Option).label
-      : "Selected";
+  const handleClearAll = () => {
+    onChange(multiple ? [] : null);
   };
 
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+
+    if (!isOpen) {
+      setSearchQuery(""); // Clear search query when dropdown is closed
+    }
+  }, [isOpen]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between min-h-10 text-left",
-            disabled && "opacity-50 pointer-events-none",
-            className
-          )}
-          disabled={disabled}
-        >
-          <div className="truncate flex-1">{displayValue()}</div>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="p-0 w-[300px] max-w-[calc(100vw-2rem)]"
-        style={{ maxHeight: `${maxHeight + 50}px` }}
-        align="start"
-        sideOffset={8}
+    <div className={cn("space-y-2", className)}>
+      <Select
+        value={multiple ? undefined : value[0]?.value || ""}
+        onValueChange={() => {}}
+        disabled={disabled}
+        open={isOpen} // Control dropdown open state
+        onOpenChange={setIsOpen} // Update open state
       >
-        <Command ref={commandRef}>
-          <div className="flex items-center border-b px-3">
-            <CommandInput
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onValueChange={(value) => {
-                setSearchQuery(value);
-                if (onSearch) onSearch(value);
-              }}
-              className="h-9 flex-1"
-              ref={inputRef}
-            />
-            {isLoading && (
-              <Loader2 className="h-4 w-4 animate-spin opacity-70 mr-1" />
+        <SelectTrigger className="w-full">
+          <SelectValue
+            placeholder={
+              value.length > 0 ? value.length + " selected" : placeholder
+            }
+          />
+        </SelectTrigger>
+        <SelectContent>
+          <div className="sticky top-0 z-10 p-2 bg-background border-b">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder={searchPlaceholder}
+                className="pl-8 h-9 w-full"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    // apiSetSearch("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          <SelectGroup
+            ref={scrollContainerRef}
+            className="py-1 max-h-[350px] overflow-y-auto"
+            onScroll={handleScroll}
+          >
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => {
+                const isSelected = value?.some((o) => o.value === option.value);
+                return (
+                  <div
+                    key={option.value}
+                    className={cn(
+                      "cursor-pointer px-3 py-2 my-1 hover:bg-accent rounded-md",
+                      isSelected ? "bg-primary/10" : ""
+                    )}
+                    onClick={() => handleSelect(option)}
+                  >
+                    {multiple && showCheckboxes ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <div
+                          className="flex h-4 w-4 items-center justify-center rounded border border-primary cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelect(option);
+                          }}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                        >
+                          {isSelected && (
+                            <Check className="h-3 w-3 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1">{option.label}</div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 w-full">
+                        {isSelected && !multiple && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                        <div className="flex-1">{option.label}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  /* <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.disabled}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelect(option);
+                      }}
+                      className={cn(
+                        "cursor-pointer px-3 py-2 rounded-md hover:bg-muted",
+                        option.disabled && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {multiple && showCheckboxes ? (
+                        <div className="flex items-center gap-2 w-full">
+                          <div
+                            className="flex h-4 w-4 items-center justify-center rounded border border-primary cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelect(option);
+                            }}
+                            role="checkbox"
+                            aria-checked={isSelected}
+                          >
+                            {isSelected && (
+                              <Check className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1">{option.label}</div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 w-full">
+                          {isSelected && !multiple && (
+                            <Check className="h-4 w-4 text-primary" />
+                          )}
+                          <div className="flex-1">{option.label}</div>
+                        </div>
+                      )}
+                    </SelectItem> */
+                );
+              })
+            ) : (
+              <div className="py-2 px-3 text-sm text-muted-foreground">
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                ) : (
+                  emptyMessage
+                )}
+              </div>
             )}
-            {multiple && clearable && Array.isArray(value) && value.length > 0 && (
+          </SelectGroup>
+          {isLoading && hasMore && (
+            <div className="py-2 px-3 text-center">
+              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+
+      {/* {showSelectedTags && value.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {allOptions
+            .filter((option) =>
+              getNormalizedValues().includes(getOptionValue(option))
+            )
+            .map((option) => (
+              <div
+                key={getOptionValue(option)}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
+              >
+                <span>{getOptionLabel(option)}</span>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+        </div>
+      )} */}
+
+      {multiple &&
+        showSelectedTags &&
+        Array.isArray(value) &&
+        value.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {value.map((option) => (
+              <div
+                key={option.value}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
+              >
+                <span>{option.label}</span>
+                <button
+                  type="button"
+                  onClick={() => removeSelectedTag(option.value)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {clearable && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 px-2 text-xs"
                 onClick={handleClearAll}
               >
-                Clear
+                Clear All
               </Button>
             )}
           </div>
-          <CommandList 
-            className="max-h-[300px] overflow-y-auto" 
-            ref={listRef}
-            onScroll={handleScroll}
-          >
-            <CommandEmpty className="py-6 text-center text-sm">
-              {emptyMessage}
-            </CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value || `option-${Math.random()}`} // Ensure key is always provided
-                  value={option.value || `option-${Math.random()}`} // Ensure value is never empty
-                  onSelect={() => handleSelect(option)}
-                  disabled={option.disabled}
-                  className={cn(
-                    "cursor-pointer",
-                    option.disabled && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full mr-2">
-                    <div className="flex-grow">{option.label}</div>
-                    {isOptionSelected(option) && (
-                      <Check className="h-4 w-4 ml-2 flex-shrink-0" />
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
-              {isLoading && hasMore && (
-                <div className="py-2 text-center">
-                  <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                </div>
-              )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        )}
+    </div>
   );
 };

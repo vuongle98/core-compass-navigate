@@ -1,4 +1,3 @@
-
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 import { User, UserProfile } from "@/types/Auth";
@@ -107,10 +106,17 @@ class UserService {
    * @returns The updated user profile
    * @throws Error if the update fails
    */
-  static async updateProfile(id: number | string, profileData: Partial<UserProfile>): Promise<UserProfile> {
+  static async updateProfile(
+    id: number | string,
+    profileData: Partial<UserProfile>
+  ): Promise<UserProfile> {
     try {
-      const userId = typeof id === 'number' ? id : parseInt(id);
-      LoggingService.info("user_service", "update_profile", `Updating profile for user ${userId}`);
+      const userId = typeof id === "number" ? id : parseInt(id);
+      LoggingService.info(
+        "user_service",
+        "update_profile",
+        `Updating profile for user ${userId}`
+      );
       return await EnhancedApiService.put<UserProfile>(
         `${this.API_ENDPOINT}/${userId}/profile`,
         profileData

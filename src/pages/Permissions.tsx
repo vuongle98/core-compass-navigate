@@ -359,7 +359,7 @@ const Permissions = () => {
             resetFilters();
             refresh();
           }}
-          className="mt-2"
+          className="mt-4"
         />
         <div className="mt-4">
           <DataTable

@@ -4,15 +4,13 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import {
-  Archive,
-  BellOff,
-  Check,
+  Archive, Check,
   Download,
   FileUp,
   Trash2,
   Upload,
   Bell,
-  BellRing,
+  BellRing
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -444,6 +442,7 @@ const Notifications = () => {
             setSearchTerm("");
             refresh();
           }}
+          className="mt-4"
         />
 
         <div className="mt-4">
