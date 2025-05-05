@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -69,8 +68,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const commandRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [reachedBottom, setReachedBottom] = useState(false);
-  const [isScrolling, setIsScrolling] = useState(false);
+  const [throttleTimer, setThrottleTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Update search when popover opens/closes
   useEffect(() => {
@@ -79,37 +77,32 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   }, [open]);
 
-  // Improved scroll handler for infinite scrolling
+  // Improved scroll handler with throttle for infinite scrolling
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!onScroll || !hasMore || isLoading) return;
+    
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     const scrollThreshold = 50; // Load more when within 50px of bottom
     
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < scrollThreshold;
-    
-    if (isNearBottom && !reachedBottom && !isLoading && hasMore && onScroll) {
-      setReachedBottom(true);
-      setIsScrolling(true);
+    if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
+      // Use throttling to prevent multiple calls
+      if (throttleTimer) return;
       
-      // Call the onScroll callback to fetch more data
-      onScroll();
+      const timer = setTimeout(() => {
+        onScroll();
+        setThrottleTimer(null);
+      }, 300);
       
-      // Reset after a short delay to prevent multiple calls
-      setTimeout(() => {
-        setReachedBottom(false);
-      }, 500);
-    }
-    
-    if (scrollTop > 0) {
-      setIsScrolling(true);
-    } else {
-      setIsScrolling(false);
+      setThrottleTimer(timer);
     }
   };
 
-  // Reset scroll state when options change (i.e., new data loaded)
+  // Cleanup timer on unmount
   useEffect(() => {
-    setReachedBottom(false);
-  }, [options.length]);
+    return () => {
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, [throttleTimer]);
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

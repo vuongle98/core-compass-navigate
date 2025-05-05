@@ -41,24 +41,20 @@ export function DataTablePagination({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 30, 50, 100],
 }: DataTablePaginationProps) {
-  // Track current page internally to ensure correct values are passed
-  const [currentPage, setCurrentPage] = useState(pageIndex);
+  // Remove internal state tracking and use the passed pageIndex directly
   
-  // Update internal state when props change
-  useEffect(() => {
-    setCurrentPage(pageIndex);
-  }, [pageIndex]);
-
   // Calculate the range of items being displayed
-  const start = totalItems ? currentPage * pageSize + 1 : 0;
-  const end = totalItems ? Math.min((currentPage + 1) * pageSize, totalItems) : 0;
+  const start = totalItems ? pageIndex * pageSize + 1 : 0;
+  const end = totalItems ? Math.min((pageIndex + 1) * pageSize, totalItems) : 0;
 
-  // Handle page change with proper value tracking
+  // Handle page change - directly call the parent handler with the correct page
   const handlePageChange = (newPage: number) => {
-    // Update internal state
-    setCurrentPage(newPage);
-    // Call the parent handler with the correct page
     onPageChange(newPage);
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize: number) => {
+    onPageSizeChange(newSize);
   };
 
   return (
@@ -75,7 +71,7 @@ export function DataTablePagination({
           <p className="text-sm font-medium">Rows per page</p>
           <Select
             value={pageSize.toString()}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
+            onValueChange={(value) => handlePageSizeChange(Number(value))}
           >
             <SelectTrigger className="h-8 w-[70px]">
               <SelectValue placeholder={pageSize.toString()} />
@@ -91,7 +87,7 @@ export function DataTablePagination({
         </div>
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
-            Page {currentPage + 1} of {Math.max(1, pageCount)}
+            Page {pageIndex + 1} of {Math.max(1, pageCount)}
           </p>
           <div className="flex items-center space-x-1">
             <Button
@@ -99,7 +95,7 @@ export function DataTablePagination({
               size="icon"
               className="h-8 w-8 p-0"
               onClick={() => handlePageChange(0)}
-              disabled={currentPage === 0}
+              disabled={pageIndex === 0}
               aria-label="Go to first page"
             >
               <ChevronsLeftIcon className="h-4 w-4" />
@@ -108,8 +104,8 @@ export function DataTablePagination({
               variant="outline"
               size="icon"
               className="h-8 w-8 p-0"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
+              onClick={() => handlePageChange(pageIndex - 1)}
+              disabled={pageIndex === 0}
               aria-label="Go to previous page"
             >
               <ChevronLeftIcon className="h-4 w-4" />
@@ -118,8 +114,8 @@ export function DataTablePagination({
               variant="outline"
               size="icon"
               className="h-8 w-8 p-0"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= pageCount - 1}
+              onClick={() => handlePageChange(pageIndex + 1)}
+              disabled={pageIndex >= pageCount - 1}
               aria-label="Go to next page"
             >
               <ChevronRightIcon className="h-4 w-4" />
@@ -129,7 +125,7 @@ export function DataTablePagination({
               size="icon"
               className="h-8 w-8 p-0"
               onClick={() => handlePageChange(pageCount - 1)}
-              disabled={currentPage >= pageCount - 1}
+              disabled={pageIndex >= pageCount - 1}
               aria-label="Go to last page"
             >
               <ChevronsRightIcon className="h-4 w-4" />

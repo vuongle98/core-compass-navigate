@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,11 +58,16 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   const handleReset = () => {
+    // Create empty filters object
     const resetFilters = options.reduce((acc, option) => {
       acc[option.id] = option.type === "select" ? undefined : "";
       return acc;
     }, {} as ApiQueryFilters);
+    
+    // Update local state first
     setLocalFilters(resetFilters);
+    
+    // Call the parent reset function
     onReset();
   };
 
@@ -156,7 +162,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                   {option.label}
                 </label>
                 <Select
-                  value={(localFilters[option.id] as string) || ""}
+                  value={(localFilters[option.id] as string) || undefined}
                   onValueChange={(value) =>
                     handleFilterChange(option.id, value)
                   }
@@ -167,9 +173,8 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                     />
                   </SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
-                    {/* <SelectItem value="">All {option.label}</SelectItem> */}
                     {option.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
+                      <SelectItem key={opt.value} value={opt.value || "all"}>
                         {opt.label}
                       </SelectItem>
                     ))}
@@ -197,4 +202,4 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
       </div>
     </div>
   );
-};
+}
