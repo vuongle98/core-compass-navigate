@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -17,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (data: Partial<User>) => void; // Added this function
   updateUserProfile: (data: Partial<User>) => void;
   resetPassword: (username: string) => Promise<boolean>;
   changePassword: (
@@ -98,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ServiceRegistry.updateCurrentUser(null);
   };
 
-  const updateUserProfile = (data: Partial<User>) => {
+  const updateUser = (data: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
@@ -109,6 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Update the user in ServiceRegistry
       ServiceRegistry.updateCurrentUser(updatedUser);
     }
+  };
+
+  const updateUserProfile = (data: Partial<User>) => {
+    updateUser(data);
   };
 
   const resetPassword = async (username: string): Promise<boolean> => {
@@ -158,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        updateUser,
         updateUserProfile,
         resetPassword,
         changePassword,

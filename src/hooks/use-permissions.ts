@@ -9,7 +9,7 @@ export function usePermissions(): UserPermissions {
   return useMemo(() => {
     // Default to guest permissions if no user or role
     const userRoles = user?.roles || [{
-      id: DEFAULT_ROLES.GUEST,
+      id: 0, // Using number instead of string for ID
       code: DEFAULT_ROLES.GUEST,
       name: DEFAULT_ROLES.GUEST
     }];
@@ -29,7 +29,7 @@ export function usePermissions(): UserPermissions {
       // If it's a role code string, map to default role
       const roleCode = typeof role === 'string' ? role : (role as Role).code;
       return { 
-        id: roleCode || DEFAULT_ROLES.GUEST,
+        id: 0, // Using number instead of string for ID 
         code: roleCode || DEFAULT_ROLES.GUEST,
         name: roleCode || DEFAULT_ROLES.GUEST
       } as Role;
@@ -44,7 +44,7 @@ export function usePermissions(): UserPermissions {
         (role.permissions as (string | Permission)[]).forEach(perm => {
           if (typeof perm === 'string') {
             rolePermissions.push({ 
-              id: perm, 
+              id: 0, // Using number instead of string for ID
               name: perm, 
               code: perm
             });
@@ -73,7 +73,7 @@ export function usePermissions(): UserPermissions {
       
       if (!hasFeatureFlags) {
         uniquePermissions.push({ 
-          id: 'feature:flags', 
+          id: 0, // Using number instead of string for ID
           name: 'feature:flags', 
           code: 'feature:flags'
         });

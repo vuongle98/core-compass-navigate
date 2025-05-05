@@ -1,3 +1,4 @@
+
 export interface Role {
   id: number;
   code: string;
@@ -44,11 +45,12 @@ export interface User {
   lastLogin?: string;
   isActive?: boolean;
   avatar?: string;
-  username?: string; // Adding username property
+  username?: string;
   profile?: UserProfile;
   locked?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  name?: string; // Adding name property to User interface
 }
 
 export interface UserPermissions {

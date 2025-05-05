@@ -118,7 +118,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
     return chatList.map(chat => {
       // For private chats, show the other participant's name
       const chatName = chat.type === 'private' 
-        ? chat.participants.find(p => p.id !== user?.id)?.name || 'Private Chat'
+        ? chat.participants.find(p => p.id !== (user?.id?.toString()))?.name || 'Private Chat'
         : chat.name || 'Unnamed Chat';
         
       const unreadIndicator = chat.unreadCount > 0 
@@ -139,7 +139,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
         >
           {chat.type === 'private' && (
             <Avatar className="border border-primary/10">
-              <AvatarImage src={chat.participants.find(p => p.id !== user?.id)?.avatar} />
+              <AvatarImage src={chat.participants.find(p => p.id !== (user?.id?.toString()))?.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary">{chatName.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           )}
@@ -274,9 +274,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                       <div className="p-3 border-b flex items-center gap-2">
                         {activeChat.type === 'private' && (
                           <Avatar className="h-8 w-8 border border-primary/10">
-                            <AvatarImage src={activeChat.participants.find(p => p.id !== user?.id)?.avatar} />
+                            <AvatarImage src={activeChat.participants.find(p => p.id !== (user?.id?.toString()))?.avatar} />
                             <AvatarFallback className="bg-primary/10 text-xs">
-                              {activeChat.participants.find(p => p.id !== user?.id)?.name.substring(0, 2).toUpperCase()}
+                              {activeChat.participants.find(p => p.id !== (user?.id?.toString()))?.name.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         )}
@@ -295,7 +295,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                         
                         <span className="font-medium">
                           {activeChat.type === 'private' 
-                            ? activeChat.participants.find(p => p.id !== user?.id)?.name 
+                            ? activeChat.participants.find(p => p.id !== (user?.id?.toString()))?.name 
                             : activeChat.name || 'Chat'}
                         </span>
                       </div>
@@ -305,7 +305,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onClose }) => {
                             <div key={message.id} className={messageAnimation}>
                               <ChatMessage 
                                 message={message} 
-                                isCurrentUser={message.sender.id === user?.id} 
+                                isCurrentUser={message.sender.id === (user?.id?.toString())} 
                               />
                             </div>
                           ))}

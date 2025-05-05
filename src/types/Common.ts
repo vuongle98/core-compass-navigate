@@ -1,9 +1,11 @@
 
+import { ReactElement } from "react";
+
 export interface Column<T> {
   header: string;
   accessorKey: string;
   id?: string;
-  cell?: (item: T) => JSX.Element;
+  cell?: (item: T) => ReactElement | string | number | null; // Updated return type to include string and number
   sortable?: boolean;
   filterable?: boolean;
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -103,6 +102,7 @@ const Profile = () => {
     }
   };
 
+  
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -171,6 +171,7 @@ const Profile = () => {
                 )}
               </CardHeader>
               <CardContent>
+                
                 {isEditing ? (
                   <Form {...form}>
                     <form

@@ -148,7 +148,6 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
         showSelectedTags={true}
         onSearch={handleSearch}
         isLoading={isLoading}
-        isScrollable={true}
         emptyMessage="No roles found"
       />
     </div>

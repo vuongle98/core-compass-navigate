@@ -1,236 +1,93 @@
+
+import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
-import { FeatureFlag, FeatureFlagConfig } from "@/types/FeatureFlag";
+import { FeatureFlag } from "@/types/FeatureFlag"; // Updated import
 
-class FeatureFlagService {
-  private static flags: Map<string, FeatureFlag> = new Map();
-  private static instance: FeatureFlagService;
+/**
+ * Service for feature flags operations
+ */
+class FeatureFlagsService {
+  private static API_ENDPOINT = "/api/feature-flags";
 
-  private constructor() {
-    // Private constructor to enforce singleton
-    this.initializeDefaults();
-  }
-
-  static getInstance() {
-    if (!FeatureFlagService.instance) {
-      FeatureFlagService.instance = new FeatureFlagService();
-    }
-    return FeatureFlagService.instance;
-  }
-
-  private initializeDefaults() {
-    // Set up default feature flags
-    this.registerFeatureFlag({
-      key: "darkMode",
-      enabled: true,
-      description: "Enable dark mode UI",
-      group: "ui",
-    });
-
-    this.registerFeatureFlag({
-      key: "analytics",
-      enabled: false,
-      description: "Enable analytics tracking",
-      group: "tracking",
-    });
-
-    this.registerFeatureFlag({
-      key: "betaFeatures",
-      enabled: false,
-      description: "Enable beta features",
-      group: "experimental",
-    });
-
-    this.registerFeatureFlag({
-      key: "newDashboard",
-      enabled: false,
-      description: "Enable new dashboard UI",
-      group: "ui",
-    });
-
-    this.registerFeatureFlag({
-      key: "chat_system",
-      enabled: true,
-      description: "Enable chat system",
-      group: "feature",
-    });
-
-    LoggingService.info(
-      "feature_flags",
-      "initialized",
-      "Feature flags initialized with defaults"
-    );
-  }
-
-  registerFeatureFlag(config: FeatureFlagConfig) {
+  /**
+   * Get all feature flags
+   * @returns List of feature flags
+   */
+  static async getAll(): Promise<FeatureFlag[]> {
     try {
-      const newFlag: FeatureFlag = {
-        ...config,
-        lastUpdated: new Date().toISOString(),
-      };
-
-      FeatureFlagService.flags.set(config.key, newFlag);
-      LoggingService.debug(
-        "feature_flags",
-        "registered",
-        `Feature flag registered: ${config.key}`
-      );
-    } catch (error) {
-      LoggingService.warn(
-        "feature_flags",
-        "register_failed",
-        `Failed to register feature flag: ${config.key}`
-      );
-    }
-  }
-
-  isEnabled(key: string): boolean {
-    try {
-      const flag = FeatureFlagService.flags.get(key);
-      if (!flag) {
-        LoggingService.warn(
-          "feature_flags",
-          "not_found",
-          `Feature flag not found: ${key}`
-        );
-        return false;
-      }
-
-      return flag.enabled;
+      LoggingService.info("feature_flags", "get_all", "Fetching all feature flags");
+      return await EnhancedApiService.get<FeatureFlag[]>(this.API_ENDPOINT);
     } catch (error) {
       LoggingService.error(
         "feature_flags",
-        "check_failed",
-        `Error checking feature flag: ${key}`
-      );
-      return false;
-    }
-  }
-
-  setFeatureFlag(key: string, enabled: boolean) {
-    try {
-      const flag = FeatureFlagService.flags.get(key);
-      if (!flag) {
-        LoggingService.warn(
-          "feature_flags",
-          "update_failed",
-          `Feature flag not found: ${key}`
-        );
-        return;
-      }
-
-      flag.enabled = enabled;
-      flag.lastUpdated = new Date().toISOString();
-      FeatureFlagService.flags.set(key, flag);
-      LoggingService.info(
-        "feature_flags",
-        "updated",
-        `Feature flag updated: ${key} = ${enabled}`
-      );
-    } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "update_failed",
-        `Error updating feature flag: ${key}`
-      );
-    }
-  }
-
-  getAllFlags(): FeatureFlag[] {
-    return Array.from(FeatureFlagService.flags.values());
-  }
-
-  getFlagsByGroup(group: string): FeatureFlag[] {
-    try {
-      return Array.from(FeatureFlagService.flags.values()).filter(
-        (flag) => flag.group === group
-      );
-    } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "get_group_failed",
-        `Error fetching flags by group: ${group}`
+        "get_all_failed",
+        "Failed to fetch all feature flags",
+        error
       );
       return [];
     }
   }
 
-  // Add the missing isFeatureEnabled method required by the hook
-  isFeatureEnabled(
-    featureName: string,
-    environment?: string,
-    userRoles?: string[]
-  ): boolean {
+  /**
+   * Get a feature flag by key
+   * @param key The feature flag key
+   * @returns The feature flag or undefined if not found
+   */
+  static async getByKey(key: string): Promise<FeatureFlag | undefined> {
     try {
-      const flag = FeatureFlagService.flags.get(featureName);
-      if (!flag) {
-        LoggingService.warn(
-          "feature_flags",
-          "not_found",
-          `Feature flag not found: ${featureName}`
-        );
-        return false;
-      }
-
-      // If flag is not enabled at all, return false
-      if (!flag.enabled) return false;
-
-      // Check environment restrictions
-      if (flag.environments && flag.environments.length > 0) {
-        if (!environment || !flag.environments.includes(environment)) {
-          return false;
-        }
-      }
-
-      // Check role restrictions
-      if (flag.roles && flag.roles.length > 0 && userRoles) {
-        // Check if user has any of the required roles
-        const hasRequiredRole = userRoles.some((role) =>
-          flag.roles?.includes(role)
-        );
-
-        if (!hasRequiredRole) return false;
-      }
-
-      return true;
+      LoggingService.info("feature_flags", "get_by_key", `Fetching feature flag with key: ${key}`);
+      return await EnhancedApiService.get<FeatureFlag>(`${this.API_ENDPOINT}/${key}`);
     } catch (error) {
       LoggingService.error(
         "feature_flags",
-        "check_failed",
-        `Error checking feature flag: ${featureName}`
+        "get_by_key_failed",
+        `Failed to fetch feature flag with key: ${key}`,
+        error
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * Check if a feature flag is enabled
+   * @param key The feature flag key
+   * @returns True if enabled, false otherwise
+   */
+  static async isEnabled(key: string): Promise<boolean> {
+    try {
+      const flag = await this.getByKey(key);
+      return flag?.enabled || false;
+    } catch (error) {
+      LoggingService.error(
+        "feature_flags",
+        "is_enabled_failed",
+        `Failed to check if feature flag is enabled: ${key}`,
+        error
       );
       return false;
     }
   }
 
-  // Add the refreshFlags method required by AuthContext
-  async refreshFlags(): Promise<void> {
+  /**
+   * Toggle a feature flag
+   * @param id The feature flag ID
+   * @param enabled True to enable, false to disable
+   * @returns The updated feature flag
+   */
+  static async toggle(id: number, enabled: boolean): Promise<FeatureFlag | undefined> {
     try {
-      LoggingService.info(
-        "feature_flags",
-        "refresh",
-        "Refreshing feature flags"
-      );
-
-      // In a real implementation, this would fetch flags from an API
-      // For now, we'll just log the action and resolve immediately
-
-      // Simulate a network request
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      LoggingService.info(
-        "feature_flags",
-        "refresh_success",
-        "Feature flags refreshed successfully"
-      );
+      LoggingService.info("feature_flags", "toggle", `Toggling feature flag ${id} to ${enabled}`);
+      return await EnhancedApiService.put<FeatureFlag>(`${this.API_ENDPOINT}/${id}/toggle`, { enabled });
     } catch (error) {
       LoggingService.error(
         "feature_flags",
-        "refresh_failed",
-        "Failed to refresh feature flags",
+        "toggle_failed",
+        `Failed to toggle feature flag ${id} to ${enabled}`,
         error
       );
+      return undefined;
     }
   }
 }
 
-export default FeatureFlagService.getInstance();
+export default FeatureFlagsService;

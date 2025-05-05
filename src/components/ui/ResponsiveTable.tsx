@@ -1,118 +1,71 @@
 
-import React from "react";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Column } from "@/types/Common";
-import { Badge } from "./badge";
+import React from 'react';
+import { Column } from '@/types/Common';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
+import { cn } from '@/lib/utils';
 
-interface ResponsiveTableProps<T> {
+export interface ResponsiveTableProps<T> {
   data: T[];
   columns: Column<T>[];
   className?: string;
-  emptyMessage?: string;
+  onRowClick?: (item: T) => void;
+  isLoading?: boolean;
+  emptyState?: React.ReactNode;
 }
 
 export function ResponsiveTable<T>({
   data,
   columns,
   className,
-  emptyMessage = "No data available",
+  onRowClick,
+  isLoading = false,
+  emptyState,
 }: ResponsiveTableProps<T>) {
-  const isMobile = useIsMobile();
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-6">Loading data...</div>;
+  }
 
-  if (!data.length) {
+  if (data.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        {emptyMessage}
+      <div className="flex items-center justify-center p-6 text-muted-foreground">
+        {emptyState || "No data available"}
       </div>
     );
   }
 
-  // Mobile view - each row becomes a card with label-value layout
-  if (isMobile) {
-    return (
-      <div className={cn("space-y-4", className)}>
-        {data.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden"
-          >
-            <div className="divide-y">
-              {columns.map((column, colIndex) => {
-                // Skip hidden columns
-                if (column.accessorKey === 'id') {
-                  return null;
-                }
-                
-                // Render cell content
-                const cellContent = column.cell 
-                  ? column.cell(row)
-                  : row[column.accessorKey as keyof T] != null
-                  ? String(row[column.accessorKey as keyof T])
-                  : "-";
-                
-                // For actions column, render it differently
-                if (column.accessorKey === 'actions') {
-                  return (
-                    <div key={colIndex} className="p-3 bg-muted/10 flex justify-end">
-                      {cellContent}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div key={colIndex} className="flex px-4 py-3">
-                    <div className="font-medium text-sm text-muted-foreground w-1/3 flex items-center">
-                      {column.header}:
-                    </div>
-                    <div className="w-2/3 flex items-center">
-                      {cellContent}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // Desktop view - traditional table
   return (
-    <div className={cn("w-full overflow-auto", className)}>
-      <table className="w-full caption-bottom text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            {columns.map((column, index) => (
-              <th
-                key={index}
-                className="h-11 px-4 text-left align-middle font-medium text-muted-foreground"
-              >
+    <div className="w-full overflow-auto">
+      <Table className={className}>
+        <TableHeader>
+          <TableRow>
+            {columns.map((column) => (
+              <TableHead key={column.accessorKey} className={cn(column.id)}>
                 {column.header}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className="border-b transition-colors hover:bg-muted/50"
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((item, index) => (
+            <TableRow
+              key={index}
+              onClick={onRowClick ? () => onRowClick(item) : undefined}
+              className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
             >
-              {columns.map((column, colIndex) => (
-                <td key={colIndex} className="p-4 align-middle">
+              {columns.map((column) => (
+                <TableCell key={`${index}-${column.accessorKey}`}>
                   {column.cell
-                    ? column.cell(row)
-                    : row[column.accessorKey as keyof T] != null
-                    ? String(row[column.accessorKey as keyof T])
-                    : "-"}
-                </td>
+                    ? column.cell(item)
+                    : (item as any)[column.accessorKey]}
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
+
+// Re-export Column type to fix imports in other files
+export type TableColumn<T> = Column<T>;

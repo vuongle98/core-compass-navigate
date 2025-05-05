@@ -23,6 +23,7 @@ import {
   ToggleLeft,
 } from "lucide-react";
 import { FeatureFlag } from "@/types/Configuration";
+import { Column } from "@/types/Common";
 
 const FeatureFlags = () => {
   // Mock data
@@ -100,7 +101,7 @@ const FeatureFlags = () => {
     );
   };
 
-  const columns = [
+  const columns: Column<FeatureFlag>[] = [
     {
       header: "#",
       accessorKey: "id",
@@ -110,21 +111,21 @@ const FeatureFlags = () => {
     },
     {
       header: "Flag Name",
-      accessorKey: "name" as const,
+      accessorKey: "name",
       cell: (item: FeatureFlag) => (
         <div className="font-medium">{item.key}</div>
       ),
     },
     {
       header: "Value",
-      accessorKey: "value" as const,
+      accessorKey: "value",
       cell: (item: FeatureFlag) => (
         <div className="text-sm text-muted-foreground">{item.value}</div>
       ),
     },
     {
       header: "Type",
-      accessorKey: "type" as const,
+      accessorKey: "type",
       cell: (item: FeatureFlag) => (
         <Badge variant="outline" className="text-xs">
           {item.type}
@@ -133,27 +134,27 @@ const FeatureFlags = () => {
     },
     {
       header: "Description",
-      accessorKey: "description" as const,
+      accessorKey: "description",
       cell: (item: FeatureFlag) => (
         <div className="max-w-xs truncate">{item.description}</div>
       ),
     },
     {
       header: "Status",
-      accessorKey: "enabled" as const,
+      accessorKey: "enabled",
       cell: (item: FeatureFlag) => (
         <Switch
           checked={item.enabled}
-          onCheckedChange={() => handleToggle(item.id, item.enabled)}
+          onCheckedChange={() => handleToggle(item.id!, item.enabled)}
           className="data-[state=checked]:bg-green-500"
         />
       ),
     },
     {
       header: "Environment",
-      accessorKey: "environment" as const,
+      accessorKey: "environment",
       cell: (item: FeatureFlag) => {
-        const envs = item.environments;
+        const envs = item.environments || [];
 
         const getEnvColor = (env: string) => {
           if (env === "All") {
@@ -166,19 +167,23 @@ const FeatureFlags = () => {
           return "bg-blue-100 text-blue-800";
         };
 
-        return envs.map((env) => (
-          <span
-            key={env}
-            className={`px-2 py-1 rounded-full text-xs ${getEnvColor}`}
-          >
-            {env}
-          </span>
-        ));
+        return (
+          <div className="flex flex-wrap gap-1">
+            {envs.map((env) => (
+              <span
+                key={env}
+                className={`px-2 py-1 rounded-full text-xs ${getEnvColor(env)}`}
+              >
+                {env}
+              </span>
+            ))}
+          </div>
+        );
       },
     },
     {
       header: "Category",
-      accessorKey: "category" as const,
+      accessorKey: "category",
       cell: (item: FeatureFlag) => {
         const category = item.group || "General";
         let icon = <ToggleLeft className="mr-2 h-4 w-4" />;
@@ -199,7 +204,11 @@ const FeatureFlags = () => {
         );
       },
     },
-    { header: "Last Updated", accessorKey: "lastUpdated" as const },
+    { 
+      header: "Last Updated", 
+      accessorKey: "lastUpdated",
+      cell: (item: FeatureFlag) => item.lastUpdated || "N/A"
+    },
   ];
 
   const getEnabledCount = () =>
@@ -259,8 +268,7 @@ const FeatureFlags = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-xl font-bold">
                     {
-                      featureFlags.filter((f) => f.environments.includes("All"))
-                        .length
+                      featureFlags.filter((f) => f.environments?.includes("All")).length
                     }
                   </span>
                   <span className="text-xs text-muted-foreground">All</span>
@@ -268,8 +276,8 @@ const FeatureFlags = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-xl font-bold">
                     {
-                      featureFlags.filter((f) =>
-                        f.environments.includes("Production")
+                      featureFlags.filter((f) => 
+                        f.environments?.includes("Production")
                       ).length
                     }
                   </span>
@@ -281,7 +289,7 @@ const FeatureFlags = () => {
                   <span className="text-xl font-bold">
                     {
                       featureFlags.filter((f) =>
-                        f.environments.includes("Development")
+                        f.environments?.includes("Development")
                       ).length
                     }
                   </span>
