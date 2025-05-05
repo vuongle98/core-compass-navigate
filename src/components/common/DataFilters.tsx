@@ -39,7 +39,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
   const handleFilterChange = (id: string, value: string | number | undefined) => {
     const newFilters = { ...localFilters, [id]: value };
     setLocalFilters(newFilters);
-    // No need to call onChange here - it will be called via the debounced effect
+    // onChange is called via the debounced effect
   };
 
   const handleReset = () => {
@@ -58,10 +58,12 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
     <div className={`space-y-4 p-4 bg-background rounded-lg border shadow-sm ${className || ''}`}>
       <div className={`grid gap-4 ${gridClass}`}>
         {options.map(option => (
-          <div key={option.id}>
+          <div key={option.id} className="space-y-1.5">
             {option.type === 'text' && (
               <div>
-                <label htmlFor={option.id} className="block text-sm font-medium mb-1">{option.label}</label>
+                <label htmlFor={option.id} className="block text-sm font-medium mb-1 text-muted-foreground">
+                  {option.label}
+                </label>
                 <Input
                   type="text"
                   id={option.id}
@@ -75,7 +77,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
 
             {option.type === 'search' && (
               <div>
-                <label htmlFor={option.id} className="block text-sm font-medium mb-1">{option.label}</label>
+                <label htmlFor={option.id} className="block text-sm font-medium mb-1 text-muted-foreground">
+                  {option.label}
+                </label>
                 <div className="relative">
                   <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <Input
@@ -102,15 +106,18 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
 
             {option.type === 'select' && (
               <div>
-                <label htmlFor={option.id} className="block text-sm font-medium mb-1">{option.label}</label>
+                <label htmlFor={option.id} className="block text-sm font-medium mb-1 text-muted-foreground">
+                  {option.label}
+                </label>
                 <Select 
-                  value={(localFilters[option.id] as string) || undefined} 
+                  value={(localFilters[option.id] as string) || ''} 
                   onValueChange={(value) => handleFilterChange(option.id, value)}
                 >
                   <SelectTrigger id={option.id} className="w-full">
                     <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">All {option.label}</SelectItem>
                     {option.options?.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -123,7 +130,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
       </div>
       
       <div className="flex justify-end">
-        <Button variant="outline" onClick={handleReset} className="ml-2">
+        <Button variant="outline" onClick={handleReset} size="sm" className="ml-2">
           Reset Filters
         </Button>
       </div>

@@ -2,16 +2,12 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-export interface TableColumn<T> {
-  header: string;
-  accessor: keyof T;
-  cell?: (item: T) => React.ReactNode;
-}
+import { Column } from "@/types/Common";
+import { Badge } from "./badge";
 
 interface ResponsiveTableProps<T> {
   data: T[];
-  columns: TableColumn<T>[];
+  columns: Column<T>[];
   className?: string;
   emptyMessage?: string;
 }
@@ -39,22 +35,43 @@ export function ResponsiveTable<T>({
         {data.map((row, rowIndex) => (
           <div
             key={rowIndex}
-            className="rounded-lg border bg-card text-card-foreground shadow-sm p-4"
+            className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden"
           >
-            {columns.map((column, colIndex) => (
-              <div key={colIndex} className="flex py-2 border-b last:border-0">
-                <div className="font-medium text-sm text-muted-foreground w-1/3">
-                  {column.header}:
-                </div>
-                <div className="w-2/3">
-                  {column.cell
-                    ? column.cell(row)
-                    : row[column.accessor] != null
-                    ? String(row[column.accessor])
-                    : "-"}
-                </div>
-              </div>
-            ))}
+            <div className="divide-y">
+              {columns.map((column, colIndex) => {
+                // Skip hidden columns
+                if (column.accessorKey === 'id') {
+                  return null;
+                }
+                
+                // Render cell content
+                const cellContent = column.cell 
+                  ? column.cell(row)
+                  : row[column.accessorKey as keyof T] != null
+                  ? String(row[column.accessorKey as keyof T])
+                  : "-";
+                
+                // For actions column, render it differently
+                if (column.accessorKey === 'actions') {
+                  return (
+                    <div key={colIndex} className="p-3 bg-muted/10 flex justify-end">
+                      {cellContent}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={colIndex} className="flex px-4 py-3">
+                    <div className="font-medium text-sm text-muted-foreground w-1/3 flex items-center">
+                      {column.header}:
+                    </div>
+                    <div className="w-2/3 flex items-center">
+                      {cellContent}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
@@ -70,7 +87,7 @@ export function ResponsiveTable<T>({
             {columns.map((column, index) => (
               <th
                 key={index}
-                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+                className="h-11 px-4 text-left align-middle font-medium text-muted-foreground"
               >
                 {column.header}
               </th>
@@ -87,8 +104,8 @@ export function ResponsiveTable<T>({
                 <td key={colIndex} className="p-4 align-middle">
                   {column.cell
                     ? column.cell(row)
-                    : row[column.accessor] != null
-                    ? String(row[column.accessor])
+                    : row[column.accessorKey as keyof T] != null
+                    ? String(row[column.accessorKey as keyof T])
                     : "-"}
                 </td>
               ))}

@@ -3,19 +3,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowUp, ArrowDown } from "lucide-react";
-import { ResponsiveTable, TableColumn } from "./ResponsiveTable";
+import { ResponsiveTable } from "./ResponsiveTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
 import { ReactNode } from "react";
-
-export interface Column<T> {
-  header: string;
-  accessorKey?: string;
-  id?: string;
-  cell?: (item: T) => ReactNode;
-  sortable?: boolean;
-  filterable?: boolean;
-}
+import { Column } from "@/types/Common";
 
 interface DataTableProps<T> {
   data: T[];
@@ -92,14 +84,6 @@ export function DataTable<T>({
     }
   };
 
-  // Convert columns to ResponsiveTable format
-  const tableColumns: TableColumn<T>[] = columns.map(column => ({
-    header: column.header,
-    accessor: (column.accessorKey || column.id) as keyof T,
-    cell: column.cell,
-    sortable: column.sortable,
-  }));
-
   return (
     <Card className="w-full shadow-sm border">
       {(title || showAddButton || headerActions) && (
@@ -126,7 +110,7 @@ export function DataTable<T>({
         ) : (
           <ResponsiveTable
             data={data}
-            columns={tableColumns}
+            columns={columns}
             emptyMessage={emptyMessage}
           />
         )}

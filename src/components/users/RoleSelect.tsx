@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
@@ -36,7 +37,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     const fetchRoles = async () => {
       try {
         setIsLoading(true);
-        const response = await EnhancedApiService.getPaginated("/api/role", {
+        const response = await EnhancedApiService.getPaginated<Role>("/api/role", {
           params: debouncedSearchQuery ? { search: debouncedSearchQuery } : {},
         });
 
@@ -143,10 +144,12 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
         searchPlaceholder="Search roles..."
         multiple={true}
         disabled={disabled || !initialLoaded}
-        maxHeight={400}
+        maxHeight={300}
         showSelectedTags={true}
         onSearch={handleSearch}
         isLoading={isLoading}
+        isScrollable={true}
+        emptyMessage="No roles found"
       />
     </div>
   );

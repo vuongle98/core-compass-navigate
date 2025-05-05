@@ -1,10 +1,9 @@
 
 import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
-import EnhancedApiService, { PaginatedData } from "@/services/EnhancedApiService";
+import EnhancedApiService from "@/services/EnhancedApiService";
 import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
 import { debounce } from "lodash";
-import { AxiosRequestConfig } from "axios";
 
 export interface ApiDataOptions<T> {
   endpoint: string;

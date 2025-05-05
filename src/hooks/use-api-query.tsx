@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, QueryKey } from '@tanstack/react-query';
 import EnhancedApiService, { PaginatedData, PaginationOptions } from '@/services/EnhancedApiService';
 import { toast } from 'sonner';
 import useLocalStorage from './use-local-storage';
+import useDebounce from './use-debounce';
 
 export interface ApiQueryFilters {
   [key: string]: string | number | boolean | null | undefined;
@@ -31,16 +32,19 @@ export function useApiQuery<T>({
   initialFilters = {},
   persistFilters = false,
   persistKey,
-  debounceMs = 0,
+  debounceMs = 300,
   mockData,
   onError,
   isPaginated = true,
 }: UseApiQueryProps<T>) {
   const storageKey = persistKey || `filters-${endpoint.replace(/\//g, '-')}`;
-  const [filters, setFiltersState] = useState<ApiQueryFilters>(initialFilters);
+  const [filtersState, setFiltersState] = useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const queryClient = useQueryClient();
+  
+  // Use debounce for filter changes to prevent too many API calls
+  const debouncedFilters = useDebounce(filtersState, debounceMs);
   
   // Load persisted filters from localStorage if enabled
   const [persistedFilters, setPersistedFilters] = useLocalStorage<ApiQueryFilters>(
@@ -67,8 +71,8 @@ export function useApiQuery<T>({
 
   // Helper to set search term
   const setSearch = useCallback((searchTerm: string) => {
-    setFilters({ ...filters, search: searchTerm });
-  }, [filters, setFilters]);
+    setFilters({ ...filtersState, search: searchTerm });
+  }, [filtersState, setFilters]);
 
   // Reset filters to initial state
   const resetFilters = useCallback(() => {
@@ -98,10 +102,10 @@ export function useApiQuery<T>({
 
   // API query with pagination and filters
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: [...queryKey, page, pageSize, filters],
+    queryKey: [...queryKey, page, pageSize, debouncedFilters],
     queryFn: async () => {
       try {
-        const params = buildQueryParams(filters);
+        const params = buildQueryParams(debouncedFilters);
         
         if (isPaginated) {
           const response = await EnhancedApiService.getPaginated<T>(endpoint, params);
@@ -132,6 +136,11 @@ export function useApiQuery<T>({
     }
   });
 
+  // Force refetch when page or pageSize changes
+  useEffect(() => {
+    refetch();
+  }, [page, pageSize, refetch]);
+
   // Total items count
   const totalItems = data?.totalElements || 0;
   const totalPages = data?.totalPages || 0;
@@ -153,7 +162,7 @@ export function useApiQuery<T>({
     setPageSize,
     totalItems,
     totalPages,
-    filters,
+    filters: filtersState,
     setFilters,
     setSearch,
     resetFilters,

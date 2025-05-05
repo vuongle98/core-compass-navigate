@@ -21,6 +21,7 @@ interface DetailViewModalProps {
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl" | "full";
   showCloseButton?: boolean;
+  footerContent?: React.ReactNode;
 }
 
 export function DetailViewModal({
@@ -32,6 +33,7 @@ export function DetailViewModal({
   children,
   size = "md",
   showCloseButton = true,
+  footerContent,
 }: DetailViewModalProps) {
   const sizeClasses = {
     sm: "max-w-sm",
@@ -56,15 +58,19 @@ export function DetailViewModal({
       <DialogContent
         className={cn(
           sizeClasses[size], 
-          "max-h-[85vh] flex flex-col p-0 overflow-hidden", 
+          "max-h-[90vh] sm:max-h-[85vh] flex flex-col p-0 overflow-hidden", 
           className
         )}
       >
-        <DialogHeader className="p-6 bg-muted/30 border-b">
+        <DialogHeader className="p-4 sm:p-6 bg-muted/30 border-b">
           <div className="flex justify-between items-start">
             <div>
-              <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
-              {description && <DialogDescription className="mt-1">{description}</DialogDescription>}
+              <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+              {description && (
+                <DialogDescription className="mt-1 text-sm">
+                  {description}
+                </DialogDescription>
+              )}
             </div>
             {showCloseButton && (
               <Button
@@ -79,9 +85,14 @@ export function DetailViewModal({
             )}
           </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6">{children}</div>
+        <ScrollArea className="flex-1 p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-6">{children}</div>
         </ScrollArea>
+        {footerContent && (
+          <div className="p-4 sm:p-6 border-t flex justify-end space-x-2 bg-muted/20">
+            {footerContent}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
