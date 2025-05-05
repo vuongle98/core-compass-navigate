@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { ResponsiveTable, TableColumn } from "@/components/ui/ResponsiveTable";
+import { ResponsiveTable } from "@/components/ui/ResponsiveTable";
 import { DataTable } from "@/components/ui/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Column } from "@/types/Common";
 
 interface User {
   id: number;
@@ -63,26 +64,26 @@ const TableStyleDemo = () => {
   ];
 
   // Table columns
-  const columns: TableColumn<User>[] = [
+  const columns: Column<User>[] = [
     {
       header: "ID",
-      accessor: "id",
+      accessorKey: "id",
     },
     {
       header: "Name",
-      accessor: "name",
+      accessorKey: "name",
     },
     {
       header: "Email",
-      accessor: "email",
+      accessorKey: "email",
     },
     {
       header: "Role",
-      accessor: "role",
+      accessorKey: "role",
     },
     {
       header: "Status",
-      accessor: "status",
+      accessorKey: "status",
       cell: (user) => (
         <Badge
           className={
@@ -99,7 +100,7 @@ const TableStyleDemo = () => {
     },
     {
       header: "Last Login",
-      accessor: "lastLogin",
+      accessorKey: "lastLogin",
       cell: (user) => {
         const date = new Date(user.lastLogin);
         return new Intl.DateTimeFormat("en-US", {
@@ -111,28 +112,28 @@ const TableStyleDemo = () => {
   ];
 
   // DataTable columns
-  const dataTableColumns = [
+  const dataTableColumns: Column<User>[] = [
     {
       header: "ID",
       accessorKey: "id",
-      cell: (user: User) => <span className="font-mono">{user.id}</span>,
+      cell: (user) => <span className="font-mono">{user.id}</span>,
     },
     {
       header: "Name",
-      accessorKey: "name" as const,
+      accessorKey: "name",
     },
     {
       header: "Email",
-      accessorKey: "email" as const,
+      accessorKey: "email",
     },
     {
       header: "Role",
-      accessorKey: "role" as const,
+      accessorKey: "role",
     },
     {
       header: "Status",
-      accessorKey: "status" as const,
-      cell: (user: User) => (
+      accessorKey: "status",
+      cell: (user) => (
         <Badge
           className={
             user.status === "active"
@@ -148,8 +149,8 @@ const TableStyleDemo = () => {
     },
     {
       header: "Last Login",
-      accessorKey: "lastLogin" as const,
-      cell: (user: User) => {
+      accessorKey: "lastLogin",
+      cell: (user) => {
         const date = new Date(user.lastLogin);
         return new Intl.DateTimeFormat("en-US", {
           dateStyle: "medium",

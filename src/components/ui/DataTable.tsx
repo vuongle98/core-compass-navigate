@@ -130,5 +130,5 @@ export function DataTable<T>({
   );
 }
 
-// Export Column type for usage in other components
-export { Column };
+// Export Column type to fix imports in other files
+export type { Column };

@@ -70,4 +70,4 @@ export function ResponsiveTable<T>({
 }
 
 // Re-export Column type to fix imports in other files
-export type TableColumn<T> = Column<T>;
+export type { Column as TableColumn };

@@ -1,11 +1,14 @@
 
 export interface FeatureFlag {
-  id?: number;
+  id: string;
+  name: string;
+  description: string;
   key: string;
-  description?: string;
-  enabled: boolean;
-  environments?: string[];
-  roles?: string[];
-  value?: string;
-  type?: string;
+  isActive: boolean;
+  environment: string[];
+  userGroups: string[];
+  percentage: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }

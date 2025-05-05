@@ -1,101 +1,128 @@
 
-import EnhancedApiService from "./EnhancedApiService";
-import LoggingService from "./LoggingService";
+import EnhancedApiService from './EnhancedApiService';
+import { FeatureFlag } from '@/types/FeatureFlag';
+import { ApiResponse, PageData } from '@/types/Common';
 
-export interface FeatureFlag {
-  id: number;
-  name: string;
-  key: string;
-  description: string;
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Service for feature flags operations
- */
 class FeatureFlagsService {
-  private static API_ENDPOINT = "/api/feature-flags";
+  private static BASE_URL = '/api/v1/feature-flags';
 
-  /**
-   * Get all feature flags
-   * @returns List of feature flags
-   */
-  static async getAll(): Promise<FeatureFlag[]> {
+  static async getAll(params: any = {}): Promise<PageData<FeatureFlag>> {
     try {
-      LoggingService.info("feature_flags", "get_all", "Fetching all feature flags");
-      return await EnhancedApiService.get<FeatureFlag[]>(this.API_ENDPOINT);
+      return await EnhancedApiService.get<PageData<FeatureFlag>>(this.BASE_URL, { params });
     } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "get_all_failed",
-        "Failed to fetch all feature flags",
-        error
-      );
-      return [];
+      console.error('Error fetching feature flags:', error);
+      throw error;
     }
   }
 
-  /**
-   * Get a feature flag by key
-   * @param key The feature flag key
-   * @returns The feature flag or undefined if not found
-   */
-  static async getByKey(key: string): Promise<FeatureFlag | undefined> {
+  static async get(id: string): Promise<ApiResponse<FeatureFlag>> {
     try {
-      LoggingService.info("feature_flags", "get_by_key", `Fetching feature flag with key: ${key}`);
-      return await EnhancedApiService.get<FeatureFlag>(`${this.API_ENDPOINT}/${key}`);
+      const response = await EnhancedApiService.get<FeatureFlag>(`${this.BASE_URL}/${id}`);
+      return {
+        success: true,
+        message: 'Feature flag retrieved successfully',
+        data: response,
+        error: null
+      };
     } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "get_by_key_failed",
-        `Failed to fetch feature flag with key: ${key}`,
-        error
-      );
-      return undefined;
+      console.error(`Error fetching feature flag ${id}:`, error);
+      return {
+        success: false,
+        message: 'Failed to fetch feature flag',
+        data: {} as FeatureFlag,
+        error: 'An error occurred while fetching the feature flag'
+      };
     }
   }
 
-  /**
-   * Check if a feature flag is enabled
-   * @param key The feature flag key
-   * @returns True if enabled, false otherwise
-   */
-  static async isEnabled(key: string): Promise<boolean> {
+  static async create(data: Partial<FeatureFlag>): Promise<ApiResponse<FeatureFlag>> {
     try {
-      const flag = await this.getByKey(key);
-      return flag?.enabled || false;
+      const response = await EnhancedApiService.post<FeatureFlag>(this.BASE_URL, data);
+      return {
+        success: true,
+        message: 'Feature flag created successfully',
+        data: response,
+        error: null
+      };
     } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "is_enabled_failed",
-        `Failed to check if feature flag is enabled: ${key}`,
-        error
-      );
-      return false;
+      console.error('Error creating feature flag:', error);
+      return {
+        success: false,
+        message: 'Failed to create feature flag',
+        data: {} as FeatureFlag,
+        error: 'An error occurred while creating the feature flag'
+      };
     }
   }
 
-  /**
-   * Toggle a feature flag
-   * @param id The feature flag ID
-   * @param enabled True to enable, false to disable
-   * @returns The updated feature flag
-   */
-  static async toggle(id: number, enabled: boolean): Promise<FeatureFlag | undefined> {
+  static async update(id: string, data: Partial<FeatureFlag>): Promise<ApiResponse<FeatureFlag>> {
     try {
-      LoggingService.info("feature_flags", "toggle", `Toggling feature flag ${id} to ${enabled}`);
-      return await EnhancedApiService.put<FeatureFlag>(`${this.API_ENDPOINT}/${id}/toggle`, { enabled });
+      const response = await EnhancedApiService.put<FeatureFlag>(`${this.BASE_URL}/${id}`, data);
+      return {
+        success: true,
+        message: 'Feature flag updated successfully',
+        data: response,
+        error: null
+      };
     } catch (error) {
-      LoggingService.error(
-        "feature_flags",
-        "toggle_failed",
-        `Failed to toggle feature flag ${id} to ${enabled}`,
-        error
-      );
-      return undefined;
+      console.error(`Error updating feature flag ${id}:`, error);
+      return {
+        success: false,
+        message: 'Failed to update feature flag',
+        data: {} as FeatureFlag,
+        error: 'An error occurred while updating the feature flag'
+      };
     }
+  }
+
+  static async delete(id: string): Promise<ApiResponse<void>> {
+    try {
+      await EnhancedApiService.delete(`${this.BASE_URL}/${id}`);
+      return {
+        success: true,
+        message: 'Feature flag deleted successfully',
+        data: undefined,
+        error: null
+      };
+    } catch (error) {
+      console.error(`Error deleting feature flag ${id}:`, error);
+      return {
+        success: false,
+        message: 'Failed to delete feature flag',
+        data: undefined,
+        error: 'An error occurred while deleting the feature flag'
+      };
+    }
+  }
+
+  static async toggle(id: string, isActive: boolean): Promise<ApiResponse<FeatureFlag>> {
+    try {
+      const response = await EnhancedApiService.patch<FeatureFlag>(`${this.BASE_URL}/${id}/toggle`, { isActive });
+      return {
+        success: true,
+        message: `Feature flag ${isActive ? 'activated' : 'deactivated'} successfully`,
+        data: response,
+        error: null
+      };
+    } catch (error) {
+      console.error(`Error toggling feature flag ${id}:`, error);
+      return {
+        success: false,
+        message: 'Failed to toggle feature flag',
+        data: {} as FeatureFlag,
+        error: 'An error occurred while toggling the feature flag'
+      };
+    }
+  }
+  
+  static isFeatureEnabled(flagName: string, userId?: string): boolean {
+    // Mock implementation, in real world would check against state or API
+    return true;
+  }
+  
+  static refreshFlags(): Promise<void> {
+    // Mock implementation, in real world would refresh flags from API
+    return Promise.resolve();
   }
 }
 

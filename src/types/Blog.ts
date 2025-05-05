@@ -1,5 +1,4 @@
 
-// Create this file if it doesn't exist
 import { ReactElement } from 'react';
 
 export interface BlogPost {
@@ -23,6 +22,17 @@ export interface BlogCategory {
   name: string;
   slug?: string;
   description?: string;
+  color?: string;
+  isActive?: boolean;
+  postCount?: number;
+}
+
+export interface BlogTag {
+  id: string | number;
+  name: string;
+  slug?: string;
+  description?: string;
+  postCount?: number;
 }
 
 export interface RichTextEditorProps {

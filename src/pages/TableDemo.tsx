@@ -1,8 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResponsiveTable, TableColumn } from "@/components/ui/ResponsiveTable";
+import { ResponsiveTable } from "@/components/ui/ResponsiveTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Column } from "@/types/Common";
 
 interface User {
   id: number;
@@ -80,14 +81,14 @@ const getStatusColor = (status: User["status"]) => {
 };
 
 const TableDemo = () => {
-  const columns: TableColumn<User>[] = [
-    { header: "ID", accessor: "id" },
-    { header: "Name", accessor: "name" },
-    { header: "Email", accessor: "email" },
-    { header: "Role", accessor: "role" },
+  const columns: Column<User>[] = [
+    { header: "ID", accessorKey: "id" },
+    { header: "Name", accessorKey: "name" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Role", accessorKey: "role" },
     {
       header: "Status",
-      accessor: "status",
+      accessorKey: "status",
       cell: (user) => (
         <Badge className={getStatusColor(user.status)}>
           {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
@@ -96,12 +97,12 @@ const TableDemo = () => {
     },
     {
       header: "Last Login",
-      accessor: "lastLogin",
+      accessorKey: "lastLogin",
       cell: (user) => formatDate(user.lastLogin),
     },
     {
       header: "Actions",
-      accessor: "id",
+      accessorKey: "id",
       cell: (user) => (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm">

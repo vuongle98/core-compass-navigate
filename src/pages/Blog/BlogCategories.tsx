@@ -98,7 +98,8 @@ const BlogCategories = () => {
       let response;
 
       if (isEditing && currentCategory.id) {
-        response = await BlogService.updateCategory(currentCategory.id, currentCategory);
+        const categoryId = String(currentCategory.id);
+        response = await BlogService.updateCategory(categoryId, currentCategory);
         if (response.success) {
           toast({
             title: 'Success',
@@ -129,10 +130,10 @@ const BlogCategories = () => {
   };
 
   // Delete a category
-  const deleteCategory = async (id: string) => {
+  const deleteCategory = async (id: string | number) => {
     try {
-      setDeleting(id);
-      const response = await BlogService.deleteCategory(id);
+      setDeleting(String(id));
+      const response = await BlogService.deleteCategory(String(id));
       if (response.success) {
         toast({
           title: 'Success',
@@ -204,7 +205,7 @@ const BlogCategories = () => {
                       <CardTitle className="flex items-center gap-2">
                         <span
                           className="block w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
+                          style={{ backgroundColor: category.color || '#3b82f6' }}
                         />
                         {category.name}
                       </CardTitle>
@@ -222,7 +223,7 @@ const BlogCategories = () => {
                   <div className="flex justify-between items-center">
                     <Badge variant="outline" className="flex items-center gap-1">
                       <FolderOpen className="h-3 w-3" />
-                      {category.postCount} posts
+                      {category.postCount || 0} posts
                     </Badge>
                     <div className="flex space-x-2">
                       <Button
@@ -237,10 +238,10 @@ const BlogCategories = () => {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-destructive"
-                        disabled={deleting === category.id}
+                        disabled={deleting === String(category.id)}
                         onClick={() => deleteCategory(category.id)}
                       >
-                        {deleting === category.id ? (
+                        {deleting === String(category.id) ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
