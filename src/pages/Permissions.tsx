@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -346,21 +345,22 @@ const Permissions = () => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         <Breadcrumbs />
-        <PageHeader title="Permissions" description="Manage system permissions">
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-            }}
-            onReset={() => {
-              resetFilters();
-              refresh();
-            }}
-            className="mt-2"
-          />
-        </PageHeader>
-
+        <PageHeader
+          title="Permissions"
+          description="Manage system permissions"
+        />
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+          }}
+          onReset={() => {
+            resetFilters();
+            refresh();
+          }}
+          className="mt-2"
+        />
         <div className="mt-4">
           <DataTable
             data={permissionData}

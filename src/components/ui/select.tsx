@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
@@ -23,7 +22,7 @@ const SelectTrigger = React.forwardRef<
     )}
     {...props}
   >
-    {children}
+    {children || <span className="text-muted-foreground">All Items</span>}
     <SelectPrimitive.Icon asChild>
       <ChevronDown className="h-4 w-4 opacity-50" />
     </SelectPrimitive.Icon>
@@ -114,22 +113,7 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, ...props }, ref) => {
-  // Enhance runtime check to handle empty value prop - if it's empty or undefined,
-  // use a safe fallback value that includes the display text or a timestamp for uniqueness
-  if (props.value === "" || props.value === undefined) {
-    console.log("SelectItem received empty value, using fallback");
-    // Use children content as part of the fallback value if it's a string
-    let fallbackValue;
-    if (typeof children === 'string') {
-      // Clean up the text to make it URL-safe
-      fallbackValue = `${children.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-    } else {
-      // If children is not a simple string, use a timestamp-based fallback
-      fallbackValue = `item-${Date.now()}`;
-    }
-    props.value = fallbackValue;
-  }
-  
+
   return (
     <SelectPrimitive.Item
       ref={ref}

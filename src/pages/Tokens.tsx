@@ -266,25 +266,25 @@ const Tokens = () => {
           title="API Tokens"
           description="Manage API access tokens"
           showAddButton={false}
-        >
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
-            }}
-            onReset={() => {
-              resetFilters();
-              setSearchTerm("");
-              refresh();
-            }}
-            className="mt-2"
-          />
-        </PageHeader>
+        />
+
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+            // Update the search term when filters change
+            if (newFilters.search !== undefined) {
+              setSearchTerm(newFilters.search.toString());
+            }
+          }}
+          onReset={() => {
+            resetFilters();
+            setSearchTerm("");
+            refresh();
+          }}
+          className="mt-2"
+        />
 
         <div className="mt-4">
           <DataTable

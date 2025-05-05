@@ -427,24 +427,24 @@ const Notifications = () => {
               </Button>
             </div>
           }
-        >
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
-            }}
-            onReset={() => {
-              resetFilters();
-              setSearchTerm("");
-              refresh();
-            }}
-          />
-        </PageHeader>
+        />
+
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+            // Update the search term when filters change
+            if (newFilters.search !== undefined) {
+              setSearchTerm(newFilters.search.toString());
+            }
+          }}
+          onReset={() => {
+            resetFilters();
+            setSearchTerm("");
+            refresh();
+          }}
+        />
 
         <div className="mt-4">
           <Tabs

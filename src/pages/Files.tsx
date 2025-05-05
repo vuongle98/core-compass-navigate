@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -302,30 +301,29 @@ const Files = () => {
               <Button>Upload Files</Button>
             </Label>
           </div>
-
-          <DataFilters
-            filters={{ search: searchTerm }}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setSearchTerm(newFilters.search as string);
-              const updateSearchParams = (filters: QueryFilters) => {
-                const params = new URLSearchParams();
-                Object.entries(filters).forEach(([key, value]) => {
-                  if (value !== undefined) {
-                    params.set(key, value.toString());
-                  }
-                });
-                setSearchParams(params);
-              };
-              updateSearchParams(newFilters);
-            }}
-            onReset={() => {
-              setSearchTerm("");
-              setSearchParams({});
-            }}
-            className="mt-4"
-          />
         </PageHeader>
+        <DataFilters
+          filters={{ search: searchTerm }}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setSearchTerm(newFilters.search as string);
+            const updateSearchParams = (filters: QueryFilters) => {
+              const params = new URLSearchParams();
+              Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined) {
+                  params.set(key, value.toString());
+                }
+              });
+              setSearchParams(params);
+            };
+            updateSearchParams(newFilters);
+          }}
+          onReset={() => {
+            setSearchTerm("");
+            setSearchParams({});
+          }}
+          className="mt-4"
+        />
 
         <div className="mt-4">
           <DataTable data={files} columns={columns} title="Files" />

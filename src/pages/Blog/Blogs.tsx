@@ -19,7 +19,7 @@ interface Blog {
   author: string;
   createdAt: string;
   updatedAt: string;
-  status: 'published' | 'draft' | 'archived';
+  status: "published" | "draft" | "archived";
 }
 
 const Blogs = () => {
@@ -83,7 +83,7 @@ const Blogs = () => {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search title, author..."
+      placeholder: "Search title, author...",
     },
     {
       id: "status",
@@ -93,8 +93,8 @@ const Blogs = () => {
         { value: "published", label: "Published" },
         { value: "draft", label: "Draft" },
         { value: "archived", label: "Archived" },
-      ]
-    }
+      ],
+    },
   ];
 
   const handleView = (blog: Blog) => {
@@ -131,7 +131,9 @@ const Blogs = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: Blog) => <span className="text-muted-foreground">{item.id}</span>,
+      cell: (item: Blog) => (
+        <span className="text-muted-foreground">{item.id}</span>
+      ),
     },
     {
       header: "Title",
@@ -193,26 +195,14 @@ const Blogs = () => {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader
-          title="Blogs"
-          description="Manage blog posts"
-        >
-          <Button 
-            onClick={handleAddBlog} 
-            className="mt-4"
-          >
-            Add New
-          </Button>
-          
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-            onReset={resetFilters}
-            className="mt-4"
-          />
-        </PageHeader>
-
+        <PageHeader title="Blogs" description="Manage blog posts" />
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onReset={resetFilters}
+          className="mt-4"
+        />
         {isLoading ? (
           <div className="mt-4 space-y-3">
             <Skeleton className="h-8 w-full" />
@@ -222,11 +212,13 @@ const Blogs = () => {
         ) : (
           <div className="mt-4">
             <DataTable
+              addButtonText="Create new"
+              onAddClick={handleAddBlog}
               data={blogs || []}
               columns={columns}
               title="Blog Posts"
               pagination={true}
-              showAddButton={false}
+              showAddButton={true}
               pageIndex={page}
               pageSize={pageSize}
               onPageChange={setPage}
