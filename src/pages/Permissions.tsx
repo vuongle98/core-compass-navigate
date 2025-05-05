@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -23,6 +24,14 @@ import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { PermissionData } from "@/types/Auth";
 import PermissionService from "@/services/PermissionService";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Permissions = () => {
   const [permissions, setPermissions] = useState<PermissionData[]>([
@@ -86,7 +95,7 @@ const Permissions = () => {
     code: "",
     name: "",
     description: "",
-    module: "",
+    module: "Users",
     isActive: true,
   });
 
@@ -174,11 +183,17 @@ const Permissions = () => {
     }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
+  const handleCheckboxChange = (checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: checked,
+      isActive: checked,
+    }));
+  };
+
+  const handleModuleChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      module: value,
     }));
   };
 
@@ -457,27 +472,26 @@ const Permissions = () => {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="module">Module</Label>
-                  <select
-                    id="module"
-                    name="module"
+                  <Select
                     value={formData.module}
-                    onChange={handleInputChange as any}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    onValueChange={handleModuleChange}
                   >
-                    <option value="Users">Users</option>
-                    <option value="Roles">Roles</option>
-                    <option value="Permissions">Permissions</option>
-                    <option value="System">System</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Users">Users</SelectItem>
+                      <SelectItem value="Roles">Roles</SelectItem>
+                      <SelectItem value="Permissions">Permissions</SelectItem>
+                      <SelectItem value="System">System</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="isActive"
-                    name="isActive"
                     checked={formData.isActive}
-                    onChange={handleCheckboxChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    onCheckedChange={handleCheckboxChange}
                   />
                   <Label htmlFor="isActive">Active</Label>
                 </div>
