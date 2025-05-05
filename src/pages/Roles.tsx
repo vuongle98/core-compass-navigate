@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -139,7 +138,7 @@ const Roles = () => {
     pageSize,
     setPageSize,
     totalItems,
-    refetch,
+    refresh,
   } = useApiQuery<Role>({
     endpoint: "/api/role",
     queryKey: ["roles"],
@@ -179,14 +178,14 @@ const Roles = () => {
         );
 
         toast.success("Role updated successfully");
-        refetch(); // Refresh data after update
+        refresh(); // Changed from refetch to refresh
       } else {
         const newRole = await RoleService.createRole(formData);
 
         setRoles((prev) => [...prev, newRole]);
 
         toast.success("Role created successfully");
-        refetch(); // Refresh data after create
+        refresh(); // Changed from refetch to refresh
       }
 
       setDialogOpen(false);
@@ -294,7 +293,7 @@ const Roles = () => {
       await RoleService.deleteRole(id);
 
       setRoles((prev) => prev.filter((role) => role.id !== id));
-      refetch(); // Refresh data after delete
+      refresh(); // Changed from refetch to refresh
       toast.success("Role deleted successfully");
     } catch (error) {
       console.error("Delete operation failed:", error);
