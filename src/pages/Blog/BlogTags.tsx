@@ -1,17 +1,18 @@
-
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { BlogTag } from '@/types/Blog';
 import BlogService from '@/services/BlogService';
-import { Plus, Pencil, Trash2, Tag, Loader2, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, Check, X, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAnimationClass } from '@/lib/animation';
@@ -24,11 +25,12 @@ const BlogTags = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentTag, setCurrentTag] = useState<Partial<BlogTag>>({
     name: '',
-    color: '#3b82f6'
+    description: '',
+    color: '#3b82f6',
   });
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Animation class
+  // Animation classes
   const fadeIn = getAnimationClass({
     type: 'fade-in',
     duration: 300,
@@ -45,7 +47,7 @@ const BlogTags = () => {
     try {
       const response = await BlogService.getTags();
       if (response.success) {
-        setTags(response.data);
+        setTags(response.data.content);
       }
     } catch (error) {
       console.error('Error loading tags:', error);
@@ -59,30 +61,22 @@ const BlogTags = () => {
     }
   };
 
-  // Open modal for new tag
+  // Add tag
   const addNewTag = () => {
     setCurrentTag({
       name: '',
+      description: '',
       color: '#3b82f6'
     });
     setIsEditing(false);
     setModalOpen(true);
   };
 
-  // Open modal for editing
+  // Edit tag
   const editTag = (tag: BlogTag) => {
     setCurrentTag({ ...tag });
     setIsEditing(true);
     setModalOpen(true);
-  };
-
-  // Generate slug from name
-  const generateSlug = (name: string) => {
-    return name.toLowerCase()
-      .replace(/[^\w\s-]/g, '') // Remove special chars
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-      .trim();
   };
 
   // Handle form submission
@@ -96,16 +90,13 @@ const BlogTags = () => {
       return;
     }
 
-    // Auto-generate slug if not provided
-    if (!currentTag.slug) {
-      currentTag.slug = generateSlug(currentTag.name);
-    }
-
     try {
       let response;
 
       if (isEditing && currentTag.id) {
-        response = await BlogService.updateTag(currentTag.id, currentTag);
+        // Convert id to string for updateTag method
+        const tagId = String(currentTag.id);
+        response = await BlogService.updateTag(tagId, currentTag);
         if (response.success) {
           toast({
             title: 'Success',
@@ -136,10 +127,11 @@ const BlogTags = () => {
   };
 
   // Delete a tag
-  const deleteTag = async (id: string) => {
+  const deleteTag = async (id: string | number) => {
     try {
-      setDeleting(id);
-      const response = await BlogService.deleteTag(id);
+      setDeleting(String(id));
+      // Convert id to string for deleteTag method
+      const response = await BlogService.deleteTag(String(id));
       if (response.success) {
         toast({
           title: 'Success',
@@ -180,83 +172,93 @@ const BlogTags = () => {
           onAddButtonClick={addNewTag}
         />
 
-        <div className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Tags</CardTitle>
-              <CardDescription>
-                Tags help categorize your content for better organization and discoverability
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex flex-wrap gap-3">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <Skeleton 
-                      key={`skeleton-${i}`}
-                      className="h-8 w-20 rounded-full"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-3">
-                  {tags.map((tag) => (
-                    <div 
-                      key={tag.id} 
-                      className={`group relative ${fadeIn}`}
-                    >
-                      <Badge
-                        className="px-3 py-1.5 text-sm h-8"
-                        style={{ backgroundColor: tag.color }}
-                      >
-                        <span className="mr-1">#</span>
-                        {tag.name}
-                        <span className="ml-2 bg-white bg-opacity-20 px-1.5 rounded-full text-xs">
-                          {tag.postCount}
-                        </span>
-                      </Badge>
-                      <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex">
-                        <Button 
-                          variant="secondary" 
-                          size="icon" 
-                          className="h-6 w-6 rounded-full shadow-sm"
-                          onClick={() => editTag(tag)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
-                          className="h-6 w-6 rounded-full shadow-sm ml-1"
-                          disabled={deleting === tag.id}
-                          onClick={() => deleteTag(tag.id)}
-                        >
-                          {deleting === tag.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {loading ? (
+            // Skeleton loading state
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={`skeleton-${i}`} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-5 w-24 mb-1" />
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex justify-between items-center mt-4">
+                    <Skeleton className="h-8 w-16 rounded-full" />
+                    <div className="flex space-x-2">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            {tags.length === 0 && !loading && (
-              <CardFooter className="flex flex-col items-center p-6 border-t">
-                <Tag className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No Tags Found</h3>
-                <p className="text-sm text-muted-foreground mt-2 mb-4">
-                  You haven't created any tags yet. Tags help categorize and organize your blog posts.
-                </p>
-                <Button onClick={addNewTag}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Your First Tag
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            tags.map((tag) => (
+              <Card key={tag.id} className={`overflow-hidden ${fadeIn}`}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <span
+                          className="block w-3 h-3 rounded-full"
+                          style={{ backgroundColor: tag.color || '#3b82f6' }}
+                        />
+                        {tag.name}
+                      </CardTitle>
+                      <CardDescription>{tag.slug}</CardDescription>
+                    </div>
+                    <Badge variant="outline">
+                      {tag.postCount || 0} posts
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">
+                    {tag.description || "No description"}
+                  </p>
+                  <div className="flex justify-end items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => editTag(tag)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive"
+                      disabled={deleting === String(tag.id)}
+                      onClick={() => deleteTag(tag.id)}
+                    >
+                      {deleting === String(tag.id) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
+
+        {tags.length === 0 && !loading && (
+          <Card className="mt-4 p-8 text-center">
+            <Tag className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No Tags Found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You haven't created any tags yet. Create your first tag to organize your blog posts.
+            </p>
+            <Button className="mt-4" onClick={addNewTag}>
+              <Plus className="mr-2 h-4 w-4" /> Add Tag
+            </Button>
+          </Card>
+        )}
 
         {/* Tag Edit/Create Dialog */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -270,53 +272,48 @@ const BlogTags = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Tag Name *</Label>
-                <Input
-                  id="name"
-                  value={currentTag.name || ''}
-                  onChange={(e) => setCurrentTag({ 
-                    ...currentTag, 
-                    name: e.target.value,
-                    slug: generateSlug(e.target.value)
-                  })}
-                  placeholder="Enter tag name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                  id="slug"
-                  value={currentTag.slug || ''}
-                  onChange={(e) => setCurrentTag({ ...currentTag, slug: e.target.value })}
-                  placeholder="Enter slug"
-                  className="text-muted-foreground"
-                />
-                <p className="text-xs text-muted-foreground">
-                  The slug is automatically generated from the name, but you can customize it.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="color"
-                    value={currentTag.color || '#3b82f6'}
-                    onChange={(e) => setCurrentTag({ ...currentTag, color: e.target.value })}
-                    className="w-10 h-10 rounded-md border cursor-pointer"
-                  />
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4 py-2 px-1">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Tag Name *</Label>
                   <Input
-                    value={currentTag.color || '#3b82f6'}
-                    onChange={(e) => setCurrentTag({ ...currentTag, color: e.target.value })}
-                    className="flex-1"
+                    id="name"
+                    value={currentTag.name || ''}
+                    onChange={(e) => setCurrentTag({ ...currentTag, name: e.target.value })}
+                    placeholder="Enter tag name"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={currentTag.description || ''}
+                    onChange={(e) => setCurrentTag({ ...currentTag, description: e.target.value })}
+                    placeholder="Enter tag description"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      id="color"
+                      value={currentTag.color || '#3b82f6'}
+                      onChange={(e) => setCurrentTag({ ...currentTag, color: e.target.value })}
+                      className="w-10 h-10 rounded-md border cursor-pointer"
+                    />
+                    <Input
+                      value={currentTag.color || '#3b82f6'}
+                      onChange={(e) => setCurrentTag({ ...currentTag, color: e.target.value })}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </ScrollArea>
 
             <DialogFooter className="gap-2 sm:gap-0">
               <Button variant="outline" onClick={() => setModalOpen(false)}>

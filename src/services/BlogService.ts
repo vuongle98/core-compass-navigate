@@ -96,12 +96,29 @@ class BlogService {
   }
 
   // Categories
-  static async getCategories(params: any = {}): Promise<PageData<BlogCategory>> {
+  static async getCategories(params: any = {}): Promise<ApiResponse<PageData<BlogCategory>>> {
     try {
-      return await EnhancedApiService.get<PageData<BlogCategory>>(`${this.BASE_URL}/categories`, { params });
+      const response = await EnhancedApiService.get<PageData<BlogCategory>>(`${this.BASE_URL}/categories`, { params });
+      return {
+        success: true,
+        message: 'Blog categories retrieved successfully',
+        data: response,
+        error: null
+      };
     } catch (error) {
       console.error('Error fetching blog categories:', error);
-      throw error;
+      return {
+        success: false,
+        message: 'Failed to fetch blog categories',
+        data: {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          size: 0,
+          number: 0
+        },
+        error: 'An error occurred while fetching blog categories'
+      };
     }
   }
 
@@ -186,12 +203,29 @@ class BlogService {
   }
 
   // Tags
-  static async getTags(params: any = {}): Promise<PageData<BlogTag>> {
+  static async getTags(params: any = {}): Promise<ApiResponse<PageData<BlogTag>>> {
     try {
-      return await EnhancedApiService.get<PageData<BlogTag>>(`${this.BASE_URL}/tags`, { params });
+      const response = await EnhancedApiService.get<PageData<BlogTag>>(`${this.BASE_URL}/tags`, { params });
+      return {
+        success: true,
+        message: 'Blog tags retrieved successfully',
+        data: response,
+        error: null
+      };
     } catch (error) {
       console.error('Error fetching blog tags:', error);
-      throw error;
+      return {
+        success: false,
+        message: 'Failed to fetch blog tags',
+        data: {
+          content: [],
+          totalElements: 0,
+          totalPages: 0,
+          size: 0,
+          number: 0
+        },
+        error: 'An error occurred while fetching blog tags'
+      };
     }
   }
 
@@ -274,6 +308,37 @@ class BlogService {
         message: 'Failed to delete tag',
         data: undefined,
         error: 'An error occurred while deleting the tag'
+      };
+    }
+  }
+
+  // Add the missing uploadImage method
+  static async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
+    try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Upload the image
+      const response = await EnhancedApiService.post<{ url: string }>(`${this.BASE_URL}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return {
+        success: true,
+        message: 'Image uploaded successfully',
+        data: { url: response.url },
+        error: null
+      };
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return {
+        success: false,
+        message: 'Failed to upload image',
+        data: { url: '' },
+        error: 'An error occurred while uploading the image'
       };
     }
   }

@@ -50,7 +50,7 @@ const BlogCategories = () => {
     try {
       const response = await BlogService.getCategories();
       if (response.success) {
-        setCategories(response.data);
+        setCategories(response.data.content);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
