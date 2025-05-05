@@ -22,4 +22,5 @@ export interface Column<T> {
   id?: string;
   cell?: (item: T) => ReactElement | string | number | null;
   sortable?: boolean;
+  filterable?: boolean;
 }

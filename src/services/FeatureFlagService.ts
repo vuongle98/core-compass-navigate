@@ -57,7 +57,7 @@ class FeatureFlagService {
   static async isEnabled(key: string): Promise<boolean> {
     try {
       const flag = await this.getByKey(key);
-      return flag?.enabled || false;
+      return flag?.isActive || false;
     } catch (error) {
       LoggingService.error(
         "feature_flags",
@@ -95,7 +95,7 @@ class FeatureFlagService {
       
       // Update cache
       flags.forEach(flag => {
-        this.cachedFlags[flag.key] = flag.enabled;
+        this.cachedFlags[flag.key] = flag.isActive;
       });
       
       LoggingService.info("feature_flags", "refresh_flags", "Refreshed feature flags");
@@ -112,18 +112,18 @@ class FeatureFlagService {
   /**
    * Toggle a feature flag
    * @param id The feature flag ID
-   * @param enabled True to enable, false to disable
+   * @param isActive True to enable, false to disable
    * @returns The updated feature flag
    */
-  static async toggle(id: number, enabled: boolean): Promise<FeatureFlag | undefined> {
+  static async toggle(id: number, isActive: boolean): Promise<FeatureFlag | undefined> {
     try {
-      LoggingService.info("feature_flags", "toggle", `Toggling feature flag ${id} to ${enabled}`);
-      return await EnhancedApiService.put<FeatureFlag>(`${this.API_ENDPOINT}/${id}/toggle`, { enabled });
+      LoggingService.info("feature_flags", "toggle", `Toggling feature flag ${id} to ${isActive}`);
+      return await EnhancedApiService.put<FeatureFlag>(`${this.API_ENDPOINT}/${id}/toggle`, { isActive });
     } catch (error) {
       LoggingService.error(
         "feature_flags",
         "toggle_failed",
-        `Failed to toggle feature flag ${id} to ${enabled}`,
+        `Failed to toggle feature flag ${id} to ${isActive}`,
         error
       );
       return undefined;

@@ -32,6 +32,7 @@ export interface BlogTag {
   name: string;
   slug?: string;
   description?: string;
+  color?: string;
   postCount?: number;
 }
 

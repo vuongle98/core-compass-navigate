@@ -170,6 +170,28 @@ class EnhancedApiService {
   }
 
   /**
+   * Make a PATCH request
+   */
+  public static async patch<T, D = unknown>(
+    url: string,
+    data?: D,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    this.initialize();
+    LoggingService.info("api", "patch", `PATCH ${url}`);
+
+    try {
+      const response = await this.instance.patch<ApiResponse<T>>(url, data, {
+        headers,
+      });
+      return response.data.data;
+    } catch (error) {
+      LoggingService.error("api", "patch_failed", `PATCH ${url} failed`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Make a DELETE request
    */
   public static async delete<T>(

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,5 +129,5 @@ export function DataTable<T>({
   );
 }
 
-// Export Column type to fix imports in other files
+// Use 'export type' to properly re-export the type when 'isolatedModules' is enabled
 export type { Column };
