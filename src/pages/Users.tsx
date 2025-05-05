@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { UserProfile } from "@/components/users/UserProfile";
@@ -85,6 +85,7 @@ const Users = () => {
   ];
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Debounce the search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -105,7 +106,7 @@ const Users = () => {
       id: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search roles...",
+      placeholder: "Search users...",
     },
     {
       id: "blocked",
@@ -121,13 +122,18 @@ const Users = () => {
       label: "Roles",
       type: "select",
       options: [
-        { value: "ADMIN", label: "ADMIN" },
-        { value: "MANAGE", label: "MANAGE" },
-        { value: "USER", label: "USER" },
-        { value: "VIEWER", label: "VIEWER" },
+        { value: "ADMIN", label: "Admin" },
+        { value: "MANAGE", label: "Manager" },
+        { value: "USER", label: "User" },
+        { value: "VIEWER", label: "Viewer" },
       ],
     },
   ];
+
+  // Trigger data refresh function
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   const {
     data: userData,
@@ -144,7 +150,7 @@ const Users = () => {
     error,
   } = useApiQuery<User>({
     endpoint: "/api/user",
-    queryKey: ["users", debouncedSearchTerm],
+    queryKey: ["users", debouncedSearchTerm, refreshTrigger],
     initialPage: 0,
     initialPageSize: 10,
     persistFilters: true,
@@ -163,12 +169,17 @@ const Users = () => {
     },
   });
 
+  // Force refresh when page changes
+  useEffect(() => {
+    refresh();
+  }, [page, refresh]);
+
   const handleAddUser = async (newUser: Omit<User, "id">) => {
     try {
       await EnhancedApiService.post("/api/user", newUser);
       toast.success("User added successfully");
       setIsCreateDialogOpen(false);
-      refresh(); // Refresh the user list after adding a new user
+      triggerRefresh(); // Refresh the user list after adding a new user
     } catch (error) {
       console.error("Failed to add user:", error);
       toast.error("Failed to add user", {
@@ -181,7 +192,7 @@ const Users = () => {
     try {
       await EnhancedApiService.delete(`/api/user/${id}`);
       toast.success("User deleted successfully");
-      refresh(); // Refresh the user list after deleting a user
+      triggerRefresh(); // Refresh the user list after deleting a user
     } catch (error) {
       console.error("Failed to delete user:", error);
       toast.error("Failed to delete user", {
@@ -248,7 +259,7 @@ const Users = () => {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="px-2 py-0.5 rounded-full border bg-muted/40 text-xs font-semibold text-gray-200 hover:bg-muted/70 cursor-pointer"
+                className="px-2 py-0.5 rounded-full border bg-muted/40 text-xs font-semibold hover:bg-muted/70 cursor-pointer"
                 title={
                   user.roles && user.roles.length > 0
                     ? `${user.roles.length} roles`
@@ -259,7 +270,7 @@ const Users = () => {
                 {user.roles?.length || 0} roles
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" sideOffset={6} className="w-56 p-2">
+            <PopoverContent align="start" sideOffset={6} className="w-56 p-2 max-h-[250px] overflow-y-auto">
               <div className="font-semibold text-sm mb-2">Roles</div>
               {user.roles && user.roles.length > 0 ? (
                 <ul className="space-y-1">
@@ -294,8 +305,8 @@ const Users = () => {
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
             user.locked === true
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-800"
+              ? "bg-red-100 text-red-800"
+              : "bg-green-100 text-green-800"
           }`}
         >
           {user.locked ? "Locked" : "Active"}
@@ -310,16 +321,20 @@ const Users = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <Breadcrumbs />
 
-        <PageHeader
-          title="Users"
-          description="Manage your application users"
-          showAddButton={false}
-        >
+        <div className="mb-6">
+          <PageHeader
+            title="Users"
+            description="Manage your application users"
+            showAddButton={false}
+          />
+        </div>
+
+        <div className="mb-6">
           <DataFilters
             filters={filters}
             options={filterOptions}
@@ -335,11 +350,10 @@ const Users = () => {
               setSearchTerm("");
               refresh();
             }}
-            className="mt-2"
           />
-        </PageHeader>
+        </div>
 
-        <div className="mt-4">
+        <div className="mb-4">
           <DataTable
             data={userData}
             columns={columns}

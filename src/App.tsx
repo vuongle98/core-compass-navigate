@@ -3,12 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MiniToastContainer } from "@/components/ui/mini-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Users from "./pages/Users";
+import UserAccountSettings from "./pages/UserAccountSettings";
 import Roles from "./pages/Roles";
 import Permissions from "./pages/Permissions";
 import Tokens from "./pages/Tokens";
@@ -69,52 +70,55 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <ThemeProvider defaultTheme="system" storageKey="app-theme">
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <MiniToastContainer />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/table-demo" element={<ProtectedRoute><TableDemo /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-              <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
-              <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
-              <Route path="/tokens" element={<ProtectedRoute><Tokens /></ProtectedRoute>} />
-              <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
-              <Route path="/endpoint-secure" element={<ProtectedRoute><EndpointSecures /></ProtectedRoute>} />
-              <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
-              <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
-              <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
-              <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/bots" element={<ProtectedRoute><Bots /></ProtectedRoute>} />
-              <Route path="/bots/:id/edit" element={<ProtectedRoute><BotEdit /></ProtectedRoute>} />
-              <Route path="/bots/:id/schedule" element={<ProtectedRoute><BotSchedule /></ProtectedRoute>} />
-              {/* Blog routes */}
-              <Route path="/blogs" element={<ProtectedRoute><Blogs /></ProtectedRoute>} />
-              <Route path="/blogs/new" element={<ProtectedRoute><BlogNew /></ProtectedRoute>} />
-              <Route path="/blogs/:id/edit" element={<ProtectedRoute><BlogEdit /></ProtectedRoute>} />
-              <Route path="/blogs/:id" element={<ProtectedRoute><BlogDetail /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            
-            {/* ChatButton is conditionally rendered based on feature flag */}
-            <ProtectedRoute>
-              <ChatButtonWrapper />
-            </ProtectedRoute>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+function App() {
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="app-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <MiniToastContainer />
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/table-demo" element={<ProtectedRoute><TableDemo /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+                <Route path="/account-settings" element={<ProtectedRoute><UserAccountSettings /></ProtectedRoute>} />
+                <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+                <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
+                <Route path="/tokens" element={<ProtectedRoute><Tokens /></ProtectedRoute>} />
+                <Route path="/files" element={<ProtectedRoute><Files /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/configuration" element={<ProtectedRoute><Configuration /></ProtectedRoute>} />
+                <Route path="/endpoint-secure" element={<ProtectedRoute><EndpointSecures /></ProtectedRoute>} />
+                <Route path="/feature-flags" element={<ProtectedRoute><FeatureFlags /></ProtectedRoute>} />
+                <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+                <Route path="/user-request-log" element={<ProtectedRoute><UserRequestLog /></ProtectedRoute>} />
+                <Route path="/event-log" element={<ProtectedRoute><EventLog /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/bots" element={<ProtectedRoute><Bots /></ProtectedRoute>} />
+                <Route path="/bots/:id/edit" element={<ProtectedRoute><BotEdit /></ProtectedRoute>} />
+                <Route path="/bots/:id/schedule" element={<ProtectedRoute><BotSchedule /></ProtectedRoute>} />
+                {/* Blog routes */}
+                <Route path="/blogs" element={<ProtectedRoute><Blogs /></ProtectedRoute>} />
+                <Route path="/blogs/new" element={<ProtectedRoute><BlogNew /></ProtectedRoute>} />
+                <Route path="/blogs/:id/edit" element={<ProtectedRoute><BlogEdit /></ProtectedRoute>} />
+                <Route path="/blogs/:id" element={<ProtectedRoute><BlogDetail /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              
+              {/* ChatButton is conditionally rendered based on feature flag */}
+              <ProtectedRoute>
+                <ChatButtonWrapper />
+              </ProtectedRoute>
+            </Router>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;

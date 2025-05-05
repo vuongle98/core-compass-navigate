@@ -1,6 +1,7 @@
+
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
-import { User } from "@/types/Auth";
+import { User, UserProfile } from "@/types/Auth";
 
 /**
  * Service for user related operations
@@ -96,6 +97,31 @@ class UserService {
         error
       );
       return {} as User;
+    }
+  }
+
+  /**
+   * Update a user's profile information
+   * @param id - ID of the user to update profile
+   * @param profileData - Profile data to update
+   * @returns The updated user profile
+   * @throws Error if the update fails
+   */
+  static async updateProfile(id: number, profileData: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      LoggingService.info("user_service", "update_profile", `Updating profile for user ${id}`);
+      return await EnhancedApiService.put<UserProfile>(
+        `${this.API_ENDPOINT}/${id}/profile`,
+        profileData
+      );
+    } catch (error) {
+      LoggingService.error(
+        "user_service",
+        "update_profile_failed",
+        `Failed to update profile for user ${id}`,
+        error
+      );
+      throw error;
     }
   }
 

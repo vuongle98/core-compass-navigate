@@ -1,8 +1,6 @@
-
-import React, { useState, useEffect, useRef } from "react";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -16,14 +14,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import useDebounce from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
 
 export interface Option {
   value: string;
-  label: string | React.ReactNode;
-  [key: string]: unknown;
+  label: React.ReactNode;
+  original?: any;
+  disabled?: boolean;
 }
 
 interface SearchableSelectProps {
@@ -31,251 +29,229 @@ interface SearchableSelectProps {
   value: Option | Option[] | null;
   onChange: (value: Option | Option[] | null) => void;
   placeholder?: string;
-  emptyMessage?: string;
   searchPlaceholder?: string;
-  multiple?: boolean;
   disabled?: boolean;
-  className?: string;
+  multiple?: boolean;
   maxHeight?: number;
+  className?: string;
   showSelectedTags?: boolean;
+  emptyMessage?: string;
   onSearch?: (query: string) => void;
   isLoading?: boolean;
+  clearable?: boolean;
+  creatable?: boolean;
 }
 
-export function SearchableSelect({
+export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   options,
   value,
   onChange,
   placeholder = "Select an option",
-  emptyMessage = "No results found",
   searchPlaceholder = "Search...",
-  multiple = false,
   disabled = false,
-  className,
+  multiple = false,
   maxHeight = 300,
+  className,
   showSelectedTags = false,
+  emptyMessage = "No results found",
   onSearch,
   isLoading = false,
-}: SearchableSelectProps) {
+  clearable = true,
+  creatable = false,
+}) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const inputRef = useRef<HTMLInputElement>(null);
+  const commandRef = useRef<HTMLDivElement>(null);
 
-  // Handle external search if provided
+  // Update search when popover opens/closes
   useEffect(() => {
-    if (onSearch && debouncedSearchQuery) {
-      onSearch(debouncedSearchQuery);
+    if (!open) {
+      setSearchQuery("");
     }
-  }, [debouncedSearchQuery, onSearch]);
+  }, [open]);
 
-  // Filter options locally if no external search is provided
-  const filteredOptions =
-    !onSearch && debouncedSearchQuery
-      ? options.filter(
-          (option) => {
-            // Ensure we're not working with empty values
-            if (!option.value) {
-              console.warn("SearchableSelect received an option with empty value");
-              return false;
-            }
-            
-            return String(option.label)
-              .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase()) ||
-            option.value
-              .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase());
-          }
-        )
-      : options;
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (onSearch) onSearch(query);
+  };
 
-  // Handle selection
-  const handleSelect = (option: Option) => {
+  // Handle option selection
+  const handleSelect = (selectedOption: Option) => {
     if (multiple) {
-      const currentValues = Array.isArray(value) ? value : [];
-      const isSelected = currentValues.some(
-        (item) => item.value === option.value
+      // In multiple mode
+      const currentValue = (value as Option[]) || [];
+      const isSelected = currentValue.some(
+        (option) => option.value === selectedOption.value
       );
 
-      onChange(
-        isSelected
-          ? currentValues.filter((item) => item.value !== option.value)
-          : [...currentValues, option]
-      );
+      if (isSelected) {
+        // If already selected, remove it
+        onChange(
+          currentValue.filter((option) => option.value !== selectedOption.value)
+        );
+      } else {
+        // If not selected, add it
+        onChange([...currentValue, selectedOption]);
+      }
 
-      // Keep popover open for multiple selection
+      // Keep the popover open in multiple mode
       if (inputRef.current) {
         inputRef.current.focus();
       }
     } else {
-      onChange(option);
+      // In single mode
+      onChange(selectedOption);
       setOpen(false);
     }
   };
 
-  // Handle remove selected item in multiple mode
-  const handleRemove = (e: React.MouseEvent, optionValue: string) => {
+  // Handle clear all selections
+  const handleClearAll = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const currentValues = Array.isArray(value) ? value : [];
-    onChange(currentValues.filter((item) => item.value !== optionValue));
-  };
-
-  // Clear selection
-  const handleClear = () => {
     onChange(multiple ? [] : null);
   };
 
-  // Format selected value for display
-  const selectedDisplay = () => {
+  // Check if an option is selected
+  const isOptionSelected = (option: Option) => {
+    if (!value) return false;
+    if (Array.isArray(value)) {
+      return value.some((v) => v.value === option.value);
+    }
+    return value.value === option.value;
+  };
+
+  // Remove a selected tag (for multiple mode)
+  const removeSelectedTag = (e: React.MouseEvent, optionValue: string) => {
+    e.stopPropagation();
+    if (!multiple || !Array.isArray(value)) return;
+    onChange(value.filter((option) => option.value !== optionValue));
+  };
+
+  // Display value in the trigger button
+  const displayValue = () => {
     if (!value) return placeholder;
 
     if (multiple && Array.isArray(value)) {
       if (value.length === 0) return placeholder;
+      if (!showSelectedTags) return `${value.length} selected`;
 
-      if (!showSelectedTags) {
-        return `${value.length} item${value.length !== 1 ? "s" : ""} selected`;
-      }
-
-      // Don't return anything here as we'll show the tags below the button
-      return placeholder;
+      // For multiple with tags visible in the trigger
+      return (
+        <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
+          {value.map((option) => (
+            <Badge
+              key={option.value}
+              variant="secondary"
+              className="mr-1 mb-1"
+            >
+              {typeof option.label === "string" ? option.label : "Selected"}
+              <button
+                className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => removeSelectedTag(e, option.value)}
+              >
+                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                <span className="sr-only">Remove</span>
+              </button>
+            </Badge>
+          ))}
+          {value.length > 3 && (
+            <Badge variant="secondary">+{value.length - 3} more</Badge>
+          )}
+        </div>
+      );
     }
 
-    // Single selection
-    return Array.isArray(value) ? placeholder : value.label;
+    // For single select
+    return typeof (value as Option).label === "string"
+      ? (value as Option).label
+      : "Selected";
   };
 
   return (
-    <div className={cn("relative", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "w-full justify-between min-h-10",
-              disabled && "opacity-50 cursor-not-allowed"
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "w-full justify-between min-h-10 text-left",
+            disabled && "opacity-50 pointer-events-none",
+            className
+          )}
+          disabled={disabled}
+        >
+          <div className="truncate flex-1">{displayValue()}</div>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 w-[300px] max-w-[calc(100vw-2rem)]"
+        style={{ maxHeight: `${maxHeight + 50}px` }}
+        align="start"
+        sideOffset={8}
+      >
+        <Command ref={commandRef}>
+          <div className="flex items-center border-b px-3">
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onValueChange={(value) => {
+                setSearchQuery(value);
+                if (onSearch) onSearch(value);
+              }}
+              className="h-9 flex-1"
+              ref={inputRef}
+            />
+            {isLoading && (
+              <Loader2 className="h-4 w-4 animate-spin opacity-70 mr-1" />
             )}
-            disabled={disabled}
-          >
-            <span className="truncate">{selectedDisplay()}</span>
-            <div className="flex items-center">
-              {value &&
-                Array.isArray(value) &&
-                value.length > 0 &&
-                !disabled && (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="h-4 w-4 rounded-full ml-1 mr-1 hover:bg-muted flex items-center justify-center"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleClear();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.stopPropagation();
-                        handleClear();
-                      }
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                    <span className="sr-only">Clear</span>
-                  </div>
-                )}
-              <ChevronsUpDown className="h-4 w-4 opacity-50" />
-            </div>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
-          <Command shouldFilter={false}>
-            <div className="flex items-center border-b px-3">
-              <Search className="h-4 w-4 mr-2 opacity-50 shrink-0" />
-              <CommandInput
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                ref={inputRef}
-                className="flex-1"
-              />
-            </div>
-            <ScrollArea className={`max-h-${maxHeight} overflow-auto`}>
-              <CommandList>
-                {isLoading ? (
-                  <div className="py-6 text-center text-sm">Loading...</div>
-                ) : filteredOptions.length === 0 ? (
-                  <CommandEmpty>{emptyMessage}</CommandEmpty>
-                ) : (
-                  <CommandGroup>
-                    {filteredOptions.map((option) => (
-                      <CommandItem
-                        key={option.value}
-                        value={option.value}
-                        onSelect={() => handleSelect(option)}
-                        className="cursor-pointer"
-                      >
-                        {multiple && (
-                          <div
-                            className={cn(
-                              "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                              Array.isArray(value) &&
-                                value.some((v) => v.value === option.value)
-                                ? "bg-primary text-primary-foreground"
-                                : "opacity-50"
-                            )}
-                          >
-                            {Array.isArray(value) &&
-                              value.some((v) => v.value === option.value) && (
-                                <Check className="h-3 w-3" />
-                              )}
-                          </div>
-                        )}
-                        <span>{option.label}</span>
-                        {!multiple &&
-                          value &&
-                          !Array.isArray(value) &&
-                          value.value === option.value && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-              </CommandList>
-            </ScrollArea>
-          </Command>
-        </PopoverContent>
-      </Popover>
-
-      {/* Show selected tags if in multiple mode and showSelectedTags is true */}
-      {multiple &&
-        showSelectedTags &&
-        Array.isArray(value) &&
-        value.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {value.map((item) => (
-              <Badge
-                key={item.value}
-                variant="secondary"
-                className="max-w-full"
+            {multiple && clearable && Array.isArray(value) && value.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleClearAll}
               >
-                <span className="truncate mr-1">{item.label}</span>
-                {!disabled && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 rounded-full p-0 hover:bg-muted"
-                    onClick={(e) => handleRemove(e, item.value)}
-                  >
-                    <X className="h-3 w-3" />
-                    <span className="sr-only">Remove</span>
-                  </Button>
-                )}
-              </Badge>
-            ))}
+                Clear
+              </Button>
+            )}
           </div>
-        )}
-    </div>
+          <CommandList className="max-h-[300px] overflow-y-auto">
+            <CommandEmpty className="py-6 text-center text-sm">
+              {emptyMessage}
+            </CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={() => handleSelect(option)}
+                  disabled={option.disabled}
+                  className={cn(
+                    "cursor-pointer",
+                    option.disabled && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full mr-2">
+                    <div className="flex-grow">{option.label}</div>
+                    {isOptionSelected(option) && (
+                      <Check className="h-4 w-4 ml-2 flex-shrink-0" />
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
-}
+};

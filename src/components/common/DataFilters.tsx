@@ -117,7 +117,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
                     <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All {option.label}</SelectItem>
+                    <SelectItem value="_all">{`All ${option.label}`}</SelectItem>
                     {option.options?.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}

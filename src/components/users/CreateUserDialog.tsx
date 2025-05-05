@@ -1,86 +1,95 @@
-import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+
+import React, { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { User } from "@/types/Auth";
+import RoleSelect from "./RoleSelect";
+import { Loader2 } from "lucide-react";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-
-const createUserSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string(),
-    // .min(8, "Password must be at least 8 characters")
-    // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    // .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    // .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type CreateUserFormValues = z.infer<typeof createUserSchema>;
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 interface CreateUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: Omit<CreateUserFormValues, "confirmPassword">) => void;
+  onCreate: (user: Omit<User, "id">) => Promise<void>;
 }
 
-export function CreateUserDialog({
+const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Must be a valid email address"),
+  locked: z.boolean().default(false),
+});
+
+type CreateUserFormValues = z.infer<typeof createUserSchema>;
+
+export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   isOpen,
   onClose,
   onCreate,
-}: CreateUserDialogProps) {
+}) => {
+  const [roles, setRoles] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: "",
       email: "",
-      password: "",
-      confirmPassword: "",
-    },
+      locked: false,
+    }
   });
 
-  const handleSubmit = (data: CreateUserFormValues) => {
-    onCreate({
-      username: data.username,
-      email: data.email,
-      password: data.password,
-    });
-    toast.success("User created successfully");
+  const handleSubmit = async (values: CreateUserFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const newUser = {
+        ...values,
+        roles: roles,
+      };
+      
+      await onCreate(newUser);
+      reset();
+    } catch (error) {
+      console.error("Error creating user:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const reset = () => {
     form.reset();
+    setRoles([]);
+  };
+
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New User</DialogTitle>
+          <DialogTitle className="text-xl">Create New User</DialogTitle>
+          <DialogDescription>
+            Enter the details for the new user account.
+          </DialogDescription>
         </DialogHeader>
+        
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="username"
@@ -88,12 +97,13 @@ export function CreateUserDialog({
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter username" />
+                    <Input placeholder="Enter username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="email"
@@ -101,55 +111,62 @@ export function CreateUserDialog({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" placeholder="Enter email" />
+                    <Input type="email" placeholder="Enter email address" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
+            <RoleSelect
+              value={roles}
+              onChange={(selectedRoles) => {
+                setRoles(selectedRoles);
+              }}
+            />
+            
             <FormField
               control={form.control}
-              name="password"
+              name="locked"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Account Locked</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Create account in locked state
+                    </p>
+                  </div>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="Enter password"
+                    <Switch 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="Confirm password"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+            
+            <DialogFooter className="mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit">Create</Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting} 
+                className="flex gap-2 items-center"
+              >
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Create User
+              </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
