@@ -114,11 +114,20 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, ...props }, ref) => {
-  // Add runtime check to prevent empty value prop
-  if (props.value === "") {
-    console.error("SelectItem must have a non-empty value prop");
-    // Use a fallback value
-    props.value = "fallback-value";
+  // Enhance runtime check to handle empty value prop - if it's empty or undefined,
+  // use a safe fallback value that includes the display text or a timestamp for uniqueness
+  if (props.value === "" || props.value === undefined) {
+    console.log("SelectItem received empty value, using fallback");
+    // Use children content as part of the fallback value if it's a string
+    let fallbackValue;
+    if (typeof children === 'string') {
+      // Clean up the text to make it URL-safe
+      fallbackValue = `${children.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+    } else {
+      // If children is not a simple string, use a timestamp-based fallback
+      fallbackValue = `item-${Date.now()}`;
+    }
+    props.value = fallbackValue;
   }
   
   return (

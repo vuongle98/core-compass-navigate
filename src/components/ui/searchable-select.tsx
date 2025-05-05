@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,8 @@ interface SearchableSelectProps {
   isLoading?: boolean;
   clearable?: boolean;
   creatable?: boolean;
+  onScroll?: () => void; // Add optional onScroll callback for infinite scrolling
+  hasMore?: boolean; // Flag to indicate if more items are available to load
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -58,11 +61,16 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   isLoading = false,
   clearable = true,
   creatable = false,
+  onScroll,
+  hasMore = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const commandRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [reachedBottom, setReachedBottom] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   // Update search when popover opens/closes
   useEffect(() => {
@@ -70,6 +78,38 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       setSearchQuery("");
     }
   }, [open]);
+
+  // Improved scroll handler for infinite scrolling
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const scrollThreshold = 50; // Load more when within 50px of bottom
+    
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < scrollThreshold;
+    
+    if (isNearBottom && !reachedBottom && !isLoading && hasMore && onScroll) {
+      setReachedBottom(true);
+      setIsScrolling(true);
+      
+      // Call the onScroll callback to fetch more data
+      onScroll();
+      
+      // Reset after a short delay to prevent multiple calls
+      setTimeout(() => {
+        setReachedBottom(false);
+      }, 500);
+    }
+    
+    if (scrollTop > 0) {
+      setIsScrolling(true);
+    } else {
+      setIsScrolling(false);
+    }
+  };
+
+  // Reset scroll state when options change (i.e., new data loaded)
+  useEffect(() => {
+    setReachedBottom(false);
+  }, [options.length]);
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,15 +264,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               </Button>
             )}
           </div>
-          <CommandList className="max-h-[300px] overflow-y-auto">
+          <CommandList 
+            className="max-h-[300px] overflow-y-auto" 
+            ref={listRef}
+            onScroll={handleScroll}
+          >
             <CommandEmpty className="py-6 text-center text-sm">
               {emptyMessage}
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
-                  key={option.value}
-                  value={option.value}
+                  key={option.value || `option-${Math.random()}`} // Ensure key is always provided
+                  value={option.value || `option-${Math.random()}`} // Ensure value is never empty
                   onSelect={() => handleSelect(option)}
                   disabled={option.disabled}
                   className={cn(
@@ -248,6 +292,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   </div>
                 </CommandItem>
               ))}
+              {isLoading && hasMore && (
+                <div className="py-2 text-center">
+                  <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                </div>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
