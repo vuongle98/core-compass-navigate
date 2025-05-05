@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -138,6 +139,7 @@ const Roles = () => {
     pageSize,
     setPageSize,
     totalItems,
+    refetch,
   } = useApiQuery<Role>({
     endpoint: "/api/role",
     queryKey: ["roles"],
@@ -177,12 +179,14 @@ const Roles = () => {
         );
 
         toast.success("Role updated successfully");
+        refetch(); // Refresh data after update
       } else {
         const newRole = await RoleService.createRole(formData);
 
         setRoles((prev) => [...prev, newRole]);
 
         toast.success("Role created successfully");
+        refetch(); // Refresh data after create
       }
 
       setDialogOpen(false);
@@ -290,7 +294,7 @@ const Roles = () => {
       await RoleService.deleteRole(id);
 
       setRoles((prev) => prev.filter((role) => role.id !== id));
-
+      refetch(); // Refresh data after delete
       toast.success("Role deleted successfully");
     } catch (error) {
       console.error("Delete operation failed:", error);
@@ -301,21 +305,21 @@ const Roles = () => {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <Breadcrumbs />
         <PageHeader
           title="Roles"
           description="Manage user roles and permissions"
           showAddButton={false}
-        >
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-            onReset={resetFilters}
-            className="mt-4"
-          />
-        </PageHeader>
+        />
+        
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onReset={resetFilters}
+          className="mt-4 mb-5"
+        />
 
         <div className="mt-4">
           {isLoading ? (
@@ -382,7 +386,7 @@ const Roles = () => {
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
+          <DialogContent size="md">
             <DialogHeader>
               <DialogTitle>
                 {editingRole ? "Edit Role" : "Create New Role"}
@@ -394,7 +398,7 @@ const Roles = () => {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-2">
                 <div className="grid gap-2">
                   <Label htmlFor="code">Code</Label>
                   <Input

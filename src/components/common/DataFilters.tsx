@@ -54,6 +54,10 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
       ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
       : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
 
+  const hasActiveFilters = Object.values(localFilters).some(
+    value => value !== undefined && value !== null && value !== ''
+  );
+
   return (
     <div className={`space-y-4 p-4 bg-background rounded-lg border shadow-sm ${className || ''}`}>
       <div className={`grid gap-4 ${gridClass}`}>
@@ -116,8 +120,8 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
                   <SelectTrigger id={option.id} className="w-full">
                     <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_all">{`All ${option.label}`}</SelectItem>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="">All {option.label}</SelectItem>
                     {option.options?.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -127,13 +131,22 @@ export const DataFilters: React.FC<DataFiltersProps> = ({ filters, options, onCh
             )}
           </div>
         ))}
-      </div>
-      
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={handleReset} size="sm" className="ml-2">
-          Reset Filters
-        </Button>
+
+        {/* Inline reset button at the end of the grid */}
+        <div className="flex items-end">
+          {hasActiveFilters && (
+            <Button 
+              variant="ghost" 
+              onClick={handleReset} 
+              size="sm" 
+              className="h-9 text-muted-foreground hover:text-foreground flex items-center"
+            >
+              <XIcon className="h-3.5 w-3.5 mr-1" />
+              Reset
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
-};
+}
