@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -22,6 +23,13 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import LoggingService from "@/services/LoggingService";
 import { FileItem } from "@/types/Storage";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define a type for filter values
 interface QueryFilters {
@@ -323,7 +331,7 @@ const Files = () => {
           <DataTable data={files} columns={columns} title="Files" />
         </div>
 
-        {/* Share File Dialog */}
+        {/* Share File Dialog - Replace the native select with Shadcn UI Select */}
         <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -337,15 +345,20 @@ const Files = () => {
                 <Label htmlFor="shareType" className="text-right">
                   Share Type
                 </Label>
-                <select
-                  id="shareType"
-                  className="col-span-3 rounded-md border border-gray-200 px-2 py-1"
-                  value={shareType}
-                  onChange={(e) => setShareType(e.target.value)}
-                >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
-                </select>
+                <div className="col-span-3">
+                  <Select
+                    value={shareType}
+                    onValueChange={(value) => setShareType(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select share type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <DialogFooter>
