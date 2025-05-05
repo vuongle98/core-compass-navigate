@@ -101,6 +101,7 @@ const Users = () => {
     detailRoute: "/users",
   });
 
+  // Filter options for the data filters component - Ensure all select options have non-empty values
   const filterOptions: FilterOption[] = [
     {
       id: "search",

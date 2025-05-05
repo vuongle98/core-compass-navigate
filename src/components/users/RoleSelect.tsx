@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService from "@/services/EnhancedApiService";
@@ -43,7 +42,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
 
         const roles = response.content || [];
 
-        // Transform roles to options format
+        // Transform roles to options format - Ensure all values are non-empty strings
         const roleOptions = roles.map((role: Role) => {
           // Generate a safe value - ensure it's never empty
           const value = role.id ? 
@@ -104,7 +103,7 @@ const RoleSelect: React.FC<RoleSelectProps> = ({
     }
   }, [value, initialLoaded]);
 
-  // Convert current value to options format
+  // Convert current value to options format - Ensure all values are non-empty strings
   const selectedOptions = value.map((role) => {
     // Generate a safe value - ensure it's never empty
     const value = role.id ? 

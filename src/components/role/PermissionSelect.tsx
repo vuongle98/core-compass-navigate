@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { SearchableSelect, Option } from "@/components/ui/searchable-select";
 import EnhancedApiService, {
@@ -53,7 +52,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
 
         const permissions = response.content || [];
 
-        // Transform permissions to options format
+        // Transform permissions to options format - Ensure all values are non-empty strings
         const permissionOptions = permissions.map((permission: Permission) => {
           // Generate a safe value - ensure it's never empty
           const value = permission.id ? 
@@ -116,7 +115,7 @@ const PermissionSelect: React.FC<PermissionSelectProps> = ({
     }
   }, [value, initialLoaded]);
 
-  // Convert current value to options format
+  // Convert current value to options format - Ensure all values are non-empty strings
   const selectedOptions = value.map((permission) => {
     // Generate a safe value - ensure it's never empty
     const value = permission.id ? 

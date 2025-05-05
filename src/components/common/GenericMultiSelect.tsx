@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import {
   Select,
@@ -216,7 +217,8 @@ function GenericMultiSelect<T>({
           disabled={disabled}
           onOpenChange={(open) => setIsOpen(open)}
           onValueChange={() => { }} // Prevent default select behavior
-          value="placeholder" // Keep empty value to prevent auto-closing
+          // Important: Don't use empty string for value prop, use a placeholder value instead
+          value="placeholder_value" 
           open={isOpen} // Explicitly control open state
         >
           <SelectTrigger className="w-full">
