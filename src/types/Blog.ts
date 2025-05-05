@@ -1,108 +1,43 @@
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  coverImage?: string;
-  publishDate: string;
-  status: string; // 'draft' | 'published' | 'scheduled';
-  authorId: string;
-  authorName: string;
-  categoryId?: string;
-  categoryName?: string;
-  tags?: string[];
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string[];
-  createdAt: string;
-  updatedAt: string;
-  commentCount: number;
-  viewCount: number;
-}
+// Create this file if it doesn't exist
+import { ReactElement } from 'react';
 
-export interface BlogComment {
-  id: string;
-  postId: string;
-  authorId: string;
-  authorName: string;
-  authorEmail: string;
+export interface BlogPost {
+  id?: number;
+  title: string;
   content: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  parentId?: string;
+  excerpt?: string;
+  categoryId?: number | string;
+  category?: BlogCategory;
+  tags?: string[];
+  featuredImage?: string;
+  isPublished?: boolean;
+  slug?: string;
+  author?: any;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BlogCategory {
-  id: string;
+  id: string | number;
   name: string;
-  slug: string;
+  slug?: string;
   description?: string;
-  postCount: number;
-  color?: string;
-  icon?: string;
-  parentId?: string;
-  isActive: boolean;
-}
-
-export interface BlogTag {
-  id: string;
-  name: string;
-  slug: string;
-  postCount: number;
-  color?: string;
-}
-
-export interface BlogMedia {
-  id: string;
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  url: string;
-  thumbnailUrl?: string;
-  uploadDate: string;
-  width?: number;
-  height?: number;
-  altText?: string;
-  caption?: string;
-}
-
-export interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  coverImage?: string;
-  publishDate: string;
-  status: string;
-  authorName: string;
-  categoryName?: string;
-  commentCount: number;
-  viewCount: number;
 }
 
 export interface RichTextEditorProps {
   initialValue?: string;
-  onChange: (content: string) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
   readOnly?: boolean;
   minHeight?: string;
   className?: string;
   allowImageUpload?: boolean;
-  onImageUpload?: (file: File) => Promise<{ url: string }>;
+  onImageUpload?: (file: File) => Promise<any>;
 }
 
-// Type for BlogService response
-export interface BlogServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: any;
-}
-
-// Interface for image upload response
-export interface ImageUploadResponse {
-  url: string;
-  thumbnailUrl?: string;
-  id?: string;
+export interface BlogPostFormProps {
+  initialData?: BlogPost;
+  onSubmit: (data: any) => Promise<void>;
+  isLoading?: boolean;
 }

@@ -11,6 +11,7 @@ export interface ResponsiveTableProps<T> {
   onRowClick?: (item: T) => void;
   isLoading?: boolean;
   emptyState?: React.ReactNode;
+  emptyMessage?: string;
 }
 
 export function ResponsiveTable<T>({
@@ -20,6 +21,7 @@ export function ResponsiveTable<T>({
   onRowClick,
   isLoading = false,
   emptyState,
+  emptyMessage = "No data available",
 }: ResponsiveTableProps<T>) {
   if (isLoading) {
     return <div className="flex items-center justify-center p-6">Loading data...</div>;
@@ -28,7 +30,7 @@ export function ResponsiveTable<T>({
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center p-6 text-muted-foreground">
-        {emptyState || "No data available"}
+        {emptyState || emptyMessage}
       </div>
     );
   }

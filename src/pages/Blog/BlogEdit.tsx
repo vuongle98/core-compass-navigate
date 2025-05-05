@@ -42,8 +42,25 @@ const BlogEdit = () => {
     fetchPost();
   }, [id, navigate, toast]);
 
-  const handleSuccess = () => {
-    setIsSubmitting(false);
+  const handleSubmit = async (formData: BlogPost) => {
+    setIsSubmitting(true);
+    try {
+      // Process form submission
+      await BlogService.updatePost(id as string, formData);
+      toast({
+        title: "Success",
+        description: "Blog post updated successfully",
+      });
+      navigate("/blogs");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update blog post",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,9 +90,9 @@ const BlogEdit = () => {
         ) : post ? (
           <div className="mt-4">
             <BlogPostForm 
-              post={post} 
-              onSuccess={handleSuccess} 
-              isSubmitting={isSubmitting}
+              initialData={post} 
+              onSubmit={handleSubmit} 
+              isLoading={isSubmitting}
             />
           </div>
         ) : (

@@ -1,15 +1,31 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { BlogPostForm } from "@/components/blog/BlogPostForm";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { toast } from "sonner";
+import { BlogPost } from "@/types/Blog";
+import BlogService from "@/services/BlogService";
 
 const BlogNew = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSuccess = () => {
-    setIsSubmitting(false);
+  const handleSubmit = async (formData: BlogPost) => {
+    setIsSubmitting(true);
+    try {
+      // Process form submission
+      await BlogService.createPost(formData);
+      toast.success("Blog post created successfully");
+      navigate("/blogs");
+    } catch (error) {
+      toast.error("Failed to create blog post");
+      console.error("Error creating blog post:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -31,8 +47,8 @@ const BlogNew = () => {
         />
         <div className="mt-4">
           <BlogPostForm 
-            onSuccess={handleSuccess}
-            isSubmitting={isSubmitting}
+            onSubmit={handleSubmit}
+            isLoading={isSubmitting}
           />
         </div>
       </main>

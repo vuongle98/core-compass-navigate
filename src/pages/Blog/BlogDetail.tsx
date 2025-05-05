@@ -13,7 +13,6 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
-import { User } from "@/types/Auth";
 
 // Mock blog post data
 const mockPost = {
@@ -73,7 +72,8 @@ export default Greeting;</code></pre>
     id: 1,
     username: "johndoe",
     email: "john@example.com",
-    avatar: "/avatars/john.png"
+    avatar: "/avatars/john.png",
+    roles: [] // Add empty roles array to match User type
   },
   publishedAt: "2023-05-15T10:30:00Z",
   updatedAt: "2023-05-16T14:20:00Z",
@@ -119,7 +119,7 @@ const BlogDetail = () => {
     return format(new Date(dateString), "MMMM d, yyyy");
   };
 
-  const formatAuthorName = (author: User | null) => {
+  const formatAuthorName = (author: any) => {
     if (!author) return "Unknown";
     return author.username || "Anonymous";
   };

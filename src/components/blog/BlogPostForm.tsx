@@ -23,7 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Save } from "lucide-react";
-import { BlogPost, BlogCategory } from "@/types/Blog";
+import { BlogPost, BlogCategory, BlogPostFormProps } from "@/types/Blog";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types/Auth";
 import RichTextEditor from "@/components/ui/rich-text-editor";
@@ -45,12 +45,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-interface BlogPostFormProps {
-  initialData?: BlogPost;
-  onSubmit: (data: FormValues) => Promise<void>;
-  isLoading?: boolean;
-}
 
 export function BlogPostForm({
   initialData,
@@ -74,7 +68,7 @@ export function BlogPostForm({
       title: initialData?.title || "",
       content: initialData?.content || "",
       excerpt: initialData?.excerpt || "",
-      categoryId: initialData?.category?.id?.toString() || "",
+      categoryId: initialData?.categoryId?.toString() || "",
       tags: initialData?.tags || [],
       featuredImage: initialData?.featuredImage || "",
       isPublished: initialData?.isPublished || false,

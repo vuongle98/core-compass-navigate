@@ -41,16 +41,10 @@ export function UserMenu() {
     }
   };
 
-  // Get user initials from username if name is not available
-  const initials = user?.name 
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-    : user?.username 
-      ? user.username.substring(0, 2).toUpperCase()
-      : 'U';
+  // Get user initials from username
+  const initials = user?.username 
+    ? user.username.substring(0, 2).toUpperCase()
+    : 'U';
 
   return (
     <div className="flex items-center gap-2">
@@ -77,7 +71,7 @@ export function UserMenu() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.name || user?.username || 'User'}</p>
+              <p className="text-sm font-medium leading-none">{user?.username || 'User'}</p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user?.email || ''}
               </p>

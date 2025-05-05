@@ -1,13 +1,14 @@
 
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
-import { FeatureFlag } from "@/types/FeatureFlag"; // Updated import
+import { FeatureFlag } from "@/types/FeatureFlag";
 
 /**
  * Service for feature flags operations
  */
-class FeatureFlagsService {
+class FeatureFlagService {
   private static API_ENDPOINT = "/api/feature-flags";
+  private static cachedFlags: Record<string, boolean> = {};
 
   /**
    * Get all feature flags
@@ -69,6 +70,46 @@ class FeatureFlagsService {
   }
 
   /**
+   * Check if a feature is enabled based on user's environment and roles
+   * @param key Feature flag key
+   * @param environment Current environment
+   * @param roles User roles
+   * @returns Whether the feature is enabled
+   */
+  static isFeatureEnabled(key: string, environment: string, roles: string[]): boolean {
+    // Check cached flags first
+    if (this.cachedFlags[key] !== undefined) {
+      return this.cachedFlags[key];
+    }
+    
+    // Default to false if not found
+    return false;
+  }
+
+  /**
+   * Refresh all feature flags from the server
+   */
+  static async refreshFlags(): Promise<void> {
+    try {
+      const flags = await this.getAll();
+      
+      // Update cache
+      flags.forEach(flag => {
+        this.cachedFlags[flag.key] = flag.enabled;
+      });
+      
+      LoggingService.info("feature_flags", "refresh_flags", "Refreshed feature flags");
+    } catch (error) {
+      LoggingService.error(
+        "feature_flags",
+        "refresh_flags_failed",
+        "Failed to refresh feature flags",
+        error
+      );
+    }
+  }
+
+  /**
    * Toggle a feature flag
    * @param id The feature flag ID
    * @param enabled True to enable, false to disable
@@ -90,4 +131,4 @@ class FeatureFlagsService {
   }
 }
 
-export default FeatureFlagsService;
+export default FeatureFlagService;

@@ -129,3 +129,6 @@ export function DataTable<T>({
     </Card>
   );
 }
+
+// Export Column type for usage in other components
+export { Column };
