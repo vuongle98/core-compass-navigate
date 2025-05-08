@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DataTablePagination } from "./DataTablePagination";
 import { ReactNode } from "react";
 import { Column } from "@/types/Common";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DataTableProps<T> {
   data: T[];
@@ -49,6 +51,7 @@ export function DataTable<T>({
   headerActions,
   onSortChange,
 }: DataTableProps<T>) {
+  const isMobile = useIsMobile();
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
   const [sortColumn, setSortColumn] = useState<string | undefined>();
@@ -86,13 +89,13 @@ export function DataTable<T>({
   return (
     <Card className="w-full shadow-sm border">
       {(title || showAddButton || headerActions) && (
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          {title && <CardTitle>{title}</CardTitle>}
-          <div className="flex items-center space-x-2">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
+          {title && <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>}
+          <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
             {headerActions}
             {showAddButton && (
-              <Button onClick={onAddClick} size="sm" className="shrink-0">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={onAddClick} size={isMobile ? "sm" : "default"} className="shrink-0">
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 {addButtonText}
               </Button>
             )}

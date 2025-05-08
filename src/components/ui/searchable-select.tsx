@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,28 +64,37 @@ export const SearchableSelect = <T,>({
   const [isOpen, setIsOpen] = useState(false); // Manage dropdown open state
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = e.target.value;
     setSearchQuery(newSearch);
-    setPage(0); // Reset to first page on search
-    // apiSetSearch(newSearch);
+    
+    if (setPage) {
+      setPage(0); // Reset to first page on search
+    }
 
     if (onSearch) {
       onSearch(newSearch);
     }
   };
 
+  // Improved scroll handler with proper debounce
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (loadingRef.current || !hasMore || !onLoadMore) return;
+    
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-
-    const scrollThreshold = 50;
-
-    if (
-      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
-      hasMore && onLoadMore && !isLoading
-    ) {
+    const scrollBottom = scrollHeight - scrollTop - clientHeight;
+    const scrollThreshold = 30; // pixels from bottom to trigger load more
+    
+    if (scrollBottom < scrollThreshold) {
+      loadingRef.current = true;
       onLoadMore();
+      
+      // Reset loading ref after delay to prevent multiple calls
+      setTimeout(() => {
+        loadingRef.current = false;
+      }, 300);
     }
   };
 
@@ -99,9 +109,9 @@ export const SearchableSelect = <T,>({
       return;
     }
 
-    const newValues = value.some((o) => o.value === option.value)
+    const newValues = Array.isArray(value) && value.some((o) => o.value === option.value)
       ? value.filter((o) => o.value !== option.value)
-      : [...value, option];
+      : [...(Array.isArray(value) ? value : []), option];
 
     onChange(newValues);
   };
@@ -131,7 +141,7 @@ export const SearchableSelect = <T,>({
   return (
     <div className={cn("space-y-2", className)}>
       <Select
-        value={multiple ? undefined : value[0]?.value || ""}
+        value={multiple ? undefined : (value && value[0]?.value) || ""}
         onValueChange={() => {}}
         disabled={disabled}
         open={isOpen} // Control dropdown open state
@@ -140,7 +150,7 @@ export const SearchableSelect = <T,>({
         <SelectTrigger className="w-full">
           <SelectValue
             placeholder={
-              value.length > 0 ? value.length + " selected" : placeholder
+              value && value.length > 0 ? value.length + " selected" : placeholder
             }
           />
         </SelectTrigger>
@@ -160,8 +170,9 @@ export const SearchableSelect = <T,>({
                   type="button"
                   onClick={() => {
                     setSearchQuery("");
-                    // apiSetSearch("");
                     searchInputRef.current?.focus();
+                    if (onSearch) onSearch("");
+                    if (setPage) setPage(0);
                   }}
                   className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
                 >
@@ -177,7 +188,7 @@ export const SearchableSelect = <T,>({
           >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
-                const isSelected = value?.some((o) => o.value === option.value);
+                const isSelected = Array.isArray(value) && value?.some((o) => o.value === option.value);
                 return (
                   <div
                     key={option.value}
@@ -213,46 +224,6 @@ export const SearchableSelect = <T,>({
                       </div>
                     )}
                   </div>
-
-                  /* <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      disabled={option.disabled}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelect(option);
-                      }}
-                      className={cn(
-                        "cursor-pointer px-3 py-2 rounded-md hover:bg-muted",
-                        option.disabled && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      {multiple && showCheckboxes ? (
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="flex h-4 w-4 items-center justify-center rounded border border-primary cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelect(option);
-                            }}
-                            role="checkbox"
-                            aria-checked={isSelected}
-                          >
-                            {isSelected && (
-                              <Check className="h-3 w-3 text-primary" />
-                            )}
-                          </div>
-                          <div className="flex-1">{option.label}</div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 w-full">
-                          {isSelected && !multiple && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                          <div className="flex-1">{option.label}</div>
-                        </div>
-                      )}
-                    </SelectItem> */
                 );
               })
             ) : (
@@ -264,38 +235,25 @@ export const SearchableSelect = <T,>({
                 )}
               </div>
             )}
+            {isLoading && (
+              <div className="py-2 px-3 text-center">
+                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+              </div>
+            )}
           </SelectGroup>
-          {isLoading && hasMore && (
-            <div className="py-2 px-3 text-center">
-              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+          {hasMore && !isLoading && filteredOptions.length > 0 && (
+            <div 
+              className="py-2 px-3 text-center hover:bg-accent cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onLoadMore) onLoadMore();
+              }}
+            >
+              Load more...
             </div>
           )}
         </SelectContent>
       </Select>
-
-      {/* {showSelectedTags && value.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {allOptions
-            .filter((option) =>
-              getNormalizedValues().includes(getOptionValue(option))
-            )
-            .map((option) => (
-              <div
-                key={getOptionValue(option)}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
-              >
-                <span>{getOptionLabel(option)}</span>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className="ml-1 hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-        </div>
-      )} */}
 
       {multiple &&
         showSelectedTags &&
@@ -303,11 +261,12 @@ export const SearchableSelect = <T,>({
         value.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {value.map((option) => (
-              <div
+              <Badge
                 key={option.value}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
+                className="flex items-center gap-1 px-2 py-1"
+                variant="outline"
               >
-                <span>{option.label}</span>
+                <span className="text-xs">{option.label}</span>
                 <button
                   type="button"
                   onClick={() => removeSelectedTag(option.value)}
@@ -315,9 +274,9 @@ export const SearchableSelect = <T,>({
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </div>
+              </Badge>
             ))}
-            {clearable && (
+            {clearable && value.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import { SidebarNav } from './SidebarNav';
 import { ThemeToggle } from '../ThemeToggle';
 import { UserMenu } from './UserMenu';
@@ -68,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
           'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen sticky top-0 z-40',
           collapsed ? 'w-16' : 'w-64',
           hidden ? 'hidden' : 'flex',
-          isMobile && !hidden ? 'absolute' : '',
+          isMobile && !hidden ? 'fixed inset-y-0 left-0 h-full shadow-xl' : '',
           className
         )}
       >
@@ -78,15 +78,27 @@ export function Sidebar({ className }: SidebarProps) {
           )}
           <div className="flex items-center ml-auto">
             {!collapsed && <ThemeToggle />}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={isMobile ? toggleVisibility : toggleSidebar}
-              className={collapsed ? "mx-auto" : ""}
-              type="button"
-            >
-              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            </Button>
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleVisibility}
+                className="ml-1"
+                type="button"
+              >
+                <X size={18} />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className={collapsed ? "mx-auto" : ""}
+                type="button"
+              >
+                {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              </Button>
+            )}
           </div>
         </div>
         <SidebarNav collapsed={collapsed} />
@@ -100,6 +112,15 @@ export function Sidebar({ className }: SidebarProps) {
             <UserMenu />
           )}
         </div>
+
+        {/* Backdrop overlay for mobile */}
+        {isMobile && !hidden && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30" 
+            onClick={toggleVisibility}
+            aria-hidden="true"
+          />
+        )}
       </aside>
     </>
   );
