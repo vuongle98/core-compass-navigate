@@ -65,12 +65,12 @@ export function DetailViewModal({
           className
         )}
       >
-        <DialogHeader className="p-4 sm:p-6 bg-muted/30 border-b">
+        <DialogHeader className="p-4 sm:p-4 bg-muted/30 border-b">
           <div className="flex justify-between items-start">
             <div>
-              <DialogTitle className="text-lg font-medium">{title}</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
               {description && (
-                <DialogDescription className="mt-1.5 text-sm">
+                <DialogDescription className="mt-1 text-sm">
                   {description}
                 </DialogDescription>
               )}
@@ -88,11 +88,11 @@ export function DetailViewModal({
             )}
           </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 p-4 sm:p-6">
+        <ScrollArea className="flex-1 p-4 sm:p-4">
           <div className="space-y-4">{children}</div>
         </ScrollArea>
         {footerContent && (
-          <div className="p-4 sm:p-6 border-t flex flex-col sm:flex-row sm:justify-end gap-2 bg-muted/20">
+          <div className="p-4 sm:p-4 border-t flex flex-col sm:flex-row sm:justify-end gap-2 bg-muted/20">
             {footerContent}
           </div>
         )}

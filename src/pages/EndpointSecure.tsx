@@ -214,26 +214,24 @@ const EndpointSecures = () => {
           title="Endpoint Management"
           description="Manage access endpoints"
           showAddButton={false}
-        >
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
-            }}
-            onReset={() => {
-              resetFilters();
-              setSearchTerm("");
-              refresh();
-            }}
-            className="mt-4"
-          />
-        </PageHeader>
-
+        />
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+            // Update the search term when filters change
+            if (newFilters.search !== undefined) {
+              setSearchTerm(newFilters.search.toString());
+            }
+          }}
+          onReset={() => {
+            resetFilters();
+            setSearchTerm("");
+            refresh();
+          }}
+          className="mt-4"
+        />
         <div className="mt-4">
           <DataTable
             data={endpointSecuresData}

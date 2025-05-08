@@ -275,16 +275,14 @@ const UserRequestLog = () => {
           title="User Request Log"
           description="Monitor API requests and performance metrics"
           showAddButton={false}
-        >
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-            onReset={resetFilters}
-            className="mt-4"
-          />
-        </PageHeader>
-
+        />
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onReset={resetFilters}
+          className="mt-4"
+        />
         <div className="mt-4">
           {isLoading ? (
             <div className="space-y-3">

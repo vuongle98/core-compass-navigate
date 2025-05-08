@@ -301,15 +301,14 @@ const EventLog = () => {
             </div>
           }
         />
-
+        <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={handleFilterChange}
+          onReset={resetFilters}
+          className="mt-4"
+        />
         <div className="mt-4">
-          <DataFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={handleFilterChange}
-            onReset={resetFilters}
-          />
-
           {events.length === 0 ? (
             <div className="border rounded-lg p-8 text-center mt-4">
               <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

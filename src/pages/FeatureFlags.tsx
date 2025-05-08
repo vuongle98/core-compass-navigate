@@ -231,6 +231,14 @@ const FeatureFlags = () => {
           }
         />
 
+        {/* <DataFilters
+          filters={filters}
+          options={filterOptions}
+          onChange={setFilters}
+          onReset={resetFilters}
+          className="mt-4"
+        /> */}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <Card>
             <CardHeader className="pb-2">
