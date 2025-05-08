@@ -77,7 +77,7 @@ export function Sidebar({ className }: SidebarProps) {
             <h2 className="text-lg font-semibold text-sidebar-foreground">CoreApp</h2>
           )}
           <div className="flex items-center ml-auto">
-            {!collapsed && <ThemeToggle />}
+            {!collapsed && !isMobile && <ThemeToggle />}
             {isMobile ? (
               <Button
                 variant="ghost"

@@ -47,9 +47,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   const debouncedFilters = useDebounce(localFilters, 300);
   const [isOpen, setIsOpen] = useState(!isMobile);
   const initialRenderRef = useRef(true);
+  const resetTriggeredRef = useRef(false);
 
   // Reset the local state when parent filters change
-  // But only on initial render to avoid conflicts
   useEffect(() => {
     if (initialRenderRef.current) {
       setLocalFilters(filters);
@@ -59,9 +59,14 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
 
   // Apply debounced filters when they change
   useEffect(() => {
-    // Avoid calling onChange during initial setup
-    if (!initialRenderRef.current) {
+    // Skip initial render or when reset is triggered
+    if (!initialRenderRef.current && !resetTriggeredRef.current) {
       onChange(debouncedFilters);
+    }
+    
+    // Reset the flag after it's been processed
+    if (resetTriggeredRef.current) {
+      resetTriggeredRef.current = false;
     }
   }, [debouncedFilters, onChange]);
 
@@ -80,6 +85,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   const handleReset = () => {
+    // Set the reset flag
+    resetTriggeredRef.current = true;
+    
     // Create empty filters object based on options
     const resetFilters = options.reduce((acc, option) => {
       acc[option.id] = option.type === "select" ? undefined : "";
@@ -88,12 +96,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
 
     // Update local state first
     setLocalFilters(resetFilters);
-
-    // Call the parent reset function
-    onReset();
     
-    // Reset the initial render flag so changes propagate
-    initialRenderRef.current = false;
+    // Call the parent reset function directly
+    onReset();
   };
 
   // Determine grid columns based on number of filters for responsive layout
