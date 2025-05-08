@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface PerformanceData {
   name: string;
@@ -60,6 +62,7 @@ export function PerformanceGraph({
   const [selectedTimeRange, setSelectedTimeRange] = useState(
     timeRanges[2].value
   );
+  const isMobile = useIsMobile();
 
   // In a real app, this would filter data based on the selected time range
   // Here we're just using the same data for demonstration
@@ -67,10 +70,10 @@ export function PerformanceGraph({
 
   return (
     <Card className={cn("", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2 gap-2">
         <CardTitle>{title}</CardTitle>
         <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select time range" />
           </SelectTrigger>
           <SelectContent>
@@ -86,7 +89,7 @@ export function PerformanceGraph({
       </CardHeader>
       <CardContent>
         <ChartContainer
-          className="h-[300px]"
+          className="h-[250px] sm:h-[300px]"
           config={metrics.reduce((acc, metric) => {
             acc[metric.key] = {
               theme: { light: metric.color, dark: metric.color },
@@ -97,32 +100,42 @@ export function PerformanceGraph({
         >
           <LineChart
             data={filteredData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            margin={isMobile ? 
+              { top: 5, right: 10, left: 0, bottom: 5 } : 
+              { top: 5, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="name"
               stroke="currentColor"
-              fontSize={12}
+              fontSize={isMobile ? 10 : 12}
               tickLine={false}
               axisLine={false}
+              tick={isMobile ? { fontSize: 10 } : {}}
+              tickFormatter={isMobile ? 
+                (value) => value.split(' at ')[1] || value : 
+                undefined}
             />
             <YAxis
               stroke="currentColor"
-              fontSize={12}
+              fontSize={isMobile ? 10 : 12}
               tickLine={false}
               axisLine={false}
+              width={isMobile ? 30 : 40}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Legend />
+            <Legend 
+              wrapperStyle={isMobile ? { fontSize: '10px' } : {}}
+            />
             {metrics.map((metric) => (
               <Line
                 key={metric.key}
                 type="monotone"
                 dataKey={metric.key}
-                name={metric.key}
+                name={metric.label}
                 stroke={`var(--color-${metric.key})`}
-                activeDot={{ r: 8 }}
+                activeDot={{ r: isMobile ? 5 : 8 }}
+                strokeWidth={isMobile ? 1.5 : 2}
               />
             ))}
           </LineChart>

@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, XIcon, FilterIcon } from "lucide-react";
+import { SearchIcon, XIcon, FilterIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,6 +18,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 export interface FilterOption {
   id: string;
@@ -43,30 +44,29 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   className,
 }) => {
   const isMobile = useIsMobile();
-  const [localFilters, setLocalFilters] = useState<ApiQueryFilters>(filters);
-  const debouncedFilters = useDebounce(localFilters, 300);
+  const [localFilters, setLocalFilters] = useState<ApiQueryFilters>({});
+  const [debouncedFilters, debouncePending] = useDebounce(localFilters, 300);
   const [isOpen, setIsOpen] = useState(!isMobile);
   const initialRenderRef = useRef(true);
-  const resetTriggeredRef = useRef(false);
-
-  // Reset the local state when parent filters change
+  const resetInProgressRef = useRef(false);
+  
+  // Initialize local filters with parent filters on mount
   useEffect(() => {
     if (initialRenderRef.current) {
-      setLocalFilters(filters);
+      setLocalFilters({...filters});
       initialRenderRef.current = false;
     }
-  }, [filters]);
+  }, []);
 
   // Apply debounced filters when they change
   useEffect(() => {
-    // Skip initial render or when reset is triggered
-    if (!initialRenderRef.current && !resetTriggeredRef.current) {
+    if (!initialRenderRef.current && !resetInProgressRef.current) {
       onChange(debouncedFilters);
     }
     
-    // Reset the flag after it's been processed
-    if (resetTriggeredRef.current) {
-      resetTriggeredRef.current = false;
+    // Reset flag after processing
+    if (resetInProgressRef.current) {
+      resetInProgressRef.current = false;
     }
   }, [debouncedFilters, onChange]);
 
@@ -79,22 +79,23 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
     id: string,
     value: string | number | undefined
   ) => {
-    const newFilters = { ...localFilters, [id]: value };
-    setLocalFilters(newFilters);
-    // onChange is called via the debounced effect
+    setLocalFilters(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
   const handleReset = () => {
     // Set the reset flag
-    resetTriggeredRef.current = true;
+    resetInProgressRef.current = true;
     
     // Create empty filters object based on options
     const resetFilters = options.reduce((acc, option) => {
-      acc[option.id] = option.type === "select" ? undefined : "";
+      acc[option.id] = undefined;
       return acc;
     }, {} as ApiQueryFilters);
 
-    // Update local state first
+    // Update local state
     setLocalFilters(resetFilters);
     
     // Call the parent reset function directly
@@ -187,9 +188,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                 {option.label}
               </label>
               <Select
-                value={(localFilters[option.id] as string) || undefined}
+                value={(localFilters[option.id] as string) || ""}
                 onValueChange={(value) =>
-                  handleFilterChange(option.id, value)
+                  handleFilterChange(option.id, value || undefined)
                 }
               >
                 <SelectTrigger id={option.id} className="w-full">
@@ -201,7 +202,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                   {option.options?.map((opt) => (
                     <SelectItem 
                       key={opt.value} 
-                      value={opt.value || "all"} // Ensure no empty values
+                      value={opt.value}
                     >
                       {opt.label}
                     </SelectItem>
@@ -221,6 +222,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
             onClick={handleReset}
             size="sm"
             className="h-9 text-muted-foreground hover:text-foreground flex items-center"
+            disabled={debouncePending}
           >
             <XIcon className="h-3.5 w-3.5 mr-1" />
             Reset
@@ -241,13 +243,17 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
           <div className="p-4 flex items-center justify-between">
             <h3 className="text-sm font-medium">Filters</h3>
             <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center">
-                <FilterIcon className="h-3.5 w-3.5 mr-1.5" />
+              <Button variant="outline" size="sm" className="flex items-center gap-1.5">
+                <FilterIcon className="h-3.5 w-3.5" />
                 {isOpen ? "Hide Filters" : "Show Filters"}
+                {isOpen ? 
+                  <ChevronUp className="h-3.5 w-3.5 transition-transform" /> : 
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform" />
+                }
               </Button>
             </CollapsibleTrigger>
           </div>
-          <CollapsibleContent className="px-4 pb-4">
+          <CollapsibleContent className="px-4 pb-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
             <FiltersContent />
           </CollapsibleContent>
         </Collapsible>
