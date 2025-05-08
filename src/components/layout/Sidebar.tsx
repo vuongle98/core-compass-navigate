@@ -68,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
           'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen sticky top-0 z-40',
           collapsed ? 'w-16' : 'w-64',
           hidden ? 'hidden' : 'flex',
-          isMobile && !hidden ? 'fixed inset-y-0 left-0 h-full shadow-xl' : '',
+          isMobile && !hidden ? 'fixed inset-y-0 left-0 h-full shadow-xl w-full' : '',
           className
         )}
       >

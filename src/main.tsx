@@ -8,13 +8,11 @@ import './index.css';
 const style = document.createElement('style');
 style.textContent = `
   body {
-    overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
   }
   html {
     height: 100%;
-    overflow-y: auto;
   }
   #root {
     min-height: 100%;
@@ -23,7 +21,6 @@ style.textContent = `
   }
   .main-content {
     flex: 1;
-    overflow-y: visible;
   }
 `;
 document.head.appendChild(style);
