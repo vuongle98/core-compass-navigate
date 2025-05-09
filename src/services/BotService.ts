@@ -178,7 +178,7 @@ class BotService {
    * @throws Error if the scheduling fails
    */
   static async scheduleMessage(
-    botId: number,
+    botId: number | string,
     data: Partial<BotScheduledMessage>
   ): Promise<void> {
     try {

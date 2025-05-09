@@ -27,6 +27,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import RoleService from "@/services/RoleService";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Roles = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -235,6 +236,58 @@ const Roles = () => {
     },
     { header: "Name", accessorKey: "name" as const },
     { header: "Description", accessorKey: "description" as const },
+    {
+      header: "Permissions",
+      accessorKey: "permissions" as const,
+      sortable: false,
+      filterable: false,
+      cell: (role: Role) => (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="px-2 py-0.5 rounded-full border bg-muted/40 text-xs font-semibold hover:bg-muted/70 cursor-pointer"
+              title={
+                role.permissions && role.permissions.length > 0
+                  ? `${role.permissions.length} permissions`
+                  : "No permission"
+              }
+              style={{ minWidth: 32 }}
+            >
+              {role.permissions?.length || 0} roles
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            sideOffset={6}
+            className="w-56 p-2 max-h-[250px] overflow-y-auto"
+          >
+            <div className="font-semibold text-sm mb-2">Roles</div>
+            {role.permissions && role.permissions.length > 0 ? (
+              <ul className="space-y-1">
+                {role.permissions.map((perm) => (
+                  <li
+                    key={perm.id || `perm-${Math.random()}`}
+                    className="border rounded px-2 py-1 bg-muted/40"
+                  >
+                    <div className="font-semibold text-xs">
+                      {perm.name || "Unnamed Permission"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {perm.description || "No description"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                No permission assigned
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+      ),
+    },
     { header: "Created At", accessorKey: "createdAt" as const },
     {
       header: "Actions",

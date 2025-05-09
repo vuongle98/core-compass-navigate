@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -17,7 +16,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => void; // Added this function
   updateUserProfile: (data: Partial<User>) => void;
   resetPassword: (username: string) => Promise<boolean>;
@@ -92,8 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    AuthService.logout();
+  const logout = async (): Promise<void> => {
+    await AuthService.logout();
     setUser(null);
 
     // Update the user in ServiceRegistry

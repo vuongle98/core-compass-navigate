@@ -1,8 +1,10 @@
 export interface FileItem {
-  id: string;
+  id: number;
   name: string;
   size: number;
-  type: string;
-  uploadDate: string;
-  url: string;
+  contentType: string;
+  extension: string;
+  createdAt: string;
+  updatedAt?: string;
+  path: string;
 }

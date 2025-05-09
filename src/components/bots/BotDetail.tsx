@@ -150,14 +150,14 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium"></h3>
         <Button variant="outline" size="sm" onClick={refreshData}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Refresh
         </Button>
-      </div>
+      </div> */}
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
@@ -212,7 +212,7 @@ export function BotDetail({ bot, onRefresh }: BotDetailProps) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         {(bot.status === "STOPPED" ||
           bot.status === "CREATED" ||
           bot.status === "ERRORED") && (

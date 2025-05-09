@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,20 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-export interface Option<T> {
-  value: string;
-  label: React.ReactNode;
-  original?: T;
-  disabled?: boolean;
-}
+import useApiQuery from "@/hooks/use-api-query";
+import { Option } from "@/types/Common";
 
 interface SearchableSelectProps<T> {
-  options: Option<T>[];
   value: Option<T>[] | null;
+  endpoint: string;
+  queryKey: string | string[];
   onChange: (value: Option<T> | Option<T>[] | null) => void;
   placeholder?: string;
   searchPlaceholder?: string;
@@ -32,18 +26,16 @@ interface SearchableSelectProps<T> {
   className?: string;
   showSelectedTags?: boolean;
   emptyMessage?: string;
-  isLoading?: boolean;
   clearable?: boolean;
-  onLoadMore?: () => void; // Callback to load more options
-  hasMore?: boolean; // Indicates if more options are available
   showCheckboxes?: boolean;
-  onSearch?: (query: string) => void; // Callback to handle search input
-  setPage?: (page: number) => void;
+  initialSearch?: string; // Initial search query
+  transformData: (data: T[]) => Option<T>[]; // Function to transform data
 }
 
 export const SearchableSelect = <T,>({
-  options,
   value,
+  endpoint,
+  queryKey,
   onChange,
   placeholder = "Select an option",
   searchPlaceholder = "Search...",
@@ -52,55 +44,105 @@ export const SearchableSelect = <T,>({
   className,
   showSelectedTags = false,
   emptyMessage = "No results found",
-  isLoading = false,
   clearable = true,
-  onLoadMore,
-  hasMore = false,
   showCheckboxes = true,
-  onSearch,
-  setPage,
+  initialSearch = "",
+  transformData,
 }: SearchableSelectProps<T>) => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false); // Manage dropdown open state
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [allOptions, setAllOptions] = useState<Option<T>[]>([]);
+  const [last, setLast] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [search, setSearch] = useState<string>(initialSearch);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false);
+
+  const {
+    data: data,
+    isLoading,
+    setPage,
+    page,
+    totalPages,
+    setSearch: apiSetSearch,
+  } = useApiQuery<T>({
+    endpoint,
+    queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
+    initialPage: 0,
+    initialPageSize: 10,
+    mockData: {
+      content: [],
+      totalElements: 0,
+      totalPages: 1,
+      number: 0,
+      size: 1000,
+    },
+    debounceMs: 300,
+  });
+
+  useEffect(() => {
+    let pageOptions: Option<T>[] = [];
+
+    if (transformData) {
+      pageOptions = transformData(data);
+    } else if (data && Array.isArray(data)) {
+      pageOptions = data.map((item) => ({
+        value: item.value,
+        label: item.label,
+        original: item,
+      }));
+    }
+
+    const isLast =
+      typeof totalPages === "number" ? page >= totalPages - 1 : true;
+
+    setLast(isLast);
+    setIsFetchingMore(false);
+
+    setAllOptions((prev) => {
+      if (page === 0) {
+        return pageOptions;
+      }
+
+      const existingIds = new Set(prev.map((item) => item.value));
+
+      const newOptions = pageOptions.filter(
+        (item) => !existingIds.has(item.value)
+      );
+
+      return [...prev, ...newOptions];
+    });
+  }, [data, page, totalPages, transformData]);
+
+  const handleFetchMore = () => {
+    if (!last && !isFetchingMore) {
+      setIsFetchingMore(true);
+      setPage(page + 1);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearch = e.target.value;
-    setSearchQuery(newSearch);
-    
-    if (setPage) {
-      setPage(0); // Reset to first page on search
-    }
-
-    if (onSearch) {
-      onSearch(newSearch);
-    }
+    setSearch(newSearch);
+    setPage(0); // Reset to first page on search
+    apiSetSearch(newSearch);
   };
 
-  // Improved scroll handler with proper debounce
+  // Improved scroll detection function
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (loadingRef.current || !hasMore || !onLoadMore) return;
-    
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const scrollBottom = scrollHeight - scrollTop - clientHeight;
-    const scrollThreshold = 30; // pixels from bottom to trigger load more
-    
-    if (scrollBottom < scrollThreshold) {
-      loadingRef.current = true;
-      onLoadMore();
-      
-      // Reset loading ref after delay to prevent multiple calls
-      setTimeout(() => {
-        loadingRef.current = false;
-      }, 300);
+
+    const scrollThreshold = 50;
+
+    if (
+      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+      !last &&
+      !isFetchingMore
+    ) {
+      console.log("Fetching more options...");
+      handleFetchMore();
     }
   };
-
-  const filteredOptions = options.filter((option) =>
-    option.label.toString().toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleSelect = (option: Option<T>) => {
     if (!multiple) {
@@ -109,9 +151,9 @@ export const SearchableSelect = <T,>({
       return;
     }
 
-    const newValues = Array.isArray(value) && value.some((o) => o.value === option.value)
+    const newValues = value.some((o) => o.value === option.value)
       ? value.filter((o) => o.value !== option.value)
-      : [...(Array.isArray(value) ? value : []), option];
+      : [...value, option];
 
     onChange(newValues);
   };
@@ -134,14 +176,14 @@ export const SearchableSelect = <T,>({
     }
 
     if (!isOpen) {
-      setSearchQuery(""); // Clear search query when dropdown is closed
+      setSearch(""); // Clear search query when dropdown is closed
     }
   }, [isOpen]);
 
   return (
     <div className={cn("space-y-2", className)}>
       <Select
-        value={multiple ? undefined : (value && value[0]?.value) || ""}
+        value={multiple ? undefined : value[0]?.value || ""}
         onValueChange={() => {}}
         disabled={disabled}
         open={isOpen} // Control dropdown open state
@@ -150,7 +192,7 @@ export const SearchableSelect = <T,>({
         <SelectTrigger className="w-full">
           <SelectValue
             placeholder={
-              value && value.length > 0 ? value.length + " selected" : placeholder
+              value.length > 0 ? value.length + " selected" : placeholder
             }
           />
         </SelectTrigger>
@@ -160,19 +202,18 @@ export const SearchableSelect = <T,>({
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
-                value={searchQuery}
+                value={search}
                 onChange={handleSearchChange}
                 placeholder={searchPlaceholder}
                 className="pl-8 h-9 w-full"
               />
-              {searchQuery && (
+              {search && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSearchQuery("");
+                    setSearch("");
+                    apiSetSearch("");
                     searchInputRef.current?.focus();
-                    if (onSearch) onSearch("");
-                    if (setPage) setPage(0);
                   }}
                   className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
                 >
@@ -186,9 +227,9 @@ export const SearchableSelect = <T,>({
             className="py-1 max-h-[350px] overflow-y-auto"
             onScroll={handleScroll}
           >
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => {
-                const isSelected = Array.isArray(value) && value?.some((o) => o.value === option.value);
+            {allOptions.length > 0 ? (
+              allOptions.map((option) => {
+                const isSelected = value?.some((o) => o.value === option.value);
                 return (
                   <div
                     key={option.value}
@@ -235,21 +276,10 @@ export const SearchableSelect = <T,>({
                 )}
               </div>
             )}
-            {isLoading && (
-              <div className="py-2 px-3 text-center">
-                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-              </div>
-            )}
           </SelectGroup>
-          {hasMore && !isLoading && filteredOptions.length > 0 && (
-            <div 
-              className="py-2 px-3 text-center hover:bg-accent cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onLoadMore) onLoadMore();
-              }}
-            >
-              Load more...
+          {isLoading && (
+            <div className="py-2 px-3 text-center">
+              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
             </div>
           )}
         </SelectContent>
@@ -261,12 +291,11 @@ export const SearchableSelect = <T,>({
         value.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {value.map((option) => (
-              <Badge
+              <div
                 key={option.value}
-                className="flex items-center gap-1 px-2 py-1"
-                variant="outline"
+                className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-xs"
               >
-                <span className="text-xs">{option.label}</span>
+                <span>{option.label}</span>
                 <button
                   type="button"
                   onClick={() => removeSelectedTag(option.value)}
@@ -274,9 +303,9 @@ export const SearchableSelect = <T,>({
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </Badge>
+              </div>
             ))}
-            {clearable && value.length > 0 && (
+            {clearable && (
               <Button
                 variant="ghost"
                 size="sm"

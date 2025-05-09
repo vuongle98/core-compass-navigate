@@ -1,6 +1,7 @@
 import EnhancedApiService from "./EnhancedApiService";
 import { BlogCategory, BlogPost, BlogTag } from "@/types/Blog";
 import { ApiResponse, PageData } from "@/types/Common";
+import LoggingService from "./LoggingService";
 
 class BlogService {
   private static BASE_URL = "/api/v1/blogs";
@@ -16,304 +17,221 @@ class BlogService {
       );
     } catch (error) {
       console.error("Error fetching blog posts:", error);
+      LoggingService.error(
+        "blog_service",
+        "get_posts_failed",
+        "Failed to fetch posts",
+        error
+      );
       throw error;
     }
   }
 
-  static async getPost(id: string): Promise<ApiResponse<BlogPost>> {
+  static async getPost(id: string): Promise<BlogPost> {
     try {
-      const response = await EnhancedApiService.get<BlogPost>(
+      return await EnhancedApiService.get<BlogPost>(
         `${this.BASE_URL}/posts/${id}`
       );
-      return {
-        success: true,
-        message: "Blog post retrieved successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error fetching blog post ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to fetch blog post",
-        data: {} as BlogPost,
-        error: "An error occurred while fetching the blog post",
-      };
+      LoggingService.error(
+        "blog_service",
+        "get_post_failed",
+        `Failed to fetch blog post ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
-  static async createPost(
-    data: Partial<BlogPost>
-  ): Promise<ApiResponse<BlogPost>> {
+  static async createPost(data: Partial<BlogPost>): Promise<BlogPost> {
     try {
-      const response = await EnhancedApiService.post<BlogPost>(
+      return await EnhancedApiService.post<BlogPost>(
         `${this.BASE_URL}/posts`,
         data
       );
-      return {
-        success: true,
-        message: "Blog post created successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error("Error creating blog post:", error);
-      return {
-        success: false,
-        message: "Failed to create blog post",
-        data: {} as BlogPost,
-        error: "An error occurred while creating the blog post",
-      };
+      LoggingService.error(
+        "blog_service",
+        "create_post_failed",
+        "Failed to create blog post",
+        error
+      );
+      throw error;
     }
   }
 
   static async updatePost(
     id: string,
     data: Partial<BlogPost>
-  ): Promise<ApiResponse<BlogPost>> {
+  ): Promise<BlogPost> {
     try {
-      const response = await EnhancedApiService.put<BlogPost>(
+      return await EnhancedApiService.put<BlogPost>(
         `${this.BASE_URL}/posts/${id}`,
         data
       );
-      return {
-        success: true,
-        message: "Blog post updated successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error updating blog post ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to update blog post",
-        data: {} as BlogPost,
-        error: "An error occurred while updating the blog post",
-      };
+      LoggingService.error(
+        "blog_service",
+        "update_post_failed",
+        `Failed to update blog post ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
-  static async deletePost(id: string): Promise<ApiResponse<void>> {
+  static async deletePost(id: string): Promise<void> {
     try {
       await EnhancedApiService.delete(`${this.BASE_URL}/posts/${id}`);
-      return {
-        success: true,
-        message: "Blog post deleted successfully",
-        data: undefined,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error deleting blog post ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to delete blog post",
-        data: undefined,
-        error: "An error occurred while deleting the blog post",
-      };
+      LoggingService.error(
+        "blog_service",
+        "delete_post_failed",
+        `Failed to delete blog post ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
   // Categories
   static async getCategories(
     params: Record<string, string> = {}
-  ): Promise<ApiResponse<PageData<BlogCategory>>> {
+  ): Promise<PageData<BlogCategory>> {
     try {
-      const response = await EnhancedApiService.get<PageData<BlogCategory>>(
+      return await EnhancedApiService.getPaginated(
         `${this.BASE_URL}/categories`,
         { params }
       );
-      return {
-        success: true,
-        message: "Blog categories retrieved successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error("Error fetching blog categories:", error);
-      return {
-        success: false,
-        message: "Failed to fetch blog categories",
-        data: {
-          content: [],
-          totalElements: 0,
-          totalPages: 0,
-          size: 0,
-          number: 0,
-        },
-        error: "An error occurred while fetching blog categories",
-      };
+      LoggingService.error(
+        "blog_service",
+        "get_posts_failed",
+        "Failed to fetch posts",
+        error
+      );
+      throw error;
     }
   }
 
-  static async getCategory(id: string): Promise<ApiResponse<BlogCategory>> {
+  static async getCategory(id: string): Promise<BlogCategory> {
     try {
-      const response = await EnhancedApiService.get<BlogCategory>(
+      return await EnhancedApiService.get<BlogCategory>(
         `${this.BASE_URL}/categories/${id}`
       );
-      return {
-        success: true,
-        message: "Blog category retrieved successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error fetching blog category ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to fetch blog category",
-        data: {} as BlogCategory,
-        error: "An error occurred while fetching the blog category",
-      };
+      LoggingService.error(
+        "blog_service",
+        "get_category_failed",
+        `Failed to fetch blog category ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
   static async createCategory(
     data: Partial<BlogCategory>
-  ): Promise<ApiResponse<BlogCategory>> {
+  ): Promise<BlogCategory> {
     try {
-      const response = await EnhancedApiService.post<BlogCategory>(
+      return await EnhancedApiService.post<BlogCategory>(
         `${this.BASE_URL}/categories`,
         data
       );
-      return {
-        success: true,
-        message: "Blog category created successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error("Error creating blog category:", error);
-      return {
-        success: false,
-        message: "Failed to create blog category",
-        data: {} as BlogCategory,
-        error: "An error occurred while creating the blog category",
-      };
+      LoggingService.error(
+        "blog_service",
+        "create_category_failed",
+        "Failed to create blog category",
+        error
+      );
+      throw error;
     }
   }
 
   static async updateCategory(
     id: string,
     data: Partial<BlogCategory>
-  ): Promise<ApiResponse<BlogCategory>> {
+  ): Promise<BlogCategory> {
     try {
-      const response = await EnhancedApiService.put<BlogCategory>(
+      return await EnhancedApiService.put<BlogCategory>(
         `${this.BASE_URL}/categories/${id}`,
         data
       );
-      return {
-        success: true,
-        message: "Blog category updated successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error updating blog category ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to update blog category",
-        data: {} as BlogCategory,
-        error: "An error occurred while updating the blog category",
-      };
+      LoggingService.error(
+        "blog_service",
+        "update_category_failed",
+        `Failed to update blog category ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
-  static async deleteCategory(id: string): Promise<ApiResponse<void>> {
+  static async deleteCategory(id: string): Promise<void> {
     try {
       await EnhancedApiService.delete(`${this.BASE_URL}/categories/${id}`);
-      return {
-        success: true,
-        message: "Blog category deleted successfully",
-        data: undefined,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error deleting blog category ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to delete blog category",
-        data: undefined,
-        error: "An error occurred while deleting the blog category",
-      };
+      LoggingService.error(
+        "blog_service",
+        "delete_category_failed",
+        `Failed to delete blog category ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
   // Tags
   static async getTags(
     params: Record<string, string> = {}
-  ): Promise<ApiResponse<PageData<BlogTag>>> {
+  ): Promise<PageData<BlogTag>> {
     try {
-      const response = await EnhancedApiService.get<PageData<BlogTag>>(
+      return await EnhancedApiService.get<PageData<BlogTag>>(
         `${this.BASE_URL}/tags`,
         { params }
       );
-      return {
-        success: true,
-        message: "Blog tags retrieved successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
       console.error("Error fetching blog tags:", error);
-      return {
-        success: false,
-        message: "Failed to fetch blog tags",
-        data: {
-          content: [],
-          totalElements: 0,
-          totalPages: 0,
-          size: 0,
-          number: 0,
-        },
-        error: "An error occurred while fetching blog tags",
-      };
-    }
-  }
-
-  static async getTag(id: string): Promise<ApiResponse<BlogTag>> {
-    try {
-      const response = await EnhancedApiService.get<BlogTag>(
-        `${this.BASE_URL}/tags/${id}`
+      LoggingService.error(
+        "blog_service",
+        "get_tags_failed",
+        "Failed to fetch tags",
+        error
       );
-      return {
-        success: true,
-        message: "Blog tag retrieved successfully",
-        data: response,
-        error: null,
-      };
-    } catch (error) {
-      console.error(`Error fetching blog tag ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to fetch blog tag",
-        data: {} as BlogTag,
-        error: "An error occurred while fetching the blog tag",
-      };
+      throw error;
     }
   }
 
-  static async createTag(
-    data: Partial<BlogTag>
-  ): Promise<ApiResponse<BlogTag>> {
+  static async getTag(id: string): Promise<BlogTag> {
     try {
-      const response = await EnhancedApiService.post<BlogTag>(
+      return EnhancedApiService.get<BlogTag>(`${this.BASE_URL}/tags/${id}`);
+    } catch (error) {
+      LoggingService.error(
+        "blog_service",
+        "get_tag_failed",
+        `Failed to fetch blog tag ${id}`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  static async createTag(data: Partial<BlogTag>): Promise<BlogTag> {
+    try {
+      return await EnhancedApiService.post<BlogTag>(
         `${this.BASE_URL}/tags`,
         data
       );
-      return {
-        success: true,
-        message: "Blog tag created successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error("Error creating blog tag:", error);
-      return {
-        success: false,
-        message: "Failed to create blog tag",
-        data: {} as BlogTag,
-        error: "An error occurred while creating the blog tag",
-      };
+      LoggingService.error(
+        "blog_service",
+        "create_tag_failed",
+        "Failed to create blog tag",
+        error
+      );
+      throw error;
     }
   }
 
@@ -321,60 +239,50 @@ class BlogService {
   static async updateTag(
     id: string | number,
     data: Partial<BlogTag>
-  ): Promise<ApiResponse<BlogTag>> {
+  ): Promise<BlogTag> {
     try {
       const idStr = id.toString(); // Convert number to string if needed
-      const response = await EnhancedApiService.put<BlogTag>(
+      return await EnhancedApiService.put<BlogTag>(
         `${this.BASE_URL}/tags/${idStr}`,
         data
       );
-      return {
-        success: true,
-        message: "Tag updated successfully",
-        data: response,
-        error: null,
-      };
     } catch (error) {
-      console.error(`Error updating tag ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to update tag",
-        data: {} as BlogTag,
-        error: "An error occurred while updating the tag",
-      };
+      LoggingService.error(
+        "blog_service",
+        "update_tag_failed",
+        `Failed to update blog tag ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
-  static async deleteTag(id: string | number): Promise<ApiResponse<void>> {
+  static async deleteTag(id: string | number): Promise<void> {
     try {
       const idStr = id.toString(); // Convert number to string if needed
       await EnhancedApiService.delete(`${this.BASE_URL}/tags/${idStr}`);
-      return {
-        success: true,
-        message: "Tag deleted successfully",
-        data: undefined,
-        error: null,
-      };
     } catch (error) {
       console.error(`Error deleting tag ${id}:`, error);
-      return {
-        success: false,
-        message: "Failed to delete tag",
-        data: undefined,
-        error: "An error occurred while deleting the tag",
-      };
+
+      LoggingService.error(
+        "blog_service",
+        "delete_tag_failed",
+        `Failed to delete blog tag ${id}`,
+        error
+      );
+      throw error;
     }
   }
 
   // Add the missing uploadImage method
-  static async uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
+  static async uploadImage(file: File): Promise<{ url: string }> {
     try {
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append("image", file);
 
       // Upload the image - fix the headers type issue
-      const response = await EnhancedApiService.post<{ url: string }>(
+      return await EnhancedApiService.post<{ url: string }>(
         `${this.BASE_URL}/upload`,
         formData,
         {
@@ -383,21 +291,17 @@ class BlogService {
           },
         }
       );
-
-      return {
-        success: true,
-        message: "Image uploaded successfully",
-        data: { url: response.url },
-        error: null,
-      };
     } catch (error) {
       console.error("Error uploading image:", error);
-      return {
-        success: false,
-        message: "Failed to upload image",
-        data: { url: "" },
-        error: "An error occurred while uploading the image",
-      };
+
+      LoggingService.error(
+        "blog_service",
+        "upload_image_failed",
+        "Failed to upload image",
+        error
+      );
+
+      throw error;
     }
   }
 }

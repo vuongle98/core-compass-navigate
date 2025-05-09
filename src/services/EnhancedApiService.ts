@@ -1,49 +1,7 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-import TokenService, * as TokenServiceExports from "./TokenService";
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import TokenService from "./TokenService";
 import LoggingService from "./LoggingService";
-
-export interface PaginatedData<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  pageable?: {
-    pageNumber: number;
-    pageSize: number;
-    sort: {
-      empty: boolean;
-      sorted: boolean;
-      unsorted: boolean;
-    };
-    offset: number;
-    paged: boolean;
-    unpaged: boolean;
-  };
-  last?: boolean;
-  numberOfElements?: number;
-  first?: boolean;
-  empty?: boolean;
-  sort?: {
-    empty: boolean;
-    sorted: boolean;
-    unsorted: boolean;
-  };
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  error: string | null;
-}
-
-export interface PaginationOptions {
-  page?: number;
-  size?: number;
-  sort?: string;
-  [key: string]: unknown; // Allow arbitrary filter parameters
-}
+import { ApiResponse, PaginatedData, PaginationOptions } from "@/types/Common";
 
 class EnhancedApiService {
   private static instance: AxiosInstance;
@@ -92,6 +50,12 @@ class EnhancedApiService {
               ] = `Bearer ${token}`;
               return this.instance(originalRequest);
             } catch (refreshError) {
+              LoggingService.error(
+                "api",
+                "token_refresh_failed",
+                "Token refresh failed",
+                refreshError
+              );
               return Promise.reject(refreshError);
             }
           }
@@ -108,7 +72,8 @@ class EnhancedApiService {
   public static async get<T>(
     url: string,
     params?: Record<string, unknown>,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    responseType: AxiosRequestConfig["responseType"] = "json"
   ): Promise<T> {
     this.initialize();
     LoggingService.info("api", "get", `GET ${url}`);
@@ -117,7 +82,13 @@ class EnhancedApiService {
       const response = await this.instance.get<ApiResponse<T>>(url, {
         params,
         headers,
+        responseType,
       });
+
+      if (responseType === "blob") {
+        return response.data as unknown as T;
+      }
+
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "get_failed", `GET ${url} failed`, error);

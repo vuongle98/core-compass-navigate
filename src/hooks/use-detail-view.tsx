@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,7 +8,9 @@ interface DetailViewOptions<T> {
   onCloseCallback?: () => void;
 }
 
-export function useDetailView<T extends { id: string | number }>(options: DetailViewOptions<T> = {}) {
+export function useDetailView<T extends { id: string | number }>(
+  options: DetailViewOptions<T> = {}
+) {
   const {
     // For objects smaller than this size (in properties), use modal, otherwise redirect
     modalThreshold = 10,
@@ -20,7 +21,7 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
     // Callback function when modal is closed
     onCloseCallback,
   } = options;
-  
+
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,17 +37,17 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
   const openDetail = (item: T) => {
     console.log("Opening detail view for item:", item);
     const itemSize = Object.keys(item).length;
-    
+
     // If the item is small enough, show it in a modal
     if (itemSize <= modalThreshold) {
       setSelectedItem(item);
       setIsModalOpen(true);
       return;
     }
-    
+
     // Otherwise, navigate to a dedicated page
     let detailUrl: string;
-    
+
     if (formatDetailRoute) {
       detailUrl = formatDetailRoute(item);
     } else if (detailRoute) {
@@ -56,18 +57,18 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
       const baseRoute = window.location.pathname;
       detailUrl = `${baseRoute}/${item.id}`;
     }
-    
+
     navigate(detailUrl);
   };
 
   const closeModal = () => {
     // First set modal to closed
     setIsModalOpen(false);
-    
+
     // Use a small timeout to ensure the modal animation completes before clearing the selected item
     setTimeout(() => {
       setSelectedItem(null);
-      
+
       // Execute the callback if provided
       if (onCloseCallback) {
         onCloseCallback();
@@ -88,6 +89,6 @@ export function useDetailView<T extends { id: string | number }>(options: Detail
     // Include aliases for backward compatibility
     isOpen,
     openItem,
-    closeItem
+    closeItem,
   };
 }

@@ -29,6 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import FileService from "@/services/FileService";
+import useApiQuery from "@/hooks/use-api-query";
+import { DetailViewModal } from "@/components/ui/detail-view-modal";
+import { useDetailView } from "@/hooks/use-detail-view";
 
 // Define a type for filter values
 interface QueryFilters {
@@ -49,32 +53,65 @@ const Files = () => {
     // Simulate fetching files from an API
     const mockFiles: FileItem[] = [
       {
-        id: "1",
+        id: 1,
         name: "Document.pdf",
         size: 2.5,
-        type: "pdf",
-        uploadDate: "2023-01-01",
-        url: "/files/Document.pdf",
+        contentType: "pdf",
+        extension: "pdf",
+        createdAt: "2023-01-01",
+        path: "/files/Document.pdf",
+        updatedAt: "2023-01-01",
       },
       {
-        id: "2",
+        id: 2,
         name: "Image.jpg",
         size: 1.2,
-        type: "jpg",
-        uploadDate: "2023-02-15",
-        url: "/files/Image.jpg",
+        extension: "jpg",
+        contentType: "jpg",
+        createdAt: "2023-02-15",
+        path: "/files/Image.jpg",
+        updatedAt: "2023-02-15",
       },
       {
-        id: "3",
+        id: 3,
         name: "Presentation.pptx",
         size: 3.8,
-        type: "pptx",
-        uploadDate: "2023-03-20",
-        url: "/files/Presentation.pptx",
+        extension: "pptx",
+        contentType: "pptx",
+        createdAt: "2023-03-20",
+        path: "/files/Presentation.pptx",
+        updatedAt: "2023-03-20",
       },
     ];
     setFiles(mockFiles);
   }, []);
+
+  // Use our custom API query hook
+  const {
+    data: filesData,
+    isLoading,
+    filters,
+    setFilters,
+    resetFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalItems,
+    refresh,
+  } = useApiQuery<FileItem>({
+    endpoint: "/api/file",
+    queryKey: ["files", searchTerm],
+    initialPageSize: 10,
+    persistFilters: true,
+    mockData: {
+      content: files,
+      totalElements: 3,
+      totalPages: 1,
+      number: 0,
+      size: 10,
+    },
+  });
 
   // Dropzone configuration
   const onDrop = useCallback(
@@ -83,12 +120,13 @@ const Files = () => {
         const filename = uploadedFile.name;
         const uploadDate = new Date().toISOString().split("T")[0]; // Format as YYYY-MM-DD
         const newFile: FileItem = {
-          id: Date.now().toString(), // Generate a unique ID
+          id: 1000, // Generate a unique ID
           name: filename,
           size: uploadedFile.size / 1024, // Convert to KB
-          type: uploadedFile.type.split("/")[1], // Extract file extension
-          uploadDate: uploadDate,
-          url: URL.createObjectURL(uploadedFile), // Create a local URL for display
+          contentType: uploadedFile.type.split("/")[1], // Extract file extension
+          createdAt: uploadDate,
+          path: URL.createObjectURL(uploadedFile), // Create a local URL for display
+          extension: filename.split(".").pop() || "",
         };
 
         setFiles((prevFiles) => [...prevFiles, newFile]);
@@ -114,6 +152,16 @@ const Files = () => {
   );
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
+
+  // Setup for detail view modal
+  const {
+    selectedItem: selectedItem,
+    isModalOpen: isDetailOpen,
+    openDetail: openItemDetail,
+    closeModal: closeItemDetail,
+  } = useDetailView<FileItem>({
+    modalThreshold: 10,
+  });
 
   // Filter options
   const filterOptions: FilterOption[] = [
@@ -149,11 +197,6 @@ const Files = () => {
         onClick: () => handleDownloadFile(file),
       },
       {
-        type: "share" as ActionType,
-        label: "Share File",
-        onClick: () => handleShareFile(file),
-      },
-      {
         type: "delete" as ActionType,
         label: "Delete File",
         onClick: () => handleDeleteFile(file),
@@ -183,20 +226,7 @@ const Files = () => {
   };
 
   const handleViewFile = async (file: FileItem) => {
-    toast.info(`Viewing ${file.name}`);
-
-    try {
-      // Simulate API call to view file
-      // In a real app, you'd open the file in a new tab or display it in a viewer
-      // await apiService.viewFile(file.id);
-      LoggingService.logUserAction("files", "view", "File viewed", {
-        id: file.id,
-        name: file.name,
-      });
-    } catch (error) {
-      console.error("File view error:", error);
-      toast.error(`Failed to view ${file.name}`);
-    }
+    openItemDetail(file);
   };
 
   const handleDownloadFile = async (file: FileItem) => {
@@ -219,6 +249,25 @@ const Files = () => {
       // document.body.appendChild(link);
       // link.click();
       // link.parentNode?.removeChild(link);
+
+      // Download the file using FileService
+      const blob = await FileService.downloadFile(file.id);
+
+      console.log("Blob data:", blob);
+
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+
+      // Append the link to the document and trigger the download
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up the temporary link and URL
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
       // If needed, handle blob.data here
     } catch (error) {
@@ -255,12 +304,20 @@ const Files = () => {
 
   const columns = [
     {
+      header: "#",
+      accessorKey: "id",
+      cell: (file: FileItem) => <span>{file.id}</span>,
+      sortable: true,
+    },
+    {
       header: "Name",
       accessorKey: "name",
       cell: (file: FileItem) => (
         <div className="flex items-center">
           <LucideFile className="mr-2 h-4 w-4" />
-          {file.name}
+          <span className="truncate">
+            {file.name.length > 10 ? file.name.slice(0, 20) + "..." : file.name}
+          </span>
         </div>
       ),
       sortable: true,
@@ -272,13 +329,13 @@ const Files = () => {
       sortable: true,
     },
     {
-      header: "Type",
-      accessorKey: "type",
+      header: "Extension",
+      accessorKey: "extension",
       sortable: true,
     },
     {
-      header: "Upload Date",
-      accessorKey: "uploadDate",
+      header: "Uploaded Date",
+      accessorKey: "createdAt",
       sortable: true,
     },
     {
@@ -326,8 +383,74 @@ const Files = () => {
         />
 
         <div className="mt-4">
-          <DataTable data={files} columns={columns} title="Files" />
+          <DataTable
+            data={filesData}
+            columns={columns}
+            title="Files"
+            pagination={true}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
+            isLoading={isLoading}
+          />
         </div>
+
+        {/* view file dialog */}
+        {selectedItem && (
+          <DetailViewModal
+            isOpen={isDetailOpen}
+            onClose={closeItemDetail}
+            title="File Details"
+            size="md"
+            showCloseButton={false}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center">
+                {selectedItem.contentType.startsWith("image/") ||
+                  (["jpg", "png", "gif"].includes(selectedItem.extension) ? (
+                    // Show image preview if the file is an image
+                    <img
+                      src={selectedItem.path}
+                      alt={selectedItem.name}
+                      className="mr-2 h-16 w-16 object-cover rounded"
+                    />
+                  ) : (
+                    <LucideFile className="mr-2 h-4 w-4" />
+                  ))}
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Name</h3>
+                <p className="mt-1">{selectedItem.name}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Extension</h3>
+                <p className="mt-1">{selectedItem.extension}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Content type</h3>
+                <p className="mt-1">{selectedItem.contentType}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Size</h3>
+                <p className="mt-1">{selectedItem.size} KB</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Created At</h3>
+                <p className="mt-1">{selectedItem.createdAt}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Updated At</h3>
+                <p className="mt-1">{selectedItem.updatedAt}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Path</h3>
+                <p className="mt-1">{selectedItem.path}</p>
+              </div>
+            </div>
+          </DetailViewModal>
+        )}
 
         {/* Share File Dialog - Replace the native select with Shadcn UI Select */}
         <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>

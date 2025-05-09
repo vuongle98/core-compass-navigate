@@ -1,32 +1,31 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { BotScheduleForm } from "@/components/bots/BotScheduleForm";
 import { ArrowLeft } from "lucide-react";
-import EnhancedApiService from "@/services/EnhancedApiService";
 import { Bot, BotScheduledMessage } from "@/types/Bot";
+import BotService from "@/services/BotService";
+import useApiData from "@/hooks/use-api-data";
 
 const BotSchedule = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch basic bot info to display the name
   const {
     data: bot,
     isLoading,
     isError,
     error,
-  } = useQuery({
+  } = useApiData<Bot>({
     queryKey: ["bot-basic", id],
-    queryFn: async () => {
-      if (!id) throw new Error("Bot ID is required");
-      const response = await EnhancedApiService.get<Bot>(`/api/v1/bots/${id}`);
-      return response;
+    endpoint: `/api/v1/bots/${id}`,
+    onError: (error) => {
+      toast.error("Failed to load bot data");
+      console.error("Error fetching bot:", error);
     },
   });
 
@@ -35,10 +34,7 @@ const BotSchedule = () => {
 
     setIsSubmitting(true);
     try {
-      await EnhancedApiService.post(
-        `/api/v1/bots/${id}/schedule`,
-        scheduleData
-      );
+      await BotService.scheduleMessage(id, scheduleData);
       toast.success("Bot scheduled successfully");
       navigate(`/bots`);
     } catch (err) {

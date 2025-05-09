@@ -110,21 +110,13 @@ const Permissions = () => {
       label: "Module",
       type: "select",
       options: [
-        { value: "Users", label: "Users" },
-        { value: "Roles", label: "Roles" },
-        { value: "Permissions", label: "Permissions" },
-        { value: "System", label: "System" },
+        { value: "USER", label: "Users" },
+        { value: "ROLE", label: "Roles" },
+        { value: "PERMISSION", label: "Permissions" },
+        { value: "SYSTEM", label: "System" },
+        { value: "NOTIFICATION", label: "Notifications" },
       ],
-    },
-    {
-      id: "isActive",
-      label: "Status",
-      type: "select",
-      options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Inactive" },
-      ],
-    },
+    }
   ];
 
   // Setup for detail view modal
@@ -297,22 +289,7 @@ const Permissions = () => {
     },
     { header: "Code", accessorKey: "code", sortable: true },
     { header: "Module", accessorKey: "module", sortable: true },
-    {
-      header: "Status",
-      accessorKey: "isActive",
-      cell: (item: PermissionData) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            item.isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {item.isActive ? "Active" : "Inactive"}
-        </span>
-      ),
-      sortable: true,
-    },
+    { header: "Description", accessorKey: "description" },
     {
       header: "Actions",
       accessorKey: "actions" as keyof PermissionData,

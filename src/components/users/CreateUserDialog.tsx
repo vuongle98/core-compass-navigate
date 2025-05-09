@@ -1,12 +1,11 @@
-
 import React, { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,14 @@ import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface CreateUserDialogProps {
   isOpen: boolean;
@@ -48,7 +54,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
       username: "",
       email: "",
       locked: false,
-    }
+    },
   });
 
   const handleSubmit = async (values: CreateUserFormValues) => {
@@ -58,7 +64,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
         ...values,
         roles: roles,
       };
-      
+
       await onCreate(newUser);
       reset();
     } catch (error) {
@@ -87,9 +93,12 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             Enter the details for the new user account.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4 py-2"
+          >
             <FormField
               control={form.control}
               name="username"
@@ -103,7 +112,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -111,20 +120,24 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="Enter email address"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <RoleSelect
               value={roles}
               onChange={(selectedRoles) => {
                 setRoles(selectedRoles);
               }}
             />
-            
+
             <FormField
               control={form.control}
               name="locked"
@@ -137,27 +150,27 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                     </p>
                   </div>
                   <FormControl>
-                    <Switch 
-                      checked={field.value} 
+                    <Switch
+                      checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 type="submit"
-                disabled={isSubmitting} 
+                disabled={isSubmitting}
                 className="flex gap-2 items-center"
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}

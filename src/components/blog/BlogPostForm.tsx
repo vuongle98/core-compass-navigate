@@ -30,7 +30,7 @@ import RichTextEditor from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import TagInput from "@/components/ui/tag-input";
 import ImageUpload from "@/components/ui/image-upload";
-import EnhancedApiService from "@/services/EnhancedApiService";
+import BlogService from "@/services/BlogService";
 
 // Define the form schema
 const formSchema = z.object({
@@ -81,10 +81,8 @@ export function BlogPostForm({
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
       try {
-        const response = await EnhancedApiService.get<BlogCategory[]>(
-          "/api/blog/categories"
-        );
-        setCategories(response || []);
+        const response = await BlogService.getCategories({});
+        setCategories(response.content || []);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
         toast.error("Failed to load categories");

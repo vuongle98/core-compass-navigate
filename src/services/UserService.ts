@@ -138,7 +138,7 @@ class UserService {
    * @throws Error if the deletion fails
    * @description This method deletes a user by its ID.
    */
-  static async deleteUser(id: number): Promise<void> {
+  static async deleteUser(id: number | string): Promise<void> {
     try {
       LoggingService.info("user_service", "delete_user", `Deleting user ${id}`);
       await EnhancedApiService.delete(`${this.API_ENDPOINT}/${id}`);

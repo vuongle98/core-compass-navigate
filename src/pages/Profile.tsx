@@ -20,8 +20,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Loader2, Pencil, Save } from "lucide-react";
-import EnhancedApiService from "@/services/EnhancedApiService";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import UserService from "@/services/UserService";
 
 const profileSchema = z.object({
   firstName: z.string().optional(),
@@ -72,7 +72,7 @@ const Profile = () => {
     setIsSubmitting(true);
     try {
       if (user?.id) {
-        await EnhancedApiService.put(`/api/user/${user.id}/profile`, values);
+        await UserService.updateProfile(user.id, values);
 
         // Update local user data
         if (updateUser && user) {

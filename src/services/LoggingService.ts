@@ -50,13 +50,13 @@ class LoggingService {
     data?: unknown
   ) {
     if (LoggingService.config.enableConsole) {
-      if (action && description) {
-        console.info(`[INFO] ${module}:${action} - ${description}`, data || "");
-      } else if (action) {
-        console.info(`[INFO] ${module} - ${action}`, description || "");
-      } else {
-        console.info(`[INFO] ${module}`, action || "");
-      }
+      // if (action && description) {
+      //   console.info(`[INFO] ${module}:${action} - ${description}`, data || "");
+      // } else if (action) {
+      //   console.info(`[INFO] ${module} - ${action}`, description || "");
+      // } else {
+      //   console.info(`[INFO] ${module}`, action || "");
+      // }
     }
   }
 

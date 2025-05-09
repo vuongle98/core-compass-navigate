@@ -124,6 +124,36 @@ class FileService {
       throw error;
     }
   }
+
+  /**
+   * Download a file
+   * @param id - ID of the file to download
+   * @returns A promise that resolves to the file blob
+   * @throws Error if the download fails
+   */
+  static async downloadFile(id: number): Promise<Blob> {
+    try {
+      LoggingService.info(
+        "file_service",
+        "download_file",
+        `Downloading file ${id}`
+      );
+      return await EnhancedApiService.get<Blob>(
+        `${this.API_ENDPOINT}/${id}/download`,
+        {},
+        {},
+        "blob"
+      );
+    } catch (error) {
+      LoggingService.error(
+        "file_service",
+        "download_file_failed",
+        `Failed to download file ${id}`,
+        error
+      );
+      throw error;
+    }
+  }
 }
 
 export default FileService;

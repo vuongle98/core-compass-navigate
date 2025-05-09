@@ -1,3 +1,4 @@
+import { PaginationOptions } from "@/types/Common";
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 import { Permission } from "@/types/Auth";
@@ -13,7 +14,7 @@ class PermissionService {
    * @param params - Optional parameters for pagination and filtering
    * @returns A paginated list of Permissions
    */
-  static async getPermissions(params?: Record<string, string>) {
+  static async getPermissions(params?: PaginationOptions) {
     try {
       LoggingService.info(
         "permission_service",
@@ -22,8 +23,8 @@ class PermissionService {
       );
       return await EnhancedApiService.getPaginated<Permission>(
         this.API_ENDPOINT,
-        {},
-        params
+        params,
+        {}
       );
     } catch (error) {
       LoggingService.error(

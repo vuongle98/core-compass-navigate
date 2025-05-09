@@ -11,13 +11,13 @@ import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { DataFilters, FilterOption } from "@/components/common/DataFilters";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
-import EnhancedApiService from "@/services/EnhancedApiService";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { User } from "@/types/Auth";
+import UserService from "@/services/UserService";
 
 const Users = () => {
   // Mock data with state management
@@ -133,7 +133,7 @@ const Users = () => {
 
   // Trigger data refresh function
   const triggerRefresh = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   const {
@@ -177,7 +177,7 @@ const Users = () => {
 
   const handleAddUser = async (newUser: Omit<User, "id">) => {
     try {
-      await EnhancedApiService.post("/api/user", newUser);
+      await UserService.createUser(newUser);
       toast.success("User added successfully");
       setIsCreateDialogOpen(false);
       triggerRefresh(); // Refresh the user list after adding a new user
@@ -191,7 +191,7 @@ const Users = () => {
 
   const handleDeleteUser = async (id: number | string) => {
     try {
-      await EnhancedApiService.delete(`/api/user/${id}`);
+      await UserService.deleteUser(id);
       toast.success("User deleted successfully");
       triggerRefresh(); // Refresh the user list after deleting a user
     } catch (error) {
@@ -271,7 +271,11 @@ const Users = () => {
                 {user.roles?.length || 0} roles
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" sideOffset={6} className="w-56 p-2 max-h-[250px] overflow-y-auto">
+            <PopoverContent
+              align="start"
+              sideOffset={6}
+              className="w-56 p-2 max-h-[250px] overflow-y-auto"
+            >
               <div className="font-semibold text-sm mb-2">Roles</div>
               {user.roles && user.roles.length > 0 ? (
                 <ul className="space-y-1">
@@ -280,7 +284,9 @@ const Users = () => {
                       key={role.id || `role-${Math.random()}`}
                       className="border rounded px-2 py-1 bg-muted/40"
                     >
-                      <div className="font-semibold text-xs">{role.name || "Unnamed Role"}</div>
+                      <div className="font-semibold text-xs">
+                        {role.name || "Unnamed Role"}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {role.description || "No description"}
                       </div>

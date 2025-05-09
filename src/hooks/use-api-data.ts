@@ -1,4 +1,3 @@
-
 import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import LoggingService from "@/services/LoggingService";
@@ -18,7 +17,7 @@ export interface ApiDataOptions<T> {
   staleTime?: number;
   onSuccess?: (data: T) => void;
   onError?: (error: unknown) => void;
-  transform?: (data: any) => T;
+  transform?: (data: unknown) => T;
 }
 
 export interface ApiDataResult<T> {
@@ -27,16 +26,18 @@ export interface ApiDataResult<T> {
   isError: boolean;
   error: unknown;
   refetch: () => void;
-  setParams: (params: Record<string, string | number | boolean | undefined>) => void;
+  setParams: (
+    params: Record<string, string | number | boolean | undefined>
+  ) => void;
 }
 
 /**
  * Hook for non-paginated API data fetching with parameter support
  */
 export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
-  const [params, setParamsState] = useState<Record<string, string | number | boolean | undefined>>(
-    options.params || {}
-  );
+  const [params, setParamsState] = useState<
+    Record<string, string | number | boolean | undefined>
+  >(options.params || {});
 
   const fetchData = useCallback(async (): Promise<T> => {
     try {
@@ -47,10 +48,15 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
         { params }
       );
 
-      const response = await EnhancedApiService.get<T>(options.endpoint, params);
-      
+      const response = await EnhancedApiService.get<T>(
+        options.endpoint,
+        params
+      );
+
       // Apply transform function if provided
-      const transformedData = options.transform ? options.transform(response) : response;
+      const transformedData = options.transform
+        ? options.transform(response)
+        : response;
 
       LoggingService.info(
         "api_data",
@@ -75,7 +81,9 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
           `Using mock data for ${options.endpoint}`
         );
         const mockResponse = options.mockData as T;
-        return options.transform ? options.transform(mockResponse) : mockResponse;
+        return options.transform
+          ? options.transform(mockResponse)
+          : mockResponse;
       }
 
       throw error;
@@ -84,8 +92,8 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
 
   // Set up query options
   const queryOptions: UseQueryOptions<T, unknown, T, QueryKey> = {
-    queryKey: Array.isArray(options.queryKey) 
-      ? [...options.queryKey, params] 
+    queryKey: Array.isArray(options.queryKey)
+      ? [...options.queryKey, params]
       : [options.queryKey, params],
     queryFn: fetchData,
     enabled: options.enabled !== false,
@@ -94,21 +102,21 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     refetchInterval: options.refetchInterval,
     retry: options.retry,
     retryDelay: options.retryDelay,
-    meta: {}
+    meta: {},
   };
 
   // Add callbacks to meta
   if (options.onSuccess) {
     queryOptions.meta = {
       ...queryOptions.meta,
-      onSuccess: options.onSuccess
+      onSuccess: options.onSuccess,
     };
   }
-  
+
   if (options.onError) {
     queryOptions.meta = {
       ...queryOptions.meta,
-      onError: options.onError
+      onError: options.onError,
     };
   }
 

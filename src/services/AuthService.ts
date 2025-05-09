@@ -163,7 +163,7 @@ class AuthService {
   /**
    * Log out current user
    */
-  public logout(): void {
+  public async logout(): Promise<void> {
     this.accessToken = null;
     this.refreshToken = null;
     this.currentUser = null;
@@ -174,6 +174,10 @@ class AuthService {
     localStorage.removeItem("user");
 
     LoggingService.info("auth", "logout", "User logged out");
+
+    await EnhancedApiService.post("/api/auth/logout", {
+      refresh: this.refreshToken,
+    });
   }
 
   /**

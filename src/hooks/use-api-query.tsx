@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQuery, useQueryClient, QueryKey } from "@tanstack/react-query";
-import EnhancedApiService, {
-  PaginatedData,
-  PaginationOptions,
-} from "@/services/EnhancedApiService";
-import { toast } from "sonner";
+import { useQuery, QueryKey } from "@tanstack/react-query";
+import EnhancedApiService from "@/services/EnhancedApiService";
 import useLocalStorage from "./use-local-storage";
 import useDebounce from "./use-debounce";
+import { PaginatedData, PaginationOptions } from "@/types/Common";
 
 export interface ApiQueryFilters {
   [key: string]: string | number | boolean | null | undefined;
@@ -44,7 +41,6 @@ export function useApiQuery<T>({
     useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const queryClient = useQueryClient();
 
   // Use debounce for filter changes to prevent too many API calls
   const debouncedFilters = useDebounce(filtersState, debounceMs);
