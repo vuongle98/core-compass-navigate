@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { DataFilters } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import {
   Dialog,
   DialogContent,

@@ -33,7 +33,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { DataFilters } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { Notification } from "@/types/Notification";
 import { FilterOption } from "@/types/Common";

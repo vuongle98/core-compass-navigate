@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
 
+// Export the type as a named export 
 export type FilterOption = {
   id: string;
   label: string;
@@ -43,6 +44,7 @@ export interface DataFiltersProps {
   onReset?: () => void;
 }
 
+// Export as both default and named export for backward compatibility
 const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
   setFilters,
@@ -351,4 +353,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   );
 };
 
+// Export as both default and named export for backward compatibility
+export { DataFilters };
 export default DataFilters;

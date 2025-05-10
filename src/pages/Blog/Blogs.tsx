@@ -8,7 +8,7 @@ import { ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { DataFilters } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterOption } from "@/types/Common";
 

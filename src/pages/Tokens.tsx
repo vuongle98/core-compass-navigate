@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
