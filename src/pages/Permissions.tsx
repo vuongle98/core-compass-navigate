@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import DataFilters, { FilterOption } from "@/components/common/DataFilters";
 import {
   Dialog,
   DialogContent,
@@ -328,14 +328,9 @@ const Permissions = () => {
         />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-          }}
-          onReset={() => {
-            resetFilters();
-            refresh();
-          }}
           className="mt-4"
         />
         <div className="mt-4">

@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import DataFilters, { FilterOption } from "@/components/common/DataFilters";
 import useApiQuery from "@/hooks/use-api-query";
 import LoggingService from "@/services/LoggingService";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -267,18 +267,9 @@ const AuditLog = () => {
         />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-            // Update the search term when filters change
-            if (newFilters.search !== undefined) {
-              setSearchTerm(newFilters.search.toString());
-            }
-          }}
-          onReset={() => {
-            resetFilters();
-            setSearchTerm("");
-          }}
           className="mt-4"
         />
         <div className="mt-4">

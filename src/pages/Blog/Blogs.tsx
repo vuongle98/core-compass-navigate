@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -8,7 +9,7 @@ import { ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import DataFilters, { FilterOption } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Define the Blog interface
@@ -198,9 +199,9 @@ const Blogs = () => {
         <PageHeader title="Blogs" description="Manage blog posts" />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
-          onChange={setFilters}
-          onReset={resetFilters}
           className="mt-4"
         />
         {isLoading ? (

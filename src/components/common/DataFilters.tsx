@@ -24,6 +24,9 @@ interface DataFiltersProps {
   searchPlaceholder?: string;
   filtersTitle?: string;
   showToggle?: boolean;
+  options?: FilterOption[]; // Added options property
+  onChange?: (filters: ApiQueryFilters) => void; // Added onChange property for compatibility
+  onReset?: () => void; // Added onReset property for compatibility
 }
 
 export const DataFilters: React.FC<DataFiltersProps> = ({
@@ -36,6 +39,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   searchPlaceholder = 'Search...',
   filtersTitle = 'Filters',
   showToggle = true,
+  options, // Add options parameter
+  onChange, // Add onChange parameter
+  onReset, // Add onReset parameter
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -43,11 +49,23 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFilters({ ...filters, search: value });
+    // Also call onChange if provided
+    if (onChange) {
+      onChange({ ...filters, search: value });
+    }
   };
 
   // Toggle filter visibility
   const toggleFilters = () => {
     setShowFilters(prev => !prev);
+  };
+
+  // Handle reset with compatibility for both prop styles
+  const handleReset = () => {
+    resetFilters();
+    if (onReset) {
+      onReset();
+    }
   };
 
   // Get current search value
@@ -74,7 +92,12 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                 variant="ghost"
                 size="sm"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => setFilters({ ...filters, search: '' })}
+                onClick={() => {
+                  setFilters({ ...filters, search: '' });
+                  if (onChange) {
+                    onChange({ ...filters, search: '' });
+                  }
+                }}
                 type="button"
               >
                 <X className="h-3 w-3" />
@@ -105,7 +128,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={resetFilters}
+              onClick={handleReset}
               className="text-muted-foreground hover:text-primary transition-colors"
               type="button"
             >

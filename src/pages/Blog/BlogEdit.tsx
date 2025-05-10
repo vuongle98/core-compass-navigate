@@ -23,8 +23,8 @@ const BlogEdit = () => {
 
       try {
         const response = await BlogService.getPost(id);
-        if (response.success) {
-          setPost(response.data as BlogPost);
+        if (response && typeof response === 'object') {
+          setPost(response as BlogPost);
         }
       } catch (error) {
         toast({

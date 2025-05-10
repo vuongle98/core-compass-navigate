@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ interface SearchableSelectProps<T> {
   clearable?: boolean;
   showCheckboxes?: boolean;
   initialSearch?: string; // Initial search query
-  transformData: (data: any[]) => Option<T>[]; // Function to transform data - changed from T[] to any[]
+  transformData: (data: any[]) => Option<T>[]; // Function to transform data from any to Option<T>
 }
 
 export const SearchableSelect = <T,>({
@@ -65,7 +66,7 @@ export const SearchableSelect = <T,>({
     page,
     totalPages,
     setSearch: apiSetSearch,
-  } = useApiQuery<any>({ // Changed from T to any
+  } = useApiQuery<any>({ // Using any type for API query data since we transform it
     endpoint,
     queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
     initialPage: 0,
