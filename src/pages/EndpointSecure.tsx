@@ -217,6 +217,8 @@ const EndpointSecures = () => {
         />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
           onChange={(newFilters) => {
             setFilters(newFilters);

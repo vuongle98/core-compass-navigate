@@ -278,9 +278,16 @@ const UserRequestLog = () => {
         />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
-          onChange={setFilters}
-          onReset={resetFilters}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+          }}
+          onReset={() => {
+            resetFilters();
+            refresh();
+          }}
           className="mt-4"
         />
         <div className="mt-4">

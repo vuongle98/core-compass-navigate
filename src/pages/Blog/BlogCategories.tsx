@@ -72,9 +72,8 @@ const BlogCategories = () => {
     setLoading(true);
     try {
       const response = await BlogService.getCategories();
-      if (response.success) {
-        setCategories(response.data.content);
-      }
+      // Update to handle the direct response structure without checking 'success'
+      setCategories(response.content || []);
     } catch (error) {
       console.error("Error loading categories:", error);
       toast({
@@ -118,28 +117,22 @@ const BlogCategories = () => {
     }
 
     try {
-      let response;
-
       if (isEditing && currentCategory.id) {
         const categoryId = String(currentCategory.id);
-        response = await BlogService.updateCategory(
+        await BlogService.updateCategory(
           categoryId,
           currentCategory
         );
-        if (response.success) {
-          toast({
-            title: "Success",
-            description: "Category updated successfully",
-          });
-        }
+        toast({
+          title: "Success",
+          description: "Category updated successfully",
+        });
       } else {
-        response = await BlogService.createCategory(currentCategory);
-        if (response.success) {
-          toast({
-            title: "Success",
-            description: "Category created successfully",
-          });
-        }
+        await BlogService.createCategory(currentCategory);
+        toast({
+          title: "Success",
+          description: "Category created successfully",
+        });
       }
 
       // Refresh categories list
@@ -161,15 +154,13 @@ const BlogCategories = () => {
   const deleteCategory = async (id: string | number) => {
     try {
       setDeleting(String(id));
-      const response = await BlogService.deleteCategory(String(id));
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: "Category deleted successfully",
-        });
-        // Update local state to remove the deleted category
-        setCategories(categories.filter((cat) => cat.id !== id));
-      }
+      await BlogService.deleteCategory(String(id));
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+      // Update local state to remove the deleted category
+      setCategories(categories.filter((cat) => cat.id !== id));
     } catch (error) {
       console.error("Error deleting category:", error);
       toast({

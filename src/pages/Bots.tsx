@@ -428,6 +428,8 @@ const Bots = () => {
           <DataFilters
             className="mb-4"
             filters={filters}
+            setFilters={setFilters}
+            resetFilters={resetFilters}
             options={filterOptions}
             onChange={(newFilters) => {
               setFilters(newFilters);

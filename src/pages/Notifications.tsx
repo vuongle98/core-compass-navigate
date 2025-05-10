@@ -429,6 +429,8 @@ const Notifications = () => {
 
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
           onChange={(newFilters) => {
             setFilters(newFilters);
@@ -442,7 +444,7 @@ const Notifications = () => {
             setSearchTerm("");
             refresh();
           }}
-          className="mt-4"
+          className="mb-4"
         />
 
         <div className="mt-4">

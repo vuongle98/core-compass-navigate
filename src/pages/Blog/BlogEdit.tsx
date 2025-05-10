@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -23,6 +24,7 @@ const BlogEdit = () => {
 
       try {
         const response = await BlogService.getPost(id);
+        // Use the response directly without checking for success
         if (response && typeof response === 'object') {
           setPost(response as BlogPost);
         }

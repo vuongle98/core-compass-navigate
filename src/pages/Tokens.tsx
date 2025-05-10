@@ -270,17 +270,14 @@ const Tokens = () => {
 
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
           onChange={(newFilters) => {
             setFilters(newFilters);
-            // Update the search term when filters change
-            if (newFilters.search !== undefined) {
-              setSearchTerm(newFilters.search.toString());
-            }
           }}
           onReset={() => {
             resetFilters();
-            setSearchTerm("");
             refresh();
           }}
           className="mt-4"

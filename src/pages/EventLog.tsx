@@ -303,6 +303,8 @@ const EventLog = () => {
         />
         <DataFilters
           filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
           options={filterOptions}
           onChange={handleFilterChange}
           onReset={resetFilters}

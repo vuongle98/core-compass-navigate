@@ -14,22 +14,24 @@ export interface FilterOption {
   options?: { value: string; label: string }[];
 }
 
-interface DataFiltersProps {
+export interface DataFiltersProps {
   filters: ApiQueryFilters;
-  setFilters: (filters: ApiQueryFilters) => void;
-  resetFilters: () => void;
-  children?: React.ReactNode;
+  options?: FilterOption[];
   className?: string;
   withSearch?: boolean;
   searchPlaceholder?: string;
   filtersTitle?: string;
   showToggle?: boolean;
-  options?: FilterOption[]; // Added options property
-  onChange?: (filters: ApiQueryFilters) => void; // Added onChange property for compatibility
-  onReset?: () => void; // Added onReset property for compatibility
+  children?: React.ReactNode;
+  
+  // Allow both patterns of filter handling
+  setFilters?: (filters: ApiQueryFilters) => void;
+  resetFilters?: () => void;
+  onChange?: (filters: ApiQueryFilters) => void;
+  onReset?: () => void;
 }
 
-export const DataFilters: React.FC<DataFiltersProps> = ({
+const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
   setFilters,
   resetFilters,
@@ -39,19 +41,23 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   searchPlaceholder = 'Search...',
   filtersTitle = 'Filters',
   showToggle = true,
-  options, // Add options parameter
-  onChange, // Add onChange parameter
-  onReset, // Add onReset parameter
+  options,
+  onChange,
+  onReset,
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
-  // Handle search input change
+  // Handle search input change with compatibility for both prop styles
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setFilters({ ...filters, search: value });
-    // Also call onChange if provided
+    const newFilters = { ...filters, search: value };
+    
+    if (setFilters) {
+      setFilters(newFilters);
+    }
+    
     if (onChange) {
-      onChange({ ...filters, search: value });
+      onChange(newFilters);
     }
   };
 
@@ -62,7 +68,10 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
 
   // Handle reset with compatibility for both prop styles
   const handleReset = () => {
-    resetFilters();
+    if (resetFilters) {
+      resetFilters();
+    }
+    
     if (onReset) {
       onReset();
     }
@@ -93,10 +102,9 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
                 size="sm"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                 onClick={() => {
-                  setFilters({ ...filters, search: '' });
-                  if (onChange) {
-                    onChange({ ...filters, search: '' });
-                  }
+                  const newFilters = { ...filters, search: '' };
+                  if (setFilters) setFilters(newFilters);
+                  if (onChange) onChange(newFilters);
                 }}
                 type="button"
               >
@@ -152,4 +160,5 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   );
 };
 
+export { DataFilters, FilterOption };
 export default DataFilters;
