@@ -9,7 +9,7 @@ import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import {
   Popover,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { User } from "@/types/Auth";
 import UserService from "@/services/UserService";
+import { FilterOption } from "@/types/Common";
 
 const Users = () => {
   // Mock data with state management

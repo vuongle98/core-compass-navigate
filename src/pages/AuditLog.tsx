@@ -28,16 +28,21 @@ import {
 import { Progress } from "@/components/ui/progress";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { AuditLog as AuditLogType } from "@/types/AuditLog";
+import { FilterOption } from "@/types/Common";
 
 const AuditLog = () => {
   const [auditLogs, setAuditLogs] = useState<AuditLogType[]>([
     {
       id: 1,
       timestamp: "2024-04-15 10:00:00",
-      user: "admin",
+      user: {
+        id: 1,
+        username: "admin",
+        roles: [{ id: 1, name: "admin", code: "ADMIN" }],
+      },
       action: "User Login",
       resource: "Authentication",
       details: "Successful login",
@@ -45,7 +50,11 @@ const AuditLog = () => {
     {
       id: 2,
       timestamp: "2024-04-15 10:05:00",
-      user: "system",
+      user: {
+        id: 1,
+        username: "admin",
+        roles: [{ id: 1, name: "admin", code: "ADMIN" }],
+      },
       action: "Database Backup",
       resource: "System",
       details: "Scheduled backup completed",
@@ -53,7 +62,11 @@ const AuditLog = () => {
     {
       id: 3,
       timestamp: "2024-04-15 10:10:00",
-      user: "user123",
+      user: {
+        id: 1,
+        username: "admin",
+        roles: [{ id: 1, name: "admin", code: "ADMIN" }],
+      },
       action: "File Download",
       resource: "Files",
       details: "Downloaded report.pdf",
@@ -61,7 +74,11 @@ const AuditLog = () => {
     {
       id: 4,
       timestamp: "2024-04-15 10:15:00",
-      user: "admin",
+      user: {
+        id: 1,
+        username: "admin",
+        roles: [{ id: 1, name: "admin", code: "ADMIN" }],
+      },
       action: "User Creation",
       resource: "Users",
       details: "Created new user john.doe",
@@ -69,7 +86,11 @@ const AuditLog = () => {
     {
       id: 5,
       timestamp: "2024-04-15 10:20:00",
-      user: "system",
+      user: {
+        id: 1,
+        username: "admin",
+        roles: [{ id: 1, name: "admin", code: "ADMIN" }],
+      },
       action: "Security Scan",
       resource: "Security",
       details: "Detected potential vulnerability",
@@ -226,18 +247,11 @@ const AuditLog = () => {
           actions={
             <div className="flex space-x-2">
               {selectedItems.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                >
+                <Button variant="outline" size="sm" onClick={handleBulkDelete}>
                   Delete ({selectedItems.length})
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => handleExportData("csv")}
-              >
+              <Button variant="outline" onClick={() => handleExportData("csv")}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -281,10 +295,7 @@ const AuditLog = () => {
         </div>
 
         {/* Filters Modal */}
-        <Dialog
-          open={isFiltersModalOpen}
-          onOpenChange={setIsFiltersModalOpen}
-        >
+        <Dialog open={isFiltersModalOpen} onOpenChange={setIsFiltersModalOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Filters</DialogTitle>
@@ -302,7 +313,9 @@ const AuditLog = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={() => setIsFiltersModalOpen(false)}>Apply</Button>
+              <Button onClick={() => setIsFiltersModalOpen(false)}>
+                Apply
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

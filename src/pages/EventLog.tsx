@@ -5,10 +5,11 @@ import { DataTable } from "@/components/ui/DataTable";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import DataFilters, { FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { AlertTriangle, Download, RefreshCcw, Trash } from "lucide-react";
 import { Event } from "@/types/Logging";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
+import { FilterOption } from "@/types/Common";
 
 const EventLog = () => {
   // Initial static events data for fallback
@@ -139,9 +140,9 @@ const EventLog = () => {
   }, [error]);
 
   const handleFilterChange = (newFilters: ApiQueryFilters) => {
-    setFilters(prevFilters => ({
+    setFilters((prevFilters) => ({
       ...prevFilters,
-      ...newFilters as any
+      ...newFilters,
     }));
   };
 
@@ -307,7 +308,7 @@ const EventLog = () => {
           }
         />
         <DataFilters
-          filters={filters as any}
+          filters={filters}
           setFilters={handleFilterChange}
           resetFilters={resetFilters}
           onChange={handleFilterChange}

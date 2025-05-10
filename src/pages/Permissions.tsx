@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
-import DataFilters, { FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FilterOption } from "@/types/Common";
 
 const Permissions = () => {
   const [permissions, setPermissions] = useState<PermissionData[]>([
@@ -116,7 +117,7 @@ const Permissions = () => {
         { value: "SYSTEM", label: "System" },
         { value: "NOTIFICATION", label: "Notifications" },
       ],
-    }
+    },
   ];
 
   // Setup for detail view modal

@@ -4,13 +4,14 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import {
-  Archive, Check,
+  Archive,
+  Check,
   Download,
   FileUp,
   Trash2,
   Upload,
   Bell,
-  BellRing
+  BellRing,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -32,9 +33,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { Notification } from "@/types/Notification";
+import { FilterOption } from "@/types/Common";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Array<Notification>>([

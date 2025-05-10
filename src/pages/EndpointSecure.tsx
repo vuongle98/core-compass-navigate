@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { EndpointSecure } from "@/types/Configuration";
+import { FilterOption } from "@/types/Common";
 
 const EndpointSecures = () => {
   // Mock data

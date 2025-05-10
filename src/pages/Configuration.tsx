@@ -23,13 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Key,
-  MailCheck,
-  Settings,
-  ToggleLeft,
-  Wrench
-} from "lucide-react";
+import { Key, MailCheck, Settings, ToggleLeft, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {

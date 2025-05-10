@@ -1,4 +1,18 @@
+import { User } from "./Auth";
 
+export type AuditLog = {
+  id: number;
+  timestamp: string;
+  user: User;
+  action: string;
+  resource: string;
+  resourceId?: string | number;
+  details?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  statusCode?: number;
+  success?: boolean;
+};
 export interface AuditLogEntry {
   id: number;
   timestamp: string;

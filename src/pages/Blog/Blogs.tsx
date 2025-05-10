@@ -8,8 +8,9 @@ import { ActionsMenu } from "@/components/common/ActionsMenu";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import DataFilters, { FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FilterOption } from "@/types/Common";
 
 // Define the Blog interface
 interface Blog {
@@ -102,7 +103,7 @@ const Blogs = () => {
   };
 
   const handleEdit = (blog: Blog) => {
-    navigate(`/blogs/edit/${blog.id}`);
+    navigate(`/blogs/${blog.id}/edit`);
   };
 
   const handleDelete = (blog: Blog) => {

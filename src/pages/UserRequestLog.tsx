@@ -1,12 +1,12 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import DataFilters, { FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
+import { FilterOption } from "@/types/Common";
 
 const UserRequestLog = () => {
   const [filters, setFilters] = useState<ApiQueryFilters>({
@@ -89,7 +89,7 @@ const UserRequestLog = () => {
           options={filterOptions}
           className="mt-4"
         />
-        
+
         <div className="mt-4 border rounded-lg p-6">
           <p className="text-center text-muted-foreground">
             User request logs will appear here

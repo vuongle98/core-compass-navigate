@@ -1,18 +1,10 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ApiQueryFilters } from '@/hooks/use-api-query';
-
-export interface FilterOption {
-  id: string;
-  label: string;
-  type: 'text' | 'select' | 'date' | 'search';
-  placeholder?: string;
-  options?: { value: string; label: string }[];
-}
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ApiQueryFilters } from "@/hooks/use-api-query";
+import { FilterOption } from "@/types/Common";
 
 export interface DataFiltersProps {
   filters: ApiQueryFilters;
@@ -23,7 +15,7 @@ export interface DataFiltersProps {
   filtersTitle?: string;
   showToggle?: boolean;
   children?: React.ReactNode;
-  
+
   // Allow both patterns of filter handling
   setFilters?: (filters: ApiQueryFilters) => void;
   resetFilters?: () => void;
@@ -31,15 +23,15 @@ export interface DataFiltersProps {
   onReset?: () => void;
 }
 
-const DataFilters: React.FC<DataFiltersProps> = ({
+export const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
   setFilters,
   resetFilters,
   children,
-  className = '',
+  className = "",
   withSearch = true,
-  searchPlaceholder = 'Search...',
-  filtersTitle = 'Filters',
+  searchPlaceholder = "Search...",
+  filtersTitle = "Filters",
   showToggle = true,
   options,
   onChange,
@@ -51,11 +43,11 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const newFilters = { ...filters, search: value };
-    
+
     if (setFilters) {
       setFilters(newFilters);
     }
-    
+
     if (onChange) {
       onChange(newFilters);
     }
@@ -63,7 +55,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
 
   // Toggle filter visibility
   const toggleFilters = () => {
-    setShowFilters(prev => !prev);
+    setShowFilters((prev) => !prev);
   };
 
   // Handle reset with compatibility for both prop styles
@@ -71,22 +63,23 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     if (resetFilters) {
       resetFilters();
     }
-    
+
     if (onReset) {
       onReset();
     }
   };
 
   // Get current search value
-  const searchValue = (filters.search as string) || '';
+  const searchValue = (filters.search as string) || "";
 
   // Check if there are any active filters
   const hasActiveFilters = Object.entries(filters).some(
-    ([key, value]) => key !== 'search' && value !== '' && value !== null && value !== undefined
+    ([key, value]) =>
+      key !== "search" && value !== "" && value !== null && value !== undefined
   );
 
   return (
-    <div className={cn('space-y-4 mb-6', className)}>
+    <div className={cn("space-y-4 mb-6", className)}>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         {withSearch && (
           <div className="relative w-full sm:max-w-xs">
@@ -102,7 +95,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 size="sm"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                 onClick={() => {
-                  const newFilters = { ...filters, search: '' };
+                  const newFilters = { ...filters, search: "" };
                   if (setFilters) setFilters(newFilters);
                   if (onChange) onChange(newFilters);
                 }}
@@ -113,7 +106,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
             )}
           </div>
         )}
-        
+
         <div className="flex items-center gap-2 ml-auto">
           {showToggle && (
             <Button
@@ -131,7 +124,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               )}
             </Button>
           )}
-          
+
           {hasActiveFilters && (
             <Button
               variant="ghost"
@@ -145,21 +138,19 @@ const DataFilters: React.FC<DataFiltersProps> = ({
           )}
         </div>
       </div>
-      
+
       <div
         className={cn(
           "grid gap-4 transition-all duration-300 ease-in-out overflow-hidden",
-          showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 h-0"
+          showFilters
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0 h-0"
         )}
       >
-        <div className="min-h-0 overflow-hidden">
-          {children}
-        </div>
+        <div className="min-h-0 overflow-hidden">{children}</div>
       </div>
     </div>
   );
 };
 
-// Use export type for re-exporting types with isolatedModules enabled
-export type { FilterOption };
 export default DataFilters;

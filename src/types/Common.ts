@@ -83,3 +83,11 @@ export type SearchResult = {
   type: string;
   permission?: string;
 };
+
+export interface FilterOption {
+  id: string;
+  label: string;
+  type: "text" | "select" | "date" | "search";
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+}

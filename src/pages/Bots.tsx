@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, Archive, Download, Play, Square } from "lucide-react";
 import { ActionType, ActionsMenu } from "@/components/common/ActionsMenu";
@@ -18,7 +18,7 @@ import { BotBulkActions } from "@/components/bots/BotBulkActions";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { Bot } from "@/types/Bot";
-import { Column } from "@/types/Common";
+import { Column, FilterOption } from "@/types/Common";
 import BotService from "@/services/BotService";
 
 const mockBots: Bot[] = [

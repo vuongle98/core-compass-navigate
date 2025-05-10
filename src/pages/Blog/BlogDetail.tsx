@@ -121,7 +121,7 @@ const BlogDetail = () => {
   }, [id]);
 
   const handleEdit = () => {
-    navigate(`/blog/edit/${id}`);
+    navigate(`/blogs/${id}/edit`);
   };
 
   const handleDelete = () => {
@@ -131,7 +131,7 @@ const BlogDetail = () => {
   const confirmDelete = () => {
     // Simulate API call
     toast.success("Blog post deleted successfully");
-    navigate("/blog");
+    navigate("/blogs");
   };
 
   const formatDate = (dateString: string) => {

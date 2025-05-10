@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import useApiQuery from "@/hooks/use-api-query";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import { DataFilters } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PermissionSelect from "@/components/role/PermissionSelect";
@@ -27,7 +27,12 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import RoleService from "@/services/RoleService";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { FilterOption } from "@/types/Common";
 
 const Roles = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -123,6 +128,22 @@ const Roles = () => {
       label: "Search",
       type: "search",
       placeholder: "Search roles...",
+    },
+    {
+      id: "permissions",
+      label: "Permissions",
+      type: "select",
+      options: [
+        { value: "USER_READ", label: "Read Users" },
+        { value: "USER_CREATE", label: "Create Users" },
+        { value: "USER_UPDATE", label: "Update Users" },
+        { value: "USER_DELETE", label: "Delete Users" },
+      ],
+    },
+    {
+      id: "createdAt",
+      label: "Created At",
+      type: "date",
     },
   ];
 
