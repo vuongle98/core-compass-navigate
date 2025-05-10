@@ -62,7 +62,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   withSearch = true,
   searchPlaceholder = "Search...",
   filtersTitle = "Filters",
-  showToggle = false, // Changed to false as per requirement #3
+  showToggle = false,
   options = [],
   onChange,
   onReset,
@@ -325,7 +325,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                           {option.label}
                         </label>
                         <SearchableSelect
-                          value={filters[option.id] as any[] || []}
+                          value={Array.isArray(filters[option.id]) ? filters[option.id] as any[] : []}
                           endpoint={option.endpoint || `/api/${option.id}`}
                           queryKey={option.queryKey || [`filter-${option.id}`]}
                           onChange={(value) => handleSearchableSelectChange(option.id, value)}

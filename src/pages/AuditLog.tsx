@@ -211,8 +211,8 @@ const AuditLog = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: AuditLogType) => (
-        <span className="text-muted-foreground">{item.id}</span>
+      cell: (info: { row: { original: AuditLogType } }) => (
+        <span className="text-muted-foreground">{info.row.original.id}</span>
       ),
     },
     {
@@ -222,8 +222,8 @@ const AuditLog = () => {
     {
       header: "User",
       accessorKey: "user",
-      cell: (item: AuditLogType) => (
-        <span>{item.user?.username || "Unknown"}</span>
+      cell: (info: { row: { original: AuditLogType } }) => (
+        <span>{info.row.original.user?.username || "Unknown"}</span>
       ),
     },
     {

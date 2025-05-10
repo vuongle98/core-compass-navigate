@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, QueryKey } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
@@ -7,7 +6,7 @@ import useDebounce from "./use-debounce";
 import { PaginatedData, PaginationOptions } from "@/types/Common";
 
 export interface ApiQueryFilters {
-  [key: string]: string | number | boolean | null | undefined;
+  [key: string]: string | number | boolean | null | undefined | any[];
 }
 
 interface UseApiQueryProps<T> {
