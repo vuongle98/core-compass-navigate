@@ -46,12 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ServiceRegistry.updateCurrentUser(currentUser);
 
           // Refresh feature flags after login
-          await featureFlagService.refreshFlags();
+          // await featureFlagService.refreshFlags();
+        } else {
+          // If not authenticated, ensure user is logged out
+          await logout();
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
         // If there's an error, ensure user is logged out
-        AuthService.logout();
+        await logout();
       } finally {
         setIsLoading(false);
       }

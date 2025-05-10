@@ -25,6 +25,8 @@ class EnhancedApiService {
           const token = TokenService.getToken();
           if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
+          } else {
+            config.headers.Authorization = "";
           }
           return config;
         },

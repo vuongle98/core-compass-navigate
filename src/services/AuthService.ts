@@ -54,8 +54,6 @@ class AuthService {
         { username, password }
       );
 
-      console.log("Login response:", response);
-
       this.accessToken = response.token;
       this.refreshToken = response.refresh;
       this.currentUser = response.user;
@@ -164,20 +162,33 @@ class AuthService {
    * Log out current user
    */
   public async logout(): Promise<void> {
-    this.accessToken = null;
-    this.refreshToken = null;
-    this.currentUser = null;
+    if (!this.accessToken || !this.refreshToken || !this.currentUser) {
+      LoggingService.warn(
+        "auth",
+        "logout_missing",
+        "No access token available"
+      );
+      return;
+    }
 
-    // Clear from storage
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("user");
+    await EnhancedApiService.post("/api/auth/logout", {})
+      .catch((error) => {
+        LoggingService.error("auth", "logout_failed", "Logout failed", {
+          error,
+        });
+      })
+      .finally(() => {
+        this.accessToken = null;
+        this.refreshToken = null;
+        this.currentUser = null;
+
+        // Clear from storage
+        localStorage.removeItem("token");
+        localStorage.removeItem("refresh");
+        localStorage.removeItem("user");
+      });
 
     LoggingService.info("auth", "logout", "User logged out");
-
-    await EnhancedApiService.post("/api/auth/logout", {
-      refresh: this.refreshToken,
-    });
   }
 
   /**

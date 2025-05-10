@@ -126,7 +126,7 @@ class ServiceRegistry {
   public updateCurrentUser(user: User): void {
     if (LoggingService) {
       // Store the user info for logging purposes
-      console.log(`Updating current user: ${user.id}`);
+      console.log(`Updating current user: ${user?.id}`);
     }
   }
 }
