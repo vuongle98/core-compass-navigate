@@ -7,17 +7,29 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { initAppServices } from "@/utils/initAppServices";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
-// Initialize services
-initAppServices();
+// Add a global error handler for uncaught errors
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+});
+
+// Initialize services with proper error handling
+try {
+  initAppServices();
+} catch (error) {
+  console.error('Failed to initialize app services:', error);
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <App />
-        <Toaster />
-      </ThemeProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <App />
+          <Toaster />
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );
