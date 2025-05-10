@@ -37,7 +37,7 @@ import { FilterOption } from "@/types/Common";
 
 // Define a type for filter values
 interface QueryFilters {
-  [key: string]: string | number | boolean | undefined;
+  [key: string]: string | number | boolean | null | undefined | any[];
 }
 
 const Files = () => {

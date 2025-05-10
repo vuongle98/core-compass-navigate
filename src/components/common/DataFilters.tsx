@@ -142,7 +142,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   // Handle searchable-select change
-  const handleSearchableSelectChange = (id: string, selected: any[] | null) => {
+  const handleSearchableSelectChange = (id: string, selected: Option<any>[] | null) => {
     if (!selected) {
       handleFilterChange(id, []);
       return;
@@ -325,10 +325,10 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                           {option.label}
                         </label>
                         <SearchableSelect
-                          value={Array.isArray(filters[option.id]) ? filters[option.id] as any[] : []}
+                          value={Array.isArray(filters[option.id]) ? filters[option.id] as Option<any>[] : []}
                           endpoint={option.endpoint || `/api/${option.id}`}
                           queryKey={option.queryKey || [`filter-${option.id}`]}
-                          onChange={(value) => handleSearchableSelectChange(option.id, value)}
+                          onChange={(value) => handleSearchableSelectChange(option.id, value as Option<any>[])}
                           placeholder={option.placeholder || `Select ${option.label}...`}
                           searchPlaceholder={`Search ${option.label}...`}
                           multiple={true}

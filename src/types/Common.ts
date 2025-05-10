@@ -1,3 +1,4 @@
+
 import { ReactElement } from "react";
 
 export interface ApiResponse<T> {
@@ -19,7 +20,7 @@ export interface Column<T> {
   header: string;
   accessorKey: string;
   id?: string;
-  cell?: (item: T) => ReactElement | string | number | null;
+  cell?: ((item: T) => ReactElement | string | number | null) | ((info: { row: { original: T } }) => ReactElement | string | number | null);
   sortable?: boolean;
   filterable?: boolean;
 }

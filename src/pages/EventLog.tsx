@@ -236,8 +236,8 @@ const EventLog = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (item: Event) => (
-        <span className="text-muted-foreground">{item.id}</span>
+      cell: (info: { row: { original: Event } }) => (
+        <span className="text-muted-foreground">{info.row.original.id}</span>
       ),
     },
     { header: "Event", accessorKey: "event" as const },
@@ -245,8 +245,8 @@ const EventLog = () => {
     {
       header: "Level",
       accessorKey: "level" as const,
-      cell: (item: Event) => {
-        const level = item.level;
+      cell: (info: { row: { original: Event } }) => {
+        const level = info.row.original.level;
         let variant: "default" | "secondary" | "destructive" | "outline" =
           "default";
 
@@ -263,17 +263,17 @@ const EventLog = () => {
     {
       header: "Message",
       accessorKey: "message" as const,
-      cell: (item: Event) => (
-        <div className="max-w-xs truncate">{item.message}</div>
+      cell: (info: { row: { original: Event } }) => (
+        <div className="max-w-xs truncate">{info.row.original.message}</div>
       ),
     },
     { header: "User", accessorKey: "user" as const },
     {
       header: "Details",
       accessorKey: "details" as const,
-      cell: (item: Event) => (
+      cell: (info: { row: { original: Event } }) => (
         <div className="max-w-xs truncate text-xs text-muted-foreground">
-          {item.details}
+          {info.row.original.details}
         </div>
       ),
     },
