@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Option } from "@/types/Common";
 
 // Export the type as a named export
 export type FilterOption = {

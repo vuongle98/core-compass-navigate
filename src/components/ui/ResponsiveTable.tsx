@@ -39,6 +39,23 @@ export function ResponsiveTable<T>({
     );
   }
 
+  // Helper function to render cell value based on column definition
+  const renderCellValue = (item: T, column: Column<T>) => {
+    if (!column.cell) {
+      return (item as any)[column.accessorKey];
+    }
+
+    // Check if the cell function expects { row: { original: T } } format
+    const cellFn = column.cell;
+    try {
+      // First try with the info object format
+      return cellFn({ row: { original: item } } as any);
+    } catch (e) {
+      // Fall back to direct item format if the above fails
+      return (cellFn as (item: T) => React.ReactNode)(item);
+    }
+  };
+
   // Display as cards on mobile
   if (isMobile) {
     return (
@@ -60,14 +77,12 @@ export function ResponsiveTable<T>({
                   if (column.accessorKey === "actions" || column.id === "actions") {
                     return (
                       <div key={`${itemIndex}-${colIndex}`} className="px-4 py-2 flex justify-end">
-                        {column.cell ? column.cell(item) : null}
+                        {renderCellValue(item, column)}
                       </div>
                     );
                   }
                   
-                  const value = column.cell
-                    ? column.cell(item)
-                    : (item as any)[column.accessorKey];
+                  const value = renderCellValue(item, column);
                     
                   if (value === undefined || value === null) return null;
                   
@@ -108,9 +123,7 @@ export function ResponsiveTable<T>({
             >
               {columns.map((column) => (
                 <TableCell key={`${index}-${column.accessorKey}`}>
-                  {column.cell
-                    ? column.cell(item)
-                    : (item as any)[column.accessorKey]}
+                  {renderCellValue(item, column)}
                 </TableCell>
               ))}
             </TableRow>
