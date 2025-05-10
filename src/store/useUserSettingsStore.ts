@@ -99,7 +99,7 @@ const useUserSettingsStore = create<UserSettingsState>()(
         set((state) => ({
           settings: {
             ...state.settings,
-            loggingEnabled,
+            loggingEnabled: enabled,
           },
         }));
         

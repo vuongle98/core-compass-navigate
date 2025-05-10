@@ -102,11 +102,13 @@ const DataFilters: React.FC<DataFiltersProps> = ({
 
   // Handle filter change
   const handleFilterChange = (id: string, value: string | Date | null) => {
-    let formattedValue = value;
+    let formattedValue: string | number | boolean | null = null;
     
-    // Format date values
+    // Format date values to string
     if (value instanceof Date) {
       formattedValue = format(value, 'yyyy-MM-dd');
+    } else {
+      formattedValue = value;
     }
     
     const newFilters = { ...filters, [id]: formattedValue };
@@ -304,6 +306,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                               selected={filters[option.id] ? new Date(filters[option.id] as string) : undefined}
                               onSelect={(date) => handleFilterChange(option.id, date)}
                               initialFocus
+                              className="p-3 pointer-events-auto"
                             />
                           </PopoverContent>
                         </Popover>
