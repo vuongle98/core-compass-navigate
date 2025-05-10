@@ -160,5 +160,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   );
 };
 
-export { DataFilters, FilterOption };
+// Use export type for re-exporting types with isolatedModules enabled
+export type { FilterOption };
 export default DataFilters;

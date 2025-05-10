@@ -5,9 +5,10 @@ import { DataTable } from "@/components/ui/DataTable";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DataFilters, FilterOption } from "@/components/common/DataFilters";
+import DataFilters, { FilterOption } from "@/components/common/DataFilters";
 import { AlertTriangle, Download, RefreshCcw, Trash } from "lucide-react";
 import { Event } from "@/types/Logging";
+import { ApiQueryFilters } from "@/hooks/use-api-query";
 
 const EventLog = () => {
   // Initial static events data for fallback
@@ -118,7 +119,11 @@ const EventLog = () => {
   const [events, setEvents] = useState<Event[]>(staticEvents);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    level: string;
+    source: string;
+    search: string;
+  }>({
     level: "",
     source: "",
     search: "",
@@ -133,10 +138,10 @@ const EventLog = () => {
     }
   }, [error]);
 
-  const handleFilterChange = (newFilters: Record<string, string>) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters,
+  const handleFilterChange = (newFilters: ApiQueryFilters) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters as any
     }));
   };
 
@@ -302,12 +307,12 @@ const EventLog = () => {
           }
         />
         <DataFilters
-          filters={filters}
-          setFilters={setFilters}
+          filters={filters as any}
+          setFilters={handleFilterChange}
           resetFilters={resetFilters}
-          options={filterOptions}
           onChange={handleFilterChange}
           onReset={resetFilters}
+          options={filterOptions}
           className="mt-4"
         />
         <div className="mt-4">

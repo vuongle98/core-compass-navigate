@@ -24,10 +24,8 @@ const BlogEdit = () => {
 
       try {
         const response = await BlogService.getPost(id);
-        // Use the response directly without checking for success
-        if (response && typeof response === 'object') {
-          setPost(response as BlogPost);
-        }
+        // Handle the response directly without checking for success
+        setPost(response as BlogPost);
       } catch (error) {
         toast({
           title: "Error",
