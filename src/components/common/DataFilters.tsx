@@ -6,6 +6,14 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ApiQueryFilters } from '@/hooks/use-api-query';
 
+export interface FilterOption {
+  id: string;
+  label: string;
+  type: 'text' | 'select' | 'date' | 'search';
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+}
+
 interface DataFiltersProps {
   filters: ApiQueryFilters;
   setFilters: (filters: ApiQueryFilters) => void;
@@ -18,7 +26,7 @@ interface DataFiltersProps {
   showToggle?: boolean;
 }
 
-const DataFilters: React.FC<DataFiltersProps> = ({
+export const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
   setFilters,
   resetFilters,
@@ -81,7 +89,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               variant="outline"
               size="sm"
               onClick={toggleFilters}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 transition-all duration-200"
               type="button"
             >
               {filtersTitle}
@@ -98,7 +106,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               variant="ghost"
               size="sm"
               onClick={resetFilters}
-              className="text-muted-foreground"
+              className="text-muted-foreground hover:text-primary transition-colors"
               type="button"
             >
               Reset

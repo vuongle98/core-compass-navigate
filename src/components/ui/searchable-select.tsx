@@ -29,7 +29,7 @@ interface SearchableSelectProps<T> {
   clearable?: boolean;
   showCheckboxes?: boolean;
   initialSearch?: string; // Initial search query
-  transformData: (data: T[]) => Option<T>[]; // Function to transform data
+  transformData: (data: any[]) => Option<T>[]; // Function to transform data - changed from T[] to any[]
 }
 
 export const SearchableSelect = <T,>({
@@ -65,7 +65,7 @@ export const SearchableSelect = <T,>({
     page,
     totalPages,
     setSearch: apiSetSearch,
-  } = useApiQuery<T>({
+  } = useApiQuery<any>({ // Changed from T to any
     endpoint,
     queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
     initialPage: 0,
@@ -86,9 +86,10 @@ export const SearchableSelect = <T,>({
     if (transformData) {
       pageOptions = transformData(data);
     } else if (data && Array.isArray(data)) {
-      pageOptions = data.map((item) => ({
-        value: item.value,
-        label: item.label,
+      // This is a fallback, but we'll always use transformData
+      pageOptions = data.map((item: any) => ({
+        value: item.value || "",
+        label: item.label || "",
         original: item,
       }));
     }
