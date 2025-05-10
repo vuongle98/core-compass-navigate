@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +21,18 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 // Export the type as a named export
 export type FilterOption = {
   id: string;
   label: string;
-  type: "text" | "select" | "date" | "search";
+  type: "text" | "select" | "date" | "search" | "searchable-select";
   placeholder?: string;
   options?: { value: string; label: string }[];
+  endpoint?: string; // For searchable-select type
+  queryKey?: string | string[]; // For searchable-select type
+  transformData?: (data: any[]) => any[]; // For searchable-select type
 };
 
 export interface DataFiltersProps {
@@ -57,7 +62,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   withSearch = true,
   searchPlaceholder = "Search...",
   filtersTitle = "Filters",
-  showToggle = true,
+  showToggle = false, // Changed to false as per requirement #3
   options = [],
   onChange,
   onReset,
@@ -106,8 +111,8 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   // Handle filter change
-  const handleFilterChange = (id: string, value: string | Date | null) => {
-    let formattedValue: string | number | boolean | null = null;
+  const handleFilterChange = (id: string, value: string | Date | null | any[]) => {
+    let formattedValue: string | number | boolean | null | any[] = null;
 
     // Format date values to string
     if (value instanceof Date) {
@@ -127,13 +132,23 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     }
 
     // Track active filters for UI display
-    if (value && value !== "") {
+    if (value && (typeof value === "string" ? value !== "" : Array.isArray(value) ? value.length > 0 : true)) {
       if (!activeFilters.includes(id)) {
         setActiveFilters([...activeFilters, id]);
       }
     } else {
       setActiveFilters(activeFilters.filter((filterId) => filterId !== id));
     }
+  };
+
+  // Handle searchable-select change
+  const handleSearchableSelectChange = (id: string, selected: any[] | null) => {
+    if (!selected) {
+      handleFilterChange(id, []);
+      return;
+    }
+    
+    handleFilterChange(id, selected);
   };
 
   // Get current search value
@@ -152,6 +167,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     ),
     select: options.filter((opt) => opt.type === "select"),
     date: options.filter((opt) => opt.type === "date"),
+    searchableSelect: options.filter((opt) => opt.type === "searchable-select"),
   };
 
   return (
@@ -258,7 +274,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               {/* Select Filters */}
               {groupedFilters.select.length > 0 && (
                 <div className="space-y-3">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground">Categories</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.select.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">
@@ -297,10 +312,41 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                 </div>
               )}
 
+              {/* Searchable Select Filters */}
+              {groupedFilters.searchableSelect.length > 0 && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    {groupedFilters.searchableSelect.map((option) => (
+                      <div key={option.id} className="flex flex-col space-y-1">
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium"
+                        >
+                          {option.label}
+                        </label>
+                        <SearchableSelect
+                          value={filters[option.id] as any[] || []}
+                          endpoint={option.endpoint || `/api/${option.id}`}
+                          queryKey={option.queryKey || [`filter-${option.id}`]}
+                          onChange={(value) => handleSearchableSelectChange(option.id, value)}
+                          placeholder={option.placeholder || `Select ${option.label}...`}
+                          searchPlaceholder={`Search ${option.label}...`}
+                          multiple={true}
+                          transformData={option.transformData || ((data) => data.map((item: any) => ({
+                            value: item.id?.toString() || "",
+                            label: item.name || item.label || "",
+                            original: item
+                          })))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Date Filters */}
               {groupedFilters.date.length > 0 && (
                 <div className="space-y-3">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground">Time Period</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.date.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">
@@ -354,7 +400,6 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               {/* Text Search Filters (excluding main search) */}
               {groupedFilters.search.length > 0 && (
                 <div className="space-y-3">
-                  {/* <h3 className="text-sm font-medium text-muted-foreground">Additional Search</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.search.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">

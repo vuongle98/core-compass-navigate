@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    port: 8082,
+    port: 8080,
     proxy: {
       '/api/v1/bots': {
         target: 'http://localhost:8081',  // The backend API URL

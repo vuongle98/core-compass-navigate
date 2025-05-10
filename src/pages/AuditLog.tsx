@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -221,6 +222,9 @@ const AuditLog = () => {
     {
       header: "User",
       accessorKey: "user",
+      cell: (item: AuditLogType) => (
+        <span>{item.user?.username || "Unknown"}</span>
+      ),
     },
     {
       header: "Action",

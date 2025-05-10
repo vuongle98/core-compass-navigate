@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { User } from "@/types/Auth";
 import UserService from "@/services/UserService";
-import { FilterOption } from "@/types/Common";
+import { FilterOption } from "@/components/common/DataFilters";
 
 const Users = () => {
   // Mock data with state management
@@ -102,7 +103,7 @@ const Users = () => {
     detailRoute: "/users",
   });
 
-  // Filter options for the data filters component - Ensure all select options have non-empty values
+  // Filter options for the data filters component - Add searchable-select for roles
   const filterOptions: FilterOption[] = [
     {
       id: "search",
@@ -122,13 +123,14 @@ const Users = () => {
     {
       id: "roles",
       label: "Roles",
-      type: "select",
-      options: [
-        { value: "ADMIN", label: "Admin" },
-        { value: "MANAGE", label: "Manager" },
-        { value: "USER", label: "User" },
-        { value: "VIEWER", label: "Viewer" },
-      ],
+      type: "searchable-select",
+      endpoint: "/api/role",
+      queryKey: ["roles-filter"],
+      transformData: (data) => data.map((role: any) => ({
+        value: role.code || role.id?.toString() || "",
+        label: role.name || "Unnamed",
+        original: role
+      }))
     },
   ];
 
