@@ -1,3 +1,4 @@
+
 import { MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ export interface Action {
   onClick: () => void;
   destructive?: boolean;
   type?: ActionType;
+  disabled?: boolean; // Added this property to support disabled actions
 }
 
 interface ActionsMenuProps {
@@ -49,6 +51,7 @@ export const ActionsMenu = ({ actions, size = "sm" }: ActionsMenuProps) => {
             <DropdownMenuItem
               key={action.label}
               onClick={action.onClick}
+              disabled={action.disabled}
               className={
                 action.destructive
                   ? "text-destructive focus:text-destructive"
