@@ -9,6 +9,8 @@ import { DataTablePagination } from "./DataTablePagination";
 import { ReactNode } from "react";
 import { Column } from "@/types/Common";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ColumnSelector } from "./column-selector";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 interface DataTableProps<T> {
   data: T[];
@@ -29,6 +31,8 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   headerActions?: ReactNode;
   onSortChange?: (column: string, direction: 'asc' | 'desc' | undefined) => void;
+  tableId?: string; // Added tableId for column visibility
+  defaultColumnVisibility?: Record<string, boolean>; // Added default column visibility
 }
 
 export function DataTable<T>({
@@ -50,12 +54,21 @@ export function DataTable<T>({
   emptyMessage = "No data available.",
   headerActions,
   onSortChange,
+  tableId = "default-table", // Default table ID
+  defaultColumnVisibility,
 }: DataTableProps<T>) {
   const isMobile = useIsMobile();
   const [page, setPage] = useState(pageIndex);
   const [size, setSize] = useState(initialPageSize || pageSize);
   const [sortColumn, setSortColumn] = useState<string | undefined>();
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>();
+
+  // Column visibility hook
+  const { columnVisibility, visibleColumns, toggleColumnVisibility } = useColumnVisibility({
+    tableId,
+    defaultVisibility: defaultColumnVisibility,
+    columns,
+  });
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -90,9 +103,16 @@ export function DataTable<T>({
     <Card className="w-full shadow-sm border">
       {(title || showAddButton || headerActions) && (
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pb-2">
-          {title && <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>}
+          <div className="flex items-center">
+            {title && <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>}
+          </div>
           <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
             {headerActions}
+            <ColumnSelector 
+              columns={columns} 
+              columnVisibility={columnVisibility} 
+              toggleColumnVisibility={toggleColumnVisibility} 
+            />
             {showAddButton && (
               <Button onClick={onAddClick} size={isMobile ? "sm" : "default"} className="shrink-0">
                 <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -112,7 +132,7 @@ export function DataTable<T>({
         ) : (
           <ResponsiveTable
             data={data}
-            columns={columns}
+            columns={visibleColumns}
             emptyMessage={emptyMessage}
           />
         )}
