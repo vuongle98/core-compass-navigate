@@ -337,7 +337,7 @@ const Bots = () => {
     },
   ];
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Bot>[] = [
     {
       id: "status",
       label: "Status",

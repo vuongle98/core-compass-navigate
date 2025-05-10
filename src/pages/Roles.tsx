@@ -122,7 +122,7 @@ const Roles = () => {
   const [roles, setRoles] = useState<Role[]>(mockRoles);
 
   // Filter options for the data filters component
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Role>[] = [
     {
       id: "search",
       label: "Search",

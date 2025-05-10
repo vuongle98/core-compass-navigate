@@ -1,8 +1,14 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronUp, X, Filter, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  X,
+  Filter,
+  Search,
+  FilterIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
 import {
@@ -22,23 +28,17 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Option } from "@/types/Common";
+import { BaseData, FilterOption, Option } from "@/types/Common";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
 
-// Export the type as a named export
-export type FilterOption = {
-  id: string;
-  label: string;
-  type: "text" | "select" | "date" | "search" | "searchable-select";
-  placeholder?: string;
-  options?: { value: string; label: string }[];
-  endpoint?: string; // For searchable-select type
-  queryKey?: string | string[]; // For searchable-select type
-  transformData?: (data: any[]) => any[]; // For searchable-select type
-};
-
-export interface DataFiltersProps {
+export interface DataFiltersProps<T> {
   filters: ApiQueryFilters;
-  options?: FilterOption[];
+  options?: FilterOption<T>[];
   className?: string;
   withSearch?: boolean;
   searchPlaceholder?: string;
@@ -54,7 +54,7 @@ export interface DataFiltersProps {
 }
 
 // Export as both default and named export for backward compatibility
-const DataFilters: React.FC<DataFiltersProps> = ({
+const DataFilters = <T,>({
   filters,
   setFilters,
   resetFilters,
@@ -67,15 +67,22 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   options = [],
   onChange,
   onReset,
-}) => {
+}: DataFiltersProps<T>) => {
+  const isMobile = useIsMobile();
   const { settings, setFilterExpanded } = useUserSettingsStore();
   const [showFilters, setShowFilters] = useState(settings.filters.expanded);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [isOpen, setIsOpen] = useState(!isMobile);
 
   // Update the local state when the persisted setting changes
   useEffect(() => {
     setShowFilters(settings.filters.expanded);
   }, [settings.filters.expanded]);
+
+  // Update the open state when screen size changes
+  useEffect(() => {
+    setIsOpen(!isMobile);
+  }, [isMobile]);
 
   // Toggle filter visibility and persist the setting
   const toggleFilters = () => {
@@ -112,17 +119,27 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   // Handle filter change
-  const handleFilterChange = (id: string, value: string | Date | null | any[]) => {
-    let formattedValue: string | number | boolean | null | any[] = null;
+  const handleFilterChange = (
+    id: string,
+    value: string | Date | null | Option<T>[]
+  ) => {
+    let formattedValue: string | number | boolean | null | Option<T>[] = null;
 
     // Format date values to string
     if (value instanceof Date) {
       formattedValue = format(value, "yyyy-MM-dd");
-    } else {
+    }
+    //  else if (value instanceof Object) {
+    //   // Handle searchable-select values
+    //   formattedValue = value.map((item: Option<any>) => item.original.id);
+    // }
+    else {
       formattedValue = value;
     }
 
     const newFilters = { ...filters, [id]: formattedValue };
+
+    console.log(newFilters);
 
     if (setFilters) {
       setFilters(newFilters);
@@ -133,7 +150,14 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     }
 
     // Track active filters for UI display
-    if (value && (typeof value === "string" ? value !== "" : Array.isArray(value) ? value.length > 0 : true)) {
+    if (
+      value &&
+      (typeof value === "string"
+        ? value !== ""
+        : Array.isArray(value)
+        ? value.length > 0
+        : true)
+    ) {
       if (!activeFilters.includes(id)) {
         setActiveFilters([...activeFilters, id]);
       }
@@ -143,12 +167,16 @@ const DataFilters: React.FC<DataFiltersProps> = ({
   };
 
   // Handle searchable-select change
-  const handleSearchableSelectChange = (id: string, selected: Option<any>[] | null) => {
+  const handleSearchableSelectChange = (
+    id: string,
+    selected: Option<T>[] | null
+  ) => {
+    console.log("Selected options:", id, selected);
     if (!selected) {
       handleFilterChange(id, []);
       return;
     }
-    
+
     handleFilterChange(id, selected);
   };
 
@@ -171,8 +199,8 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     searchableSelect: options.filter((opt) => opt.type === "searchable-select"),
   };
 
-  return (
-    <div className={cn("space-y-4 mb-6", className)}>
+  const FiltersContent = () => (
+    <>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         {!showFilters && withSearch && (
           <div className="relative w-full sm:max-w-xs">
@@ -326,18 +354,33 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                           {option.label}
                         </label>
                         <SearchableSelect
-                          value={Array.isArray(filters[option.id]) ? filters[option.id] as Option<any>[] : []}
+                          value={
+                            Array.isArray(filters[option.id])
+                              ? (filters[option.id] as Option<T>[])
+                              : []
+                          }
                           endpoint={option.endpoint || `/api/${option.id}`}
                           queryKey={option.queryKey || [`filter-${option.id}`]}
-                          onChange={(value) => handleSearchableSelectChange(option.id, value as Option<any>[])}
-                          placeholder={option.placeholder || `Select ${option.label}...`}
+                          onChange={(value) =>
+                            handleSearchableSelectChange(
+                              option.id,
+                              value as Option<T>[]
+                            )
+                          }
+                          placeholder={
+                            option.placeholder || `Select ${option.label}...`
+                          }
                           searchPlaceholder={`Search ${option.label}...`}
                           multiple={true}
-                          transformData={option.transformData || ((data) => data.map((item: any) => ({
-                            value: item.id?.toString() || "",
-                            label: item.name || item.label || "",
-                            original: item
-                          })))}
+                          transformData={
+                            option.transformData ||
+                            ((data) =>
+                              data.map((item: T & BaseData) => ({
+                                value: item.id?.toString() || "",
+                                label: item.name || item.label || "",
+                                original: item,
+                              })))
+                          }
                         />
                       </div>
                     ))}
@@ -435,6 +478,31 @@ const DataFilters: React.FC<DataFiltersProps> = ({
           )}
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className={cn("space-y-4 mb-6", className)}>
+      {isMobile ? (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+          <div className="p-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Filters</h3>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center">
+                <FilterIcon className="h-3.5 w-3.5 mr-1.5" />
+                {isOpen ? "Hide Filters" : "Show Filters"}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent className="px-4 pb-4">
+            <FiltersContent />
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        <div className="p-4">
+          <FiltersContent />
+        </div>
+      )}
     </div>
   );
 };

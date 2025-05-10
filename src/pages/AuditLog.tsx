@@ -5,10 +5,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
 import {
-  Download,
-  RefreshCcw,
-  AlertTriangle,
-  SlidersHorizontal,
+  Download, SlidersHorizontal
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,14 +16,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import { DataFilters } from "@/components/common/DataFilters";
@@ -123,7 +112,7 @@ const AuditLog = () => {
     }
   };
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<AuditLogType>[] = [
     {
       id: "search",
       label: "Search",

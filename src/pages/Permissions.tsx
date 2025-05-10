@@ -99,7 +99,7 @@ const Permissions = () => {
     isActive: true,
   });
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<PermissionData>[] = [
     {
       id: "search",
       label: "Search",

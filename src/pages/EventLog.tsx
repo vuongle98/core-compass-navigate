@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -6,10 +5,11 @@ import { DataTable } from "@/components/ui/DataTable";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import DataFilters, { FilterOption } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import { AlertTriangle, Download, RefreshCcw, Trash } from "lucide-react";
 import { Event } from "@/types/Logging";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
+import { FilterOption } from "@/types/Common";
 
 const EventLog = () => {
   // Initial static events data for fallback
@@ -114,6 +114,16 @@ const EventLog = () => {
       user: "system",
       details: "Error: Insufficient funds, Card ending: 4321",
     },
+    {
+      id: 11,
+      event: "Payment Processing",
+      source: "Billing",
+      level: "Error",
+      timestamp: "2025-04-15 14:05:30",
+      message: "Payment processing failed for order #12345",
+      user: "system",
+      details: "Error: Insufficient funds, Card ending: 4321",
+    },
   ];
 
   // State to store events data
@@ -173,7 +183,7 @@ const EventLog = () => {
     toast.success("Event logs exported to CSV");
   };
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Event>[] = [
     {
       id: "level",
       label: "Level",
@@ -335,6 +345,10 @@ const EventLog = () => {
               pagination={true}
               initialPageSize={10}
               showAddButton={false}
+              pageIndex={0}
+              pageSize={10}
+              onPageChange={() => {}}
+              totalItems={filteredEvents.length}
             />
           )}
         </div>

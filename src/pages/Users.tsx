@@ -1,4 +1,3 @@
-
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -17,9 +16,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { User } from "@/types/Auth";
+import { Role, User } from "@/types/Auth";
 import UserService from "@/services/UserService";
-import { FilterOption } from "@/components/common/DataFilters";
+import { FilterOption } from "@/types/Common";
 
 const Users = () => {
   // Mock data with state management
@@ -104,7 +103,7 @@ const Users = () => {
   });
 
   // Filter options for the data filters component - Add searchable-select for roles
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Role>[] = [
     {
       id: "search",
       label: "Search",
@@ -126,11 +125,12 @@ const Users = () => {
       type: "searchable-select",
       endpoint: "/api/role",
       queryKey: ["roles-filter"],
-      transformData: (data) => data.map((role: any) => ({
-        value: role.code || role.id?.toString() || "",
-        label: role.name || "Unnamed",
-        original: role
-      }))
+      transformData: (data) =>
+        data.map((role: Role) => ({
+          value: role.code || role.id?.toString() || "",
+          label: role.name || "Unnamed",
+          original: role,
+        })),
     },
   ];
 

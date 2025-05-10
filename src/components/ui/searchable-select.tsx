@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Check, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,7 +29,7 @@ interface SearchableSelectProps<T> {
   clearable?: boolean;
   showCheckboxes?: boolean;
   initialSearch?: string; // Initial search query
-  transformData: (data: any[]) => Option<T>[]; // Function to transform data from any to Option<T>
+  transformData: (data: T[]) => Option<T>[]; // Function to transform data from any to Option<T>
 }
 
 export const SearchableSelect = <T,>({
@@ -66,7 +65,8 @@ export const SearchableSelect = <T,>({
     page,
     totalPages,
     setSearch: apiSetSearch,
-  } = useApiQuery<any>({ // Using any type for API query data since we transform it
+  } = useApiQuery<T>({
+    // Using any type for API query data since we transform it
     endpoint,
     queryKey: Array.isArray(queryKey) ? [...queryKey] : [queryKey],
     initialPage: 0,
@@ -88,11 +88,11 @@ export const SearchableSelect = <T,>({
       pageOptions = transformData(data);
     } else if (data && Array.isArray(data)) {
       // This is a fallback, but we'll always use transformData
-      pageOptions = data.map((item: any) => ({
-        value: item.value || "",
-        label: item.label || "",
-        original: item,
-      }));
+      // pageOptions = data.map((item: T) => ({
+      //   value: item.value || "",
+      //   label: item.label || "",
+      //   original: item,
+      // }));
     }
 
     const isLast =
@@ -231,7 +231,9 @@ export const SearchableSelect = <T,>({
           >
             {allOptions.length > 0 ? (
               allOptions.map((option) => {
-                const isSelected = value?.some((o) => o.value === option.value);
+                const isSelected = value?.some(
+                  (o) => o?.value === option.value
+                );
                 return (
                   <div
                     key={option.value}

@@ -122,7 +122,7 @@ const Notifications = () => {
     }
   };
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Notification>[] = [
     {
       id: "search",
       label: "Search",

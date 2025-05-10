@@ -79,7 +79,7 @@ const Blogs = () => {
     },
   });
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Blog>[] = [
     {
       id: "search",
       label: "Search",

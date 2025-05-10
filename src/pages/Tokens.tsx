@@ -139,7 +139,7 @@ const Tokens = () => {
   });
 
   // Filter options
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Token>[] = [
     {
       id: "search",
       label: "Search",

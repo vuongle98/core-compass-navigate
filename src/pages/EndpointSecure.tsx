@@ -89,7 +89,7 @@ const EndpointSecures = () => {
   });
 
   // Filter options
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<EndpointSecure>[] = [
     {
       id: "search",
       label: "Search",

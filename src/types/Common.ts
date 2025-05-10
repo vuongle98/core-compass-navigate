@@ -1,6 +1,14 @@
-
 import { ReactElement } from "react";
 
+export interface BaseData {
+  id: string | number;
+  name: string;
+  label: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+}
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -20,7 +28,11 @@ export interface Column<T> {
   header: string;
   accessorKey: string;
   id?: string;
-  cell?: ((item: T) => ReactElement | string | number | null) | ((info: { row: { original: T } }) => ReactElement | string | number | null);
+  cell?:
+    | ((item: T) => ReactElement | string | number | null)
+    | ((info: {
+        row: { original: T };
+      }) => ReactElement | string | number | null);
   sortable?: boolean;
   filterable?: boolean;
 }
@@ -85,10 +97,14 @@ export type SearchResult = {
   permission?: string;
 };
 
-export interface FilterOption {
+// Export the type as a named export
+export type FilterOption<T> = {
   id: string;
   label: string;
-  type: "text" | "select" | "date" | "search";
+  type: "text" | "select" | "date" | "search" | "searchable-select";
   placeholder?: string;
   options?: { value: string; label: string }[];
-}
+  endpoint?: string; // For searchable-select type
+  queryKey?: string | string[]; // For searchable-select type
+  transformData?: (data: T[]) => Option<T>[]; // For searchable-select type
+};

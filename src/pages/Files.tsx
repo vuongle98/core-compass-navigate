@@ -37,7 +37,7 @@ import { FilterOption } from "@/types/Common";
 
 // Define a type for filter values
 interface QueryFilters {
-  [key: string]: string | number | boolean | null | undefined | any[];
+  [key: string]: string | number | boolean | null | undefined | unknown[];
 }
 
 const Files = () => {
@@ -47,7 +47,6 @@ const Files = () => {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [shareType, setShareType] = useState("public");
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   // Mock data
   useEffect(() => {
@@ -165,7 +164,7 @@ const Files = () => {
   });
 
   // Filter options
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<FileItem>[] = [
     {
       id: "search",
       label: "Search",

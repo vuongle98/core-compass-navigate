@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -9,6 +8,7 @@ import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { FilterOption } from "@/types/Common";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
+import { UserRequest } from "@/types/Logging";
 
 const UserRequestLog = () => {
   const [filters, setFilters] = useState<ApiQueryFilters>({
@@ -28,7 +28,7 @@ const UserRequestLog = () => {
     }, 1000);
   };
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<UserRequest>[] = [
     {
       id: "status",
       label: "Status",
@@ -43,7 +43,7 @@ const UserRequestLog = () => {
       id: "date",
       label: "Date",
       type: "date",
-      placeholder: "Select date..."
+      placeholder: "Select date...",
     },
     {
       id: "userId",
