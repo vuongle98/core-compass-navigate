@@ -1,32 +1,23 @@
 
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+import { ThemeProvider } from "./components/ThemeProvider";
+import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import { initAppServices } from "@/utils/initAppServices";
 
-// Add global styles to fix overflow issues
-const style = document.createElement('style');
-style.textContent = `
-  body {
-    overflow-x: hidden;
-    height: 100%;
-  }
-  html {
-    height: 100%;
-  }
-  #root {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  .main-content {
-    flex: 1;
-  }
-`;
-document.head.appendChild(style);
+// Initialize services
+initAppServices();
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <App />
+        <Toaster />
+      </ThemeProvider>
+    </BrowserRouter>
+  </React.StrictMode>
 );

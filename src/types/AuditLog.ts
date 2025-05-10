@@ -1,3 +1,4 @@
+
 import { User } from "./Auth";
 
 export type AuditLog = {
@@ -13,6 +14,7 @@ export type AuditLog = {
   statusCode?: number;
   success?: boolean;
 };
+
 export interface AuditLogEntry {
   id: number;
   timestamp: string;
@@ -35,4 +37,26 @@ export interface AuditLogFilters {
   startDate?: string;
   endDate?: string;
   success?: boolean;
+}
+
+export interface ActivityLog {
+  id: number;
+  userId: string;
+  username: string;
+  module: string;
+  action: string;
+  details: string;
+  timestamp: string;
+  ipAddress: string;
+  userAgent: string;
+  meta?: Record<string, any>;
+}
+
+export interface BatchLogEntry {
+  module: string;
+  action: string;
+  description: string;
+  metadata?: Record<string, unknown>;
+  timestamp: string;
+  userId?: string;
 }

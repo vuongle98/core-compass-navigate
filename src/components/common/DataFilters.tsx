@@ -1,10 +1,30 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Filter, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
-import { FilterOption } from "@/types/Common";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import useUserSettingsStore from "@/store/useUserSettingsStore";
+
+export type FilterOption = {
+  id: string;
+  label: string;
+  type: "text" | "select" | "date" | "search";
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+};
 
 export interface DataFiltersProps {
   filters: ApiQueryFilters;
@@ -23,7 +43,7 @@ export interface DataFiltersProps {
   onReset?: () => void;
 }
 
-export const DataFilters: React.FC<DataFiltersProps> = ({
+const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
   setFilters,
   resetFilters,
@@ -33,11 +53,25 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
   searchPlaceholder = "Search...",
   filtersTitle = "Filters",
   showToggle = true,
-  options,
+  options = [],
   onChange,
   onReset,
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
+  const { settings, setFilterExpanded } = useUserSettingsStore();
+  const [showFilters, setShowFilters] = useState(settings.filters.expanded);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Update the local state when the persisted setting changes
+  useEffect(() => {
+    setShowFilters(settings.filters.expanded);
+  }, [settings.filters.expanded]);
+
+  // Toggle filter visibility and persist the setting
+  const toggleFilters = () => {
+    const newValue = !showFilters;
+    setShowFilters(newValue);
+    setFilterExpanded(newValue);
+  };
 
   // Handle search input change with compatibility for both prop styles
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,11 +87,6 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
     }
   };
 
-  // Toggle filter visibility
-  const toggleFilters = () => {
-    setShowFilters((prev) => !prev);
-  };
-
   // Handle reset with compatibility for both prop styles
   const handleReset = () => {
     if (resetFilters) {
@@ -67,27 +96,66 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
     if (onReset) {
       onReset();
     }
+    
+    setActiveFilters([]);
+  };
+
+  // Handle filter change
+  const handleFilterChange = (id: string, value: string | Date | null) => {
+    let formattedValue = value;
+    
+    // Format date values
+    if (value instanceof Date) {
+      formattedValue = format(value, 'yyyy-MM-dd');
+    }
+    
+    const newFilters = { ...filters, [id]: formattedValue };
+    
+    if (setFilters) {
+      setFilters(newFilters);
+    }
+
+    if (onChange) {
+      onChange(newFilters);
+    }
+    
+    // Track active filters for UI display
+    if (value && value !== '') {
+      if (!activeFilters.includes(id)) {
+        setActiveFilters([...activeFilters, id]);
+      }
+    } else {
+      setActiveFilters(activeFilters.filter(filterId => filterId !== id));
+    }
   };
 
   // Get current search value
   const searchValue = (filters.search as string) || "";
 
-  // Check if there are any active filters
+  // Check if there are any active filters (excluding search)
   const hasActiveFilters = Object.entries(filters).some(
     ([key, value]) =>
       key !== "search" && value !== "" && value !== null && value !== undefined
   );
+  
+  // Group filters by type for better organization
+  const groupedFilters = {
+    search: options.filter(opt => opt.type === "search" || opt.type === "text"),
+    select: options.filter(opt => opt.type === "select"),
+    date: options.filter(opt => opt.type === "date"),
+  };
 
   return (
     <div className={cn("space-y-4 mb-6", className)}>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         {withSearch && (
           <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={handleSearchChange}
-              className="pr-8"
+              className="pl-10 pr-8"
             />
             {searchValue && (
               <Button
@@ -108,6 +176,29 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
         )}
 
         <div className="flex items-center gap-2 ml-auto">
+          {activeFilters.length > 0 && (
+            <div className="hidden md:flex items-center gap-1">
+              {activeFilters.map(id => {
+                const option = options.find(opt => opt.id === id);
+                if (!option) return null;
+                
+                return (
+                  <Badge key={id} variant="outline" className="flex items-center gap-1">
+                    {option.label}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 ml-1"
+                      onClick={() => handleFilterChange(id, "")}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
+          
           {showToggle && (
             <Button
               variant="outline"
@@ -116,6 +207,7 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
               className="flex items-center gap-1 transition-all duration-200"
               type="button"
             >
+              <Filter className="h-4 w-4 mr-1" />
               {filtersTitle}
               {showFilters ? (
                 <ChevronUp className="ml-1 h-4 w-4" />
@@ -147,7 +239,110 @@ export const DataFilters: React.FC<DataFiltersProps> = ({
             : "grid-rows-[0fr] opacity-0 h-0"
         )}
       >
-        <div className="min-h-0 overflow-hidden">{children}</div>
+        <div className="min-h-0">
+          {options && options.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Select Filters */}
+              {groupedFilters.select.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
+                  <div className="space-y-2">
+                    {groupedFilters.select.map((option) => (
+                      <div key={option.id} className="flex flex-col space-y-1">
+                        <label htmlFor={option.id} className="text-sm font-medium">
+                          {option.label}
+                        </label>
+                        <Select
+                          value={(filters[option.id] as string) || ""}
+                          onValueChange={(value) => handleFilterChange(option.id, value)}
+                        >
+                          <SelectTrigger id={option.id} className="w-full">
+                            <SelectValue placeholder={option.placeholder || `Select ${option.label}...`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">All</SelectItem>
+                            {option.options?.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Date Filters */}
+              {groupedFilters.date.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Time Period</h3>
+                  <div className="space-y-2">
+                    {groupedFilters.date.map((option) => (
+                      <div key={option.id} className="flex flex-col space-y-1">
+                        <label htmlFor={option.id} className="text-sm font-medium">
+                          {option.label}
+                        </label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id={option.id}
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              {filters[option.id] ? (
+                                format(new Date(filters[option.id] as string), "PPP")
+                              ) : (
+                                <span className="text-muted-foreground">{option.placeholder || "Pick a date"}</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={filters[option.id] ? new Date(filters[option.id] as string) : undefined}
+                              onSelect={(date) => handleFilterChange(option.id, date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Text Search Filters (excluding main search) */}
+              {groupedFilters.search.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Additional Search</h3>
+                  <div className="space-y-2">
+                    {groupedFilters.search.map((option) => (
+                      <div key={option.id} className="flex flex-col space-y-1">
+                        <label htmlFor={option.id} className="text-sm font-medium">
+                          {option.label}
+                        </label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id={option.id}
+                            value={(filters[option.id] as string) || ""}
+                            onChange={(e) => handleFilterChange(option.id, e.target.value)}
+                            placeholder={option.placeholder || `Search ${option.label}...`}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            children
+          )}
+        </div>
       </div>
     </div>
   );

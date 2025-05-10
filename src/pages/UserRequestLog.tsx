@@ -1,12 +1,14 @@
+
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataFilters } from "@/components/common/DataFilters";
+import DataFilters from "@/components/common/DataFilters";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { FilterOption } from "@/types/Common";
+import useUserSettingsStore from "@/store/useUserSettingsStore";
 
 const UserRequestLog = () => {
   const [filters, setFilters] = useState<ApiQueryFilters>({
@@ -15,6 +17,7 @@ const UserRequestLog = () => {
     date: "",
   });
   const [loading, setLoading] = useState(false);
+  const { settings } = useUserSettingsStore();
 
   const refreshData = () => {
     setLoading(true);
@@ -26,12 +29,6 @@ const UserRequestLog = () => {
   };
 
   const filterOptions: FilterOption[] = [
-    {
-      id: "search",
-      label: "Search",
-      type: "search",
-      placeholder: "Search requests...",
-    },
     {
       id: "status",
       label: "Status",
@@ -46,6 +43,19 @@ const UserRequestLog = () => {
       id: "date",
       label: "Date",
       type: "date",
+      placeholder: "Select date..."
+    },
+    {
+      id: "userId",
+      label: "User ID",
+      type: "text",
+      placeholder: "Filter by user ID",
+    },
+    {
+      id: "endpoint",
+      label: "Endpoint",
+      type: "text",
+      placeholder: "Filter by endpoint",
     },
   ];
 
