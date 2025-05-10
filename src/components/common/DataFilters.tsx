@@ -1,261 +1,124 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { SearchIcon, XIcon, FilterIcon } from "lucide-react";
-import { ApiQueryFilters } from "@/hooks/use-api-query";
-import useDebounce from "@/hooks/use-debounce";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-
-export interface FilterOption {
-  id: string;
-  label: string;
-  type: "text" | "select" | "search";
-  options?: { value: string; label: string }[];
-  placeholder?: string;
-}
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ApiQueryFilters } from '@/hooks/use-api-query';
 
 interface DataFiltersProps {
   filters: ApiQueryFilters;
-  options: FilterOption[];
-  onChange: (filters: ApiQueryFilters) => void;
-  onReset: () => void;
+  setFilters: (filters: ApiQueryFilters) => void;
+  resetFilters: () => void;
+  children?: React.ReactNode;
   className?: string;
+  withSearch?: boolean;
+  searchPlaceholder?: string;
+  filtersTitle?: string;
+  showToggle?: boolean;
 }
 
-export const DataFilters: React.FC<DataFiltersProps> = ({
+const DataFilters: React.FC<DataFiltersProps> = ({
   filters,
-  options,
-  onChange,
-  onReset,
-  className,
+  setFilters,
+  resetFilters,
+  children,
+  className = '',
+  withSearch = true,
+  searchPlaceholder = 'Search...',
+  filtersTitle = 'Filters',
+  showToggle = true,
 }) => {
-  const isMobile = useIsMobile();
-  const [localFilters, setLocalFilters] = useState<ApiQueryFilters>(filters);
-  const debouncedFilters = useDebounce(localFilters, 300);
-  const [isOpen, setIsOpen] = useState(!isMobile);
-  const initialRenderRef = useRef(true);
-  const resetTriggeredRef = useRef(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Reset the local state when parent filters change
-  useEffect(() => {
-    if (initialRenderRef.current) {
-      setLocalFilters(filters);
-      initialRenderRef.current = false;
-    }
-  }, [filters]);
-
-  // Apply debounced filters when they change
-  useEffect(() => {
-    // Skip initial render or when reset is triggered
-    if (!initialRenderRef.current && !resetTriggeredRef.current) {
-      onChange(debouncedFilters);
-    }
-    
-    // Reset the flag after it's been processed
-    if (resetTriggeredRef.current) {
-      resetTriggeredRef.current = false;
-    }
-  }, [debouncedFilters, onChange]);
-
-  // Update the open state when screen size changes
-  useEffect(() => {
-    setIsOpen(!isMobile);
-  }, [isMobile]);
-
-  const handleFilterChange = (
-    id: string,
-    value: string | number | undefined
-  ) => {
-    const newFilters = { ...localFilters, [id]: value };
-    setLocalFilters(newFilters);
-    // onChange is called via the debounced effect
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFilters({ ...filters, search: value });
   };
 
-  const handleReset = () => {
-    // Set the reset flag
-    resetTriggeredRef.current = true;
-    
-    // Create empty filters object based on options
-    const resetFilters = options.reduce((acc, option) => {
-      acc[option.id] = option.type === "select" ? undefined : "";
-      return acc;
-    }, {} as ApiQueryFilters);
-
-    // Update local state first
-    setLocalFilters(resetFilters);
-    
-    // Call the parent reset function directly
-    onReset();
+  // Toggle filter visibility
+  const toggleFilters = () => {
+    setShowFilters(prev => !prev);
   };
 
-  // Determine grid columns based on number of filters for responsive layout
-  const gridClass =
-    options.length <= 2
-      ? "grid-cols-1 sm:grid-cols-2"
-      : options.length === 3
-      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+  // Get current search value
+  const searchValue = (filters.search as string) || '';
 
-  const hasActiveFilters = Object.values(localFilters).some(
-    (value) => value !== undefined && value !== null && value !== ""
-  );
-
-  const FiltersContent = () => (
-    <div className={`grid gap-4 ${gridClass}`}>
-      {options.map((option) => (
-        <div key={option.id} className="space-y-1.5">
-          {option.type === "text" && (
-            <div>
-              <label
-                htmlFor={option.id}
-                className="block text-sm font-medium mb-1 text-muted-foreground"
-              >
-                {option.label}
-              </label>
-              <Input
-                type="text"
-                id={option.id}
-                value={(localFilters[option.id] as string) || ""}
-                onChange={(e) =>
-                  handleFilterChange(option.id, e.target.value)
-                }
-                placeholder={option.placeholder}
-                className="w-full"
-              />
-            </div>
-          )}
-
-          {option.type === "search" && (
-            <div>
-              <label
-                htmlFor={option.id}
-                className="block text-sm font-medium mb-1 text-muted-foreground"
-              >
-                {option.label}
-              </label>
-              <div className="relative">
-                <SearchIcon
-                  className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none"
-                  aria-hidden="true"
-                />
-                <Input
-                  type="search"
-                  id={option.id}
-                  placeholder={
-                    option.placeholder ||
-                    `Search ${option.label.toLowerCase()}...`
-                  }
-                  value={(localFilters[option.id] as string) || ""}
-                  onChange={(e) =>
-                    handleFilterChange(option.id, e.target.value)
-                  }
-                  className="w-full pl-9"
-                />
-                {localFilters[option.id] && (
-                  <button
-                    className="absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground hover:text-foreground focus:outline-none"
-                    onClick={() => handleFilterChange(option.id, "")}
-                    type="button"
-                    aria-label="Clear search"
-                  >
-                    <XIcon className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {option.type === "select" && (
-            <div>
-              <label
-                htmlFor={option.id}
-                className="block text-sm font-medium mb-1 text-muted-foreground"
-              >
-                {option.label}
-              </label>
-              <Select
-                value={(localFilters[option.id] as string) || undefined}
-                onValueChange={(value) =>
-                  handleFilterChange(option.id, value)
-                }
-              >
-                <SelectTrigger id={option.id} className="w-full">
-                  <SelectValue
-                    placeholder={`Select ${option.label.toLowerCase()}`}
-                  />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  {option.options?.map((opt) => (
-                    <SelectItem 
-                      key={opt.value} 
-                      value={opt.value || "all"} // Ensure no empty values
-                    >
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {/* Reset button at the end of the grid */}
-      <div className="flex items-end">
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            onClick={handleReset}
-            size="sm"
-            className="h-9 text-muted-foreground hover:text-foreground flex items-center"
-          >
-            <XIcon className="h-3.5 w-3.5 mr-1" />
-            Reset
-          </Button>
-        )}
-      </div>
-    </div>
+  // Check if there are any active filters
+  const hasActiveFilters = Object.entries(filters).some(
+    ([key, value]) => key !== 'search' && value !== '' && value !== null && value !== undefined
   );
 
   return (
-    <div
-      className={`space-y-4 bg-background rounded-lg border shadow-sm ${
-        className || ""
-      }`}
-    >
-      {isMobile ? (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-          <div className="p-4 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Filters</h3>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center">
-                <FilterIcon className="h-3.5 w-3.5 mr-1.5" />
-                {isOpen ? "Hide Filters" : "Show Filters"}
+    <div className={cn('space-y-4 mb-6', className)}>
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        {withSearch && (
+          <div className="relative w-full sm:max-w-xs">
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={handleSearchChange}
+              className="pr-8"
+            />
+            {searchValue && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => setFilters({ ...filters, search: '' })}
+                type="button"
+              >
+                <X className="h-3 w-3" />
               </Button>
-            </CollapsibleTrigger>
+            )}
           </div>
-          <CollapsibleContent className="px-4 pb-4">
-            <FiltersContent />
-          </CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <div className="p-4">
-          <FiltersContent />
+        )}
+        
+        <div className="flex items-center gap-2 ml-auto">
+          {showToggle && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFilters}
+              className="flex items-center gap-1"
+              type="button"
+            >
+              {filtersTitle}
+              {showFilters ? (
+                <ChevronUp className="ml-1 h-4 w-4" />
+              ) : (
+                <ChevronDown className="ml-1 h-4 w-4" />
+              )}
+            </Button>
+          )}
+          
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="text-muted-foreground"
+              type="button"
+            >
+              Reset
+            </Button>
+          )}
         </div>
-      )}
+      </div>
+      
+      <div
+        className={cn(
+          "grid gap-4 transition-all duration-300 ease-in-out overflow-hidden",
+          showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 h-0"
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {children}
+        </div>
+      </div>
     </div>
   );
 };
+
+export default DataFilters;

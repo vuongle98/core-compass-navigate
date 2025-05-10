@@ -1,3 +1,4 @@
+
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import TokenService from "./TokenService";
 import LoggingService from "./LoggingService";
@@ -5,6 +6,8 @@ import { ApiResponse, PaginatedData, PaginationOptions } from "@/types/Common";
 
 class EnhancedApiService {
   private static instance: AxiosInstance;
+  private static apiCache = new Map<string, {data: any, timestamp: number}>();
+  private static cacheTTL = 60000; // 1 minute cache TTL by default
 
   /**
    * Initialize the API service
@@ -69,18 +72,69 @@ class EnhancedApiService {
   }
 
   /**
+   * Generate cache key based on url and params
+   */
+  private static generateCacheKey(url: string, params?: Record<string, unknown>): string {
+    return `${url}${params ? `?${JSON.stringify(params)}` : ''}`;
+  }
+
+  /**
+   * Check if cache is valid
+   */
+  private static isCacheValid(cacheKey: string): boolean {
+    const cachedItem = this.apiCache.get(cacheKey);
+    if (!cachedItem) return false;
+    
+    const now = Date.now();
+    return (now - cachedItem.timestamp) < this.cacheTTL;
+  }
+
+  /**
+   * Set cache TTL in milliseconds
+   */
+  public static setCacheTTL(ttl: number): void {
+    this.cacheTTL = ttl;
+  }
+
+  /**
+   * Clear cache for specific URL or all cache
+   */
+  public static clearCache(url?: string): void {
+    if (url) {
+      // Clear all entries that start with this URL
+      for (const key of this.apiCache.keys()) {
+        if (key.startsWith(url)) {
+          this.apiCache.delete(key);
+        }
+      }
+    } else {
+      this.apiCache.clear();
+    }
+  }
+
+  /**
    * Make a GET request
    */
   public static async get<T>(
     url: string,
     params?: Record<string, unknown>,
     headers?: Record<string, string>,
-    responseType: AxiosRequestConfig["responseType"] = "json"
+    responseType: AxiosRequestConfig["responseType"] = "json",
+    useCache: boolean = true
   ): Promise<T> {
     this.initialize();
     LoggingService.info("api", "get", `GET ${url}`);
 
     try {
+      // Check cache first if caching is enabled
+      if (useCache && responseType === "json") {
+        const cacheKey = this.generateCacheKey(url, params);
+        if (this.isCacheValid(cacheKey)) {
+          LoggingService.info("api", "cache_hit", `Cache hit for ${url}`);
+          return this.apiCache.get(cacheKey)!.data;
+        }
+      }
+
       const response = await this.instance.get<ApiResponse<T>>(url, {
         params,
         headers,
@@ -89,6 +143,15 @@ class EnhancedApiService {
 
       if (responseType === "blob") {
         return response.data as unknown as T;
+      }
+
+      // Store in cache if it's a JSON response
+      if (useCache && responseType === "json") {
+        const cacheKey = this.generateCacheKey(url, params);
+        this.apiCache.set(cacheKey, {
+          data: response.data.data,
+          timestamp: Date.now()
+        });
       }
 
       return response.data.data;
@@ -115,6 +178,10 @@ class EnhancedApiService {
         data,
         config
       );
+      
+      // Invalidate cache for this URL since data has changed
+      this.clearCache(url);
+      
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "post_failed", `POST ${url} failed`, error);
@@ -137,6 +204,10 @@ class EnhancedApiService {
       const response = await this.instance.put<ApiResponse<T>>(url, data, {
         headers,
       });
+      
+      // Invalidate cache for this URL since data has changed
+      this.clearCache(url);
+      
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "put_failed", `PUT ${url} failed`, error);
@@ -161,6 +232,10 @@ class EnhancedApiService {
         data,
         config
       );
+      
+      // Invalidate cache for this URL since data has changed
+      this.clearCache(url);
+      
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "patch_failed", `PATCH ${url} failed`, error);
@@ -182,6 +257,10 @@ class EnhancedApiService {
       const response = await this.instance.delete<ApiResponse<T>>(url, {
         headers,
       });
+      
+      // Invalidate cache for this URL since data has changed
+      this.clearCache(url);
+      
       return response.data.data;
     } catch (error) {
       LoggingService.error(
@@ -200,7 +279,8 @@ class EnhancedApiService {
   public static async getPaginated<T>(
     url: string,
     options?: PaginationOptions,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    useCache: boolean = true
   ): Promise<PaginatedData<T>> {
     const params = {
       page: options?.page || 0,
@@ -209,7 +289,7 @@ class EnhancedApiService {
       ...options,
     };
 
-    const response = await this.get<PaginatedData<T>>(url, params, headers);
+    const response = await this.get<PaginatedData<T>>(url, params, headers, "json", useCache);
     return response;
   }
 

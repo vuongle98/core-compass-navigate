@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, QueryKey } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import useLocalStorage from "./use-local-storage";
@@ -41,6 +42,9 @@ export function useApiQuery<T>({
     useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
+  
+  // Prevents multiple refetches
+  const isInitialMount = useRef(true);
 
   // Use debounce for filter changes to prevent too many API calls
   const debouncedFilters = useDebounce(filtersState, debounceMs);
@@ -54,8 +58,9 @@ export function useApiQuery<T>({
 
   // Initialize filters from persisted if available
   useEffect(() => {
-    if (persistFilters && Object.keys(persistedFilters).length > 0) {
+    if (persistFilters && Object.keys(persistedFilters).length > 0 && isInitialMount.current) {
       setFiltersState(persistedFilters);
+      isInitialMount.current = false;
     }
   }, [persistFilters, persistedFilters]);
 
@@ -67,7 +72,7 @@ export function useApiQuery<T>({
         setPersistedFilters(newFilters);
       }
       // Reset to first page when filters change
-      // setPage(0);
+      setPage(0);
     },
     [persistFilters, setPersistedFilters]
   );
@@ -143,15 +148,22 @@ export function useApiQuery<T>({
         throw err;
       }
     },
+    staleTime: 30000, // Cache results for 30 seconds to prevent rapid refetching
     meta: {
       onError: onError,
     },
   });
 
-  // Force refetch when page or pageSize changes
+  // Force refetch only when page or pageSize changes explicitly by user action
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+  
   useEffect(() => {
-    refetch();
-  }, [page, pageSize, refetch]);
+    // Skip the initial render to prevent duplicate calls
+    if (!isInitialMount.current) {
+      refetchRef.current();
+    }
+  }, [page, pageSize]);
 
   // Total items count
   const totalItems = data?.totalElements || 0;
