@@ -1,24 +1,27 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, X, Filter, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiQueryFilters } from "@/hooks/use-api-query";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import useUserSettingsStore from "@/store/useUserSettingsStore";
 
-// Export the type as a named export 
+// Export the type as a named export
 export type FilterOption = {
   id: string;
   label: string;
@@ -98,23 +101,23 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     if (onReset) {
       onReset();
     }
-    
+
     setActiveFilters([]);
   };
 
   // Handle filter change
   const handleFilterChange = (id: string, value: string | Date | null) => {
     let formattedValue: string | number | boolean | null = null;
-    
+
     // Format date values to string
     if (value instanceof Date) {
-      formattedValue = format(value, 'yyyy-MM-dd');
+      formattedValue = format(value, "yyyy-MM-dd");
     } else {
       formattedValue = value;
     }
-    
+
     const newFilters = { ...filters, [id]: formattedValue };
-    
+
     if (setFilters) {
       setFilters(newFilters);
     }
@@ -122,14 +125,14 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     if (onChange) {
       onChange(newFilters);
     }
-    
+
     // Track active filters for UI display
-    if (value && value !== '') {
+    if (value && value !== "") {
       if (!activeFilters.includes(id)) {
         setActiveFilters([...activeFilters, id]);
       }
     } else {
-      setActiveFilters(activeFilters.filter(filterId => filterId !== id));
+      setActiveFilters(activeFilters.filter((filterId) => filterId !== id));
     }
   };
 
@@ -141,18 +144,20 @@ const DataFilters: React.FC<DataFiltersProps> = ({
     ([key, value]) =>
       key !== "search" && value !== "" && value !== null && value !== undefined
   );
-  
+
   // Group filters by type for better organization
   const groupedFilters = {
-    search: options.filter(opt => opt.type === "search" || opt.type === "text"),
-    select: options.filter(opt => opt.type === "select"),
-    date: options.filter(opt => opt.type === "date"),
+    search: options.filter(
+      (opt) => opt.type === "search" || opt.type === "text"
+    ),
+    select: options.filter((opt) => opt.type === "select"),
+    date: options.filter((opt) => opt.type === "date"),
   };
 
   return (
     <div className={cn("space-y-4 mb-6", className)}>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        {withSearch && (
+        {!showFilters && withSearch && (
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -182,12 +187,16 @@ const DataFilters: React.FC<DataFiltersProps> = ({
         <div className="flex items-center gap-2 ml-auto">
           {activeFilters.length > 0 && (
             <div className="hidden md:flex items-center gap-1">
-              {activeFilters.map(id => {
-                const option = options.find(opt => opt.id === id);
+              {activeFilters.map((id) => {
+                const option = options.find((opt) => opt.id === id);
                 if (!option) return null;
-                
+
                 return (
-                  <Badge key={id} variant="outline" className="flex items-center gap-1">
+                  <Badge
+                    key={id}
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  >
                     {option.label}
                     <Button
                       variant="ghost"
@@ -202,7 +211,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               })}
             </div>
           )}
-          
+
           {showToggle && (
             <Button
               variant="outline"
@@ -240,7 +249,7 @@ const DataFilters: React.FC<DataFiltersProps> = ({
           "grid gap-4 transition-all duration-300 ease-in-out overflow-hidden",
           showFilters
             ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0 h-0"
+            : "grid-rows-[0fr] opacity-0"
         )}
       >
         <div className="min-h-0">
@@ -249,19 +258,29 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               {/* Select Filters */}
               {groupedFilters.select.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
+                  {/* <h3 className="text-sm font-medium text-muted-foreground">Categories</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.select.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">
-                        <label htmlFor={option.id} className="text-sm font-medium">
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium"
+                        >
                           {option.label}
                         </label>
                         <Select
                           value={(filters[option.id] as string) || ""}
-                          onValueChange={(value) => handleFilterChange(option.id, value)}
+                          onValueChange={(value) =>
+                            handleFilterChange(option.id, value)
+                          }
                         >
                           <SelectTrigger id={option.id} className="w-full">
-                            <SelectValue placeholder={option.placeholder || `Select ${option.label}...`} />
+                            <SelectValue
+                              placeholder={
+                                option.placeholder ||
+                                `Select ${option.label}...`
+                              }
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">All</SelectItem>
@@ -281,11 +300,14 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               {/* Date Filters */}
               {groupedFilters.date.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Time Period</h3>
+                  {/* <h3 className="text-sm font-medium text-muted-foreground">Time Period</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.date.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">
-                        <label htmlFor={option.id} className="text-sm font-medium">
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium"
+                        >
                           {option.label}
                         </label>
                         <Popover>
@@ -296,17 +318,28 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                               className="w-full justify-start text-left font-normal"
                             >
                               {filters[option.id] ? (
-                                format(new Date(filters[option.id] as string), "PPP")
+                                format(
+                                  new Date(filters[option.id] as string),
+                                  "PPP"
+                                )
                               ) : (
-                                <span className="text-muted-foreground">{option.placeholder || "Pick a date"}</span>
+                                <span className="text-muted-foreground">
+                                  {option.placeholder || "Pick a date"}
+                                </span>
                               )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={filters[option.id] ? new Date(filters[option.id] as string) : undefined}
-                              onSelect={(date) => handleFilterChange(option.id, date)}
+                              selected={
+                                filters[option.id]
+                                  ? new Date(filters[option.id] as string)
+                                  : undefined
+                              }
+                              onSelect={(date) =>
+                                handleFilterChange(option.id, date)
+                              }
                               initialFocus
                               className="p-3 pointer-events-auto"
                             />
@@ -321,11 +354,14 @@ const DataFilters: React.FC<DataFiltersProps> = ({
               {/* Text Search Filters (excluding main search) */}
               {groupedFilters.search.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">Additional Search</h3>
+                  {/* <h3 className="text-sm font-medium text-muted-foreground">Additional Search</h3> */}
                   <div className="space-y-2">
                     {groupedFilters.search.map((option) => (
                       <div key={option.id} className="flex flex-col space-y-1">
-                        <label htmlFor={option.id} className="text-sm font-medium">
+                        <label
+                          htmlFor={option.id}
+                          className="text-sm font-medium"
+                        >
                           {option.label}
                         </label>
                         <div className="relative">
@@ -333,8 +369,12 @@ const DataFilters: React.FC<DataFiltersProps> = ({
                           <Input
                             id={option.id}
                             value={(filters[option.id] as string) || ""}
-                            onChange={(e) => handleFilterChange(option.id, e.target.value)}
-                            placeholder={option.placeholder || `Search ${option.label}...`}
+                            onChange={(e) =>
+                              handleFilterChange(option.id, e.target.value)
+                            }
+                            placeholder={
+                              option.placeholder || `Search ${option.label}...`
+                            }
                             className="pl-10"
                           />
                         </div>

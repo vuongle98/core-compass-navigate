@@ -12,6 +12,16 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080
-  }
+    port: 8082,
+    proxy: {
+      '/api/v1/bots': {
+        target: 'http://localhost:8081',  // The backend API URL
+        changeOrigin: true,               // Ensures the origin is changed to the target
+      },
+      '/api': {
+        target: 'http://localhost:8080',  // The backend API URL
+        changeOrigin: true,               // Ensures the origin is changed to the target
+      }
+    },
+  },
 });
