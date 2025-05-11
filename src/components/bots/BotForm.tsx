@@ -116,79 +116,140 @@ export function BotForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="configuration.updateMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bot Type</FormLabel>
-              <Select
-                onValueChange={(value) => {
-                  setBotType(value as "WEBHOOK" | "LONG_POLLING");
-                  field.onChange(value);
-                }}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select bot type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="WEBHOOK">Webhook</SelectItem>
-                  <SelectItem value="LONG_POLLING">Long Polling</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                How the bot will receive updates from Telegram
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Configuration Section */}
+        <div className="space-y-4 border-t pt-4">
+          <h3 className="text-lg font-semibold">Configuration</h3>
 
-        {botType === "WEBHOOK" && (
+          {/* Bot Type */}
           <FormField
             control={form.control}
-            name="configuration.webhookUrl"
+            name="configuration.updateMethod"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Webhook URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com/webhook" {...field} />
-                </FormControl>
+                <FormLabel>Bot Type</FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    setBotType(value as "WEBHOOK" | "LONG_POLLING");
+                    field.onChange(value);
+                  }}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select bot type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="WEBHOOK">Webhook</SelectItem>
+                    <SelectItem value="LONG_POLLING">Long Polling</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormDescription>
-                  URL where Telegram will send updates for this bot
+                  How the bot will receive updates from Telegram
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
 
-        {botType === "LONG_POLLING" && (
+          {/* Webhook URL (Conditional) */}
+          {botType === "WEBHOOK" && (
+            <FormField
+              control={form.control}
+              name="configuration.webhookUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Webhook URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://example.com/webhook"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL where Telegram will send updates for this bot
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Polling Interval (Conditional) */}
+          {botType === "LONG_POLLING" && (
+            <FormField
+              control={form.control}
+              name="configuration.pollingInterval"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Polling Interval (seconds)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={5}
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(parseInt(e.target.value, 10))
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    How often the bot should check for updates (minimum 5
+                    seconds)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Max Connections */}
           <FormField
             control={form.control}
-            name="configuration.pollingInterval"
+            name="configuration.maxConnections"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Polling Interval (seconds)</FormLabel>
+                <FormLabel>Max Connections</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    min={5}
+                    min={1}
+                    max={100}
+                    placeholder="Enter max connections (1-100)"
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                 </FormControl>
                 <FormDescription>
-                  How often the bot should check for updates (minimum 5 seconds)
+                  Maximum number of simultaneous connections for the bot (1-100)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
+
+          {/* Allowed Updates */}
+          <FormField
+            control={form.control}
+            name="configuration.allowedUpdates"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Allowed Updates</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Enter allowed updates (comma-separated)"
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Specify the types of updates you want to receive (e.g.,
+                  message, edited_message, channel_post)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

@@ -15,8 +15,13 @@ import { toast } from "sonner";
 import { NotificationBell } from "./NotificationBell";
 import { useState } from "react";
 import { GlobalSearch } from "./GlobalSearch";
+import { cn } from "@/lib/utils";
 
-export function UserMenu() {
+export interface UserMenuProps {
+  className?: string;
+  collapsed?: boolean;
+}
+export function UserMenu({ collapsed }: UserMenuProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -41,7 +46,13 @@ export function UserMenu() {
     : "U";
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={cn(
+        !collapsed
+          ? "flex items-center gap-2"
+          : "flex-col items-center justify-end gap-2"
+      )}
+    >
       <Button
         variant="ghost"
         size="icon"

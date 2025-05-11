@@ -6,6 +6,7 @@ export interface BotConfiguration {
   ipAddress?: string;
   secretToken?: string;
   dropPendingUpdates?: boolean;
+  isWebhookEnabled?: boolean;
   maxThreads?: number;
   updateMethod?: "LONG_POLLING" | "WEBHOOK";
 }
@@ -56,4 +57,13 @@ export interface BotHistory {
   message: string;
   errorDetails?: string;
   notes?: string;
+}
+
+export interface BotStatistics {
+  totalBots: number;
+  activeBots: number;
+  activeScheduledMessages: number;
+  activeCommands: number;
+  totalScheduledMessages: number;
+  totalCommands: number;
 }

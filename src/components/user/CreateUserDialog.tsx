@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Role, User } from "@/types/Auth";
-import RoleSelect from "./RoleSelect";
+import RoleSelect from "../searchable-select/RoleSelect";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";

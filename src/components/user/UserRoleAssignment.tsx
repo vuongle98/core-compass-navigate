@@ -13,7 +13,7 @@ import { Role } from "@/types/Auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import RoleSelect from "../users/RoleSelect";
+import RoleSelect from "../searchable-select/RoleSelect";
 import UserService from "@/services/UserService";
 
 interface UserRoleAssignmentProps {

@@ -1,4 +1,3 @@
-
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import TokenService from "./TokenService";
 import LoggingService from "./LoggingService";
@@ -6,7 +5,7 @@ import { ApiResponse, PaginatedData, PaginationOptions } from "@/types/Common";
 
 class EnhancedApiService {
   private static instance: AxiosInstance;
-  private static apiCache = new Map<string, {data: any, timestamp: number}>();
+  private static apiCache = new Map<string, { data: any; timestamp: number }>();
   private static cacheTTL = 60000; // 1 minute cache TTL by default
 
   /**
@@ -74,8 +73,11 @@ class EnhancedApiService {
   /**
    * Generate cache key based on url and params
    */
-  private static generateCacheKey(url: string, params?: Record<string, unknown>): string {
-    return `${url}${params ? `?${JSON.stringify(params)}` : ''}`;
+  private static generateCacheKey(
+    url: string,
+    params?: Record<string, unknown>
+  ): string {
+    return `${url}${params ? `?${JSON.stringify(params)}` : ""}`;
   }
 
   /**
@@ -84,9 +86,9 @@ class EnhancedApiService {
   private static isCacheValid(cacheKey: string): boolean {
     const cachedItem = this.apiCache.get(cacheKey);
     if (!cachedItem) return false;
-    
+
     const now = Date.now();
-    return (now - cachedItem.timestamp) < this.cacheTTL;
+    return now - cachedItem.timestamp < this.cacheTTL;
   }
 
   /**
@@ -120,14 +122,15 @@ class EnhancedApiService {
     params?: Record<string, unknown>,
     headers?: Record<string, string>,
     responseType: AxiosRequestConfig["responseType"] = "json",
-    useCache: boolean = true
+    useCache: boolean = true,
+    forceRefresh: boolean = false
   ): Promise<T> {
     this.initialize();
     LoggingService.info("api", "get", `GET ${url}`);
 
     try {
       // Check cache first if caching is enabled
-      if (useCache && responseType === "json") {
+      if (useCache && !forceRefresh && responseType === "json") {
         const cacheKey = this.generateCacheKey(url, params);
         if (this.isCacheValid(cacheKey)) {
           LoggingService.info("api", "cache_hit", `Cache hit for ${url}`);
@@ -150,7 +153,7 @@ class EnhancedApiService {
         const cacheKey = this.generateCacheKey(url, params);
         this.apiCache.set(cacheKey, {
           data: response.data.data,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
@@ -178,10 +181,10 @@ class EnhancedApiService {
         data,
         config
       );
-      
+
       // Invalidate cache for this URL since data has changed
       this.clearCache(url);
-      
+
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "post_failed", `POST ${url} failed`, error);
@@ -204,10 +207,10 @@ class EnhancedApiService {
       const response = await this.instance.put<ApiResponse<T>>(url, data, {
         headers,
       });
-      
+
       // Invalidate cache for this URL since data has changed
       this.clearCache(url);
-      
+
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "put_failed", `PUT ${url} failed`, error);
@@ -232,10 +235,10 @@ class EnhancedApiService {
         data,
         config
       );
-      
+
       // Invalidate cache for this URL since data has changed
       this.clearCache(url);
-      
+
       return response.data.data;
     } catch (error) {
       LoggingService.error("api", "patch_failed", `PATCH ${url} failed`, error);
@@ -257,10 +260,10 @@ class EnhancedApiService {
       const response = await this.instance.delete<ApiResponse<T>>(url, {
         headers,
       });
-      
+
       // Invalidate cache for this URL since data has changed
       this.clearCache(url);
-      
+
       return response.data.data;
     } catch (error) {
       LoggingService.error(
@@ -280,7 +283,8 @@ class EnhancedApiService {
     url: string,
     options?: PaginationOptions,
     headers?: Record<string, string>,
-    useCache: boolean = true
+    useCache: boolean = true,
+    forceRefresh: boolean = false
   ): Promise<PaginatedData<T>> {
     const params = {
       page: options?.page || 0,
@@ -289,7 +293,14 @@ class EnhancedApiService {
       ...options,
     };
 
-    const response = await this.get<PaginatedData<T>>(url, params, headers, "json", useCache);
+    const response = await this.get<PaginatedData<T>>(
+      url,
+      params,
+      headers,
+      "json",
+      useCache,
+      forceRefresh
+    );
     return response;
   }
 

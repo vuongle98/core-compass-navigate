@@ -172,15 +172,25 @@ const Files = () => {
       placeholder: "Search files...",
     },
     {
-      id: "type",
+      id: "contentType",
       label: "Type",
+      type: "select",
+      options: [
+        { value: "application/pdf", label: "PDF" },
+        { value: "image/jpeg", label: "JPEG" },
+        { value: "pptx", label: "PPTX" },
+      ],
+    },
+    {
+      id: "extension",
+      label: "Extension",
       type: "select",
       options: [
         { value: "pdf", label: "PDF" },
         { value: "jpg", label: "JPG" },
         { value: "pptx", label: "PPTX" },
       ],
-    },
+    }
   ];
 
   // Actions for files
@@ -357,7 +367,7 @@ const Files = () => {
           </Label>
         </div>
       </PageHeader>
-      <DataFilters
+      {/* <DataFilters
         filters={{ search: searchTerm }}
         options={filterOptions}
         onChange={(newFilters) => {
@@ -376,6 +386,21 @@ const Files = () => {
         onReset={() => {
           setSearchTerm("");
           setSearchParams({});
+        }}
+        className="mt-4"
+      /> */}
+
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+        }}
+        onReset={() => {
+          resetFilters();
+          refresh();
         }}
         className="mt-4"
       />

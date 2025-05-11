@@ -41,7 +41,7 @@ export function useApiQuery<T>({
     useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  
+
   // Prevents multiple refetches
   const isInitialMount = useRef(true);
 
@@ -57,7 +57,11 @@ export function useApiQuery<T>({
 
   // Initialize filters from persisted if available
   useEffect(() => {
-    if (persistFilters && Object.keys(persistedFilters).length > 0 && isInitialMount.current) {
+    if (
+      persistFilters &&
+      Object.keys(persistedFilters).length > 0 &&
+      isInitialMount.current
+    ) {
       setFiltersState(persistedFilters);
       isInitialMount.current = false;
     }
@@ -147,7 +151,7 @@ export function useApiQuery<T>({
         throw err;
       }
     },
-    staleTime: 30000, // Cache results for 30 seconds to prevent rapid refetching
+    staleTime: 10000, // Cache results for 30 seconds to prevent rapid refetching
     meta: {
       onError: onError,
     },
@@ -156,7 +160,7 @@ export function useApiQuery<T>({
   // Force refetch only when page or pageSize changes explicitly by user action
   const refetchRef = useRef(refetch);
   refetchRef.current = refetch;
-  
+
   useEffect(() => {
     // Skip the initial render to prevent duplicate calls
     if (!isInitialMount.current) {

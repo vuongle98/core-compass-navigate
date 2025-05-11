@@ -12,6 +12,7 @@ import useDebounce from "@/hooks/use-debounce";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { Token } from "@/types/Token";
 import { FilterOption } from "@/types/Common";
+import { User } from "@/types/Auth";
 
 const Tokens = () => {
   // Mock data
@@ -21,7 +22,7 @@ const Tokens = () => {
       token: "Mobile API Token",
       issuedAt: "2023-07-10",
       expireAt: "2023-07-10",
-      blacklisted: false,
+      isBlacklisted: false,
       user: {
         id: 1,
         username: "johndoe",
@@ -43,7 +44,7 @@ const Tokens = () => {
       token: "Web Integration",
       issuedAt: "2023-04-09",
       expireAt: "2023-05-15",
-      blacklisted: true,
+      isBlacklisted: true,
       user: {
         id: 1,
         username: "johndoe",
@@ -66,7 +67,7 @@ const Tokens = () => {
       token: "Analytics Service",
       issuedAt: "2023-04-01",
       expireAt: "2023-04-05",
-      blacklisted: false,
+      isBlacklisted: false,
       user: {
         id: 1,
         username: "johndoe",
@@ -139,7 +140,7 @@ const Tokens = () => {
   });
 
   // Filter options
-  const filterOptions: FilterOption<Token>[] = [
+  const filterOptions: FilterOption<User>[] = [
     {
       id: "search",
       label: "Search",
@@ -147,12 +148,12 @@ const Tokens = () => {
       placeholder: "Search tokens...",
     },
     {
-      id: "blacklisted",
+      id: "isBlacklisted",
       label: "Black listed status",
       type: "select",
       options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Expired" },
+        { value: "false", label: "Active" },
+        { value: "true", label: "Expired" },
       ],
     },
     {
@@ -165,13 +166,17 @@ const Tokens = () => {
       ],
     },
     {
-      id: "user",
+      id: "userIds",
       label: "User",
-      type: "select",
-      options: [
-        { value: "admin", label: "John Doe" },
-        { value: "janedoe", label: "Jane Doe" },
-      ],
+      type: "searchable-select",
+      endpoint: "/api/user",
+      queryKey: ["users-filter"],
+      transformData: (data) =>
+        data.map((user: User) => ({
+          value: user.id?.toString() || "",
+          label: user.username || "Unnamed",
+          original: user,
+        })),
     },
   ];
 
@@ -241,12 +246,12 @@ const Tokens = () => {
       cell: (token: Token) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            token.blacklisted
+            token.isBlacklisted
               ? "bg-green-100 text-green-800"
               : "bg-red-100 text-red-800"
           }`}
         >
-          {token.blacklisted ? "Inactive" : "Active"}
+          {token.isBlacklisted ? "Inactive" : "Active"}
         </span>
       ),
     },
@@ -325,12 +330,12 @@ const Tokens = () => {
               <p className="mt-1">
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedToken.blacklisted
+                    selectedToken.isBlacklisted
                       ? "bg-green-100 text-green-800"
                       : "bg-red-100 text-red-800"
                   }`}
                 >
-                  {selectedToken.blacklisted ? "Inactive" : "Active"}
+                  {selectedToken.isBlacklisted ? "Inactive" : "Active"}
                 </span>
               </p>
             </div>

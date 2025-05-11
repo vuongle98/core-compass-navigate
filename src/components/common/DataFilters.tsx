@@ -137,15 +137,19 @@ const DataFilters = <T,>({
       formattedValue = value;
     }
 
-    const newFilters = { ...filters, [id]: formattedValue };
-
-    console.log(newFilters);
+    let newFilters = { ...filters, [id]: formattedValue };
 
     if (setFilters) {
       setFilters(newFilters);
     }
 
     if (onChange) {
+      if (value instanceof Array) {
+        newFilters = {
+          ...filters,
+          [id]: value.map((item: Option<T & BaseData>) => item.original.id),
+        };
+      }
       onChange(newFilters);
     }
 
@@ -299,7 +303,7 @@ const DataFilters = <T,>({
       >
         <div className="min-h-0">
           {options && options.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {/* Select Filters */}
               {groupedFilters.select.length > 0 && (
                 <div className="space-y-3">
@@ -482,7 +486,7 @@ const DataFilters = <T,>({
   );
 
   return (
-    <div className={cn("space-y-4 mb-6", className)}>
+    <div className={cn("space-y-4", className)}>
       {isMobile ? (
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
           <div className="p-4 flex items-center justify-between">

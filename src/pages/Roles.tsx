@@ -20,7 +20,7 @@ import useApiQuery from "@/hooks/use-api-query";
 import { DataFilters } from "@/components/common/DataFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import PermissionSelect from "@/components/role/PermissionSelect";
+import PermissionSelect from "@/components/searchable-select/PermissionSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Permission, Role } from "@/types/Auth";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
@@ -130,20 +130,17 @@ const Roles = () => {
       placeholder: "Search roles...",
     },
     {
-      id: "permissions",
+      id: "permissionIds",
       label: "Permissions",
-      type: "select",
-      options: [
-        { value: "USER_READ", label: "Read Users" },
-        { value: "USER_CREATE", label: "Create Users" },
-        { value: "USER_UPDATE", label: "Update Users" },
-        { value: "USER_DELETE", label: "Delete Users" },
-      ],
-    },
-    {
-      id: "createdAt",
-      label: "Created At",
-      type: "date",
+      type: "searchable-select",
+      endpoint: "/api/permission",
+      queryKey: ["permissions-filter"],
+      transformData: (data) =>
+        data.map((perm: Permission) => ({
+          value: perm.id?.toString() || "",
+          label: perm.name || "Unnamed",
+          original: perm,
+        })),
     },
   ];
 

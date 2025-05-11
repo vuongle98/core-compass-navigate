@@ -5,6 +5,6 @@ export interface Token {
   token: string;
   issuedAt: string;
   expireAt: string;
-  blacklisted: boolean;
+  isBlacklisted: boolean;
   user: User;
 }

@@ -17,9 +17,10 @@ import { BotStatsCards } from "@/components/bots/BotStatsCards";
 import { BotBulkActions } from "@/components/bots/BotBulkActions";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
-import { Bot } from "@/types/Bot";
+import { Bot, BotStatistics } from "@/types/Bot";
 import { Column, FilterOption } from "@/types/Common";
 import BotService from "@/services/BotService";
+import useApiData from "@/hooks/use-api-data";
 
 const mockBots: Bot[] = [
   {
@@ -130,6 +131,23 @@ const Bots = () => {
       totalPages: 1,
       number: 0,
       size: 10,
+    },
+  });
+
+  const {
+    data: botStats,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useApiData<BotStatistics>({
+    endpoint: "/api/v1/bots/statistics",
+    queryKey: ["bot-stats"],
+    mockData: {
+      totalBots: 5,
+      activeBots: 3,
+      totalCommands: 10,
+      activeCommands: 5,
+      totalScheduledMessages: 20,
+      activeScheduledMessages: 10,
     },
   });
 
@@ -325,9 +343,46 @@ const Bots = () => {
       filterable: true,
     },
     {
-      header: "Created At",
-      accessorKey: "created_at",
-      sortable: true,
+      header: "Configuration",
+      accessorKey: "configuration",
+      cell: (item: Bot) => {
+        const config = item.configuration || {};
+        return (
+          <div>
+            {config.webhookUrl && (
+              <div>
+                <strong>Webhook URL:</strong> {config.webhookUrl}
+              </div>
+            )}
+            {config.pollingInterval && (
+              <div>
+                <strong>Polling Interval:</strong> {config.pollingInterval} sec
+              </div>
+            )}
+            {config.allowedUpdates && (
+              <div>
+                <strong>Allowed Updates:</strong> {config.allowedUpdates}
+              </div>
+            )}
+            {config.isWebhookEnabled && (
+              <div>
+                <strong>Webhook Enabled:</strong>{" "}
+                {config.isWebhookEnabled ? "Yes" : "No"}
+              </div>
+            )}
+            {config.updateMethod && (
+              <div>
+                <strong>Update Method:</strong> {config.updateMethod}
+              </div>
+            )}
+            {config.maxConnections && (
+              <div>
+                <strong>Max Connections:</strong> {config.maxConnections}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: "Actions",
@@ -349,7 +404,7 @@ const Bots = () => {
       ],
     },
     {
-      id: "type",
+      id: "updateMethod",
       label: "Type",
       type: "select",
       options: [
@@ -417,10 +472,7 @@ const Bots = () => {
         }
       />
 
-      <BotStatsCards
-        totalBots={botsData?.length || 0}
-        activeBots={getActiveBotsCount()}
-      />
+      {!isStatsLoading && <BotStatsCards botstats={botStats} />}
 
       <div className="mt-4">
         <DataFilters

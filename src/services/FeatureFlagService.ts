@@ -1,6 +1,6 @@
+import { FeatureFlag } from "@/types/Configuration";
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
-import { FeatureFlag } from "@/types/FeatureFlag";
 
 /**
  * Service for feature flags operations
@@ -68,7 +68,7 @@ class FeatureFlagService {
   static async isEnabled(key: string): Promise<boolean> {
     try {
       const flag = await this.getByKey(key);
-      return flag?.isActive || false;
+      return flag?.enabled || false;
     } catch (error) {
       LoggingService.error(
         "feature_flags",
@@ -98,7 +98,7 @@ class FeatureFlagService {
     }
 
     // Default to false if not found
-    return true;
+    return false;
   }
 
   /**
@@ -110,7 +110,7 @@ class FeatureFlagService {
 
       // Update cache
       flags.forEach((flag) => {
-        this.cachedFlags[flag.key] = flag.isActive;
+        this.cachedFlags[flag.name] = flag.enabled;
       });
 
       LoggingService.info(
@@ -134,28 +134,107 @@ class FeatureFlagService {
    * @param isActive True to enable, false to disable
    * @returns The updated feature flag
    */
-  static async toggle(
-    id: number,
-    isActive: boolean
-  ): Promise<FeatureFlag | undefined> {
+  static async toggle(id: number): Promise<FeatureFlag | undefined> {
     try {
       LoggingService.info(
         "feature_flags",
         "toggle",
-        `Toggling feature flag ${id} to ${isActive}`
+        `Toggling feature flag ${id}`
       );
       return await EnhancedApiService.put<FeatureFlag>(
-        `${this.API_ENDPOINT}/${id}/toggle`,
-        { isActive }
+        `${this.API_ENDPOINT}/${id}/toggle`
       );
     } catch (error) {
       LoggingService.error(
         "feature_flags",
         "toggle_failed",
-        `Failed to toggle feature flag ${id} to ${isActive}`,
+        `Failed to toggle feature flag ${id}`,
         error
       );
       return undefined;
+    }
+  }
+
+  /**
+   * Create a new feature flag
+   * @param flag The feature flag to create
+   * @returns The created feature flag
+   */
+  static async create(
+    flag: Partial<FeatureFlag>
+  ): Promise<FeatureFlag | undefined> {
+    try {
+      LoggingService.info(
+        "feature_flags",
+        "create",
+        `Creating feature flag ${flag.name}`
+      );
+      return await EnhancedApiService.post<FeatureFlag>(
+        this.API_ENDPOINT,
+        flag
+      );
+    } catch (error) {
+      LoggingService.error(
+        "feature_flags",
+        "create_failed",
+        `Failed to create feature flag ${flag.name}`,
+        error
+      );
+      return undefined;
+    }
+  }
+  /**
+   * Update an existing feature flag
+   * @param flag The feature flag to update
+   * @returns The updated feature flag
+   */
+  static async update(
+    id: number,
+    flag: Partial<FeatureFlag>
+  ): Promise<FeatureFlag | undefined> {
+    try {
+      LoggingService.info(
+        "feature_flags",
+        "update",
+        `Updating feature flag ${flag.name}`
+      );
+      return await EnhancedApiService.put<FeatureFlag>(
+        `${this.API_ENDPOINT}/${id}`,
+        flag
+      );
+    } catch (error) {
+      LoggingService.error(
+        "feature_flags",
+        "update_failed",
+        `Failed to update feature flag ${flag.name}`,
+        error
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * Delete a feature flag
+   * @param id The feature flag ID
+   * @returns True if deleted, false otherwise
+   */
+  static async delete(id: number): Promise<boolean> {
+    try {
+      LoggingService.info(
+        "feature_flags",
+        "delete",
+        `Deleting feature flag ${id}`
+      );
+      await EnhancedApiService.delete(`${this.API_ENDPOINT}/${id}`);
+      return true;
+    } catch (error) {
+      LoggingService.error(
+        "feature_flags",
+        "delete_failed",
+        `Failed to delete feature flag ${id}`,
+        error
+      );
+      return false;
     }
   }
 }

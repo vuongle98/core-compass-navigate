@@ -1,16 +1,15 @@
 export interface FeatureFlag {
-  id?: number;
-  key: string;
+  id: number;
+  name: string;
   value?: string;
   type?: string;
   description?: string;
   enabled: boolean;
-  environments?: string[];
+  environment?: "ALL" | "PROD" | "DEV" | "STAGING";
   roles?: string[];
-  lastUpdated?: string;
   createdAt?: string;
   updatedAt?: string;
-  group?: string;
+  category?: string;
 }
 
 export interface FeatureFlagConfig {

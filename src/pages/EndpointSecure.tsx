@@ -116,16 +116,16 @@ const EndpointSecures = () => {
         { value: "DELETE", label: "DELETE" },
       ],
     },
-    {
-      id: "module",
-      label: "Module",
-      type: "select",
-      options: [
-        { value: "USER", label: "User" },
-        { value: "ADMIN", label: "Admin" },
-        { value: "product", label: "Product" },
-      ],
-    },
+    // {
+    //   id: "module",
+    //   label: "Module",
+    //   type: "select",
+    //   options: [
+    //     { value: "USER", label: "User" },
+    //     { value: "ADMIN", label: "Admin" },
+    //     { value: "product", label: "Product" },
+    //   ],
+    // },
   ];
 
   // Actions for endpoints

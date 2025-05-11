@@ -164,7 +164,7 @@ export function SidebarNav({ collapsed }: SidebarNavProps) {
   const chatSystemEnabled = useFeatureFlag("chat_system");
 
   return (
-    <div className="flex flex-col flex-1 py-2 px-3">
+    <div className="flex flex-col flex-1 py-2 px-3 overflow-y-auto overflow-x-hidden">
       <NavItem
         href="/"
         icon={BarChart}

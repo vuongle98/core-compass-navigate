@@ -4,13 +4,13 @@ import { DataTable } from "@/components/ui/DataTable";
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useDetailView } from "@/hooks/use-detail-view";
-import { UserProfile } from "@/components/users/UserProfile";
+import { UserProfile } from "@/components/user/UserProfile";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import DataFilters from "@/components/common/DataFilters";
-import { CreateUserDialog } from "@/components/users/CreateUserDialog";
+import { CreateUserDialog } from "@/components/user/CreateUserDialog";
 import {
   Popover,
   PopoverContent,

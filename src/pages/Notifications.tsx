@@ -3,7 +3,16 @@ import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import { Archive, Check, Download, FileUp, Trash2, Upload } from "lucide-react";
+import {
+  Archive,
+  Bell,
+  BellRing,
+  Check,
+  Download,
+  FileUp,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -19,6 +28,15 @@ import DataFilters from "@/components/common/DataFilters";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { Notification } from "@/types/Notification";
 import { FilterOption } from "@/types/Common";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Array<Notification>>([
@@ -482,138 +500,121 @@ const Notifications = () => {
       />
 
       <div className="mt-4">
-        <DataTable
-          data={notificationsData}
-          columns={columns}
-          title="Notification Management"
-          pagination={true}
-          isLoading={isLoading}
-          pageIndex={page}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          totalItems={totalItems}
-          showAddButton={true}
-        />
-        {/* <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid w-[400px] grid-cols-2 mb-4">
-              <TabsTrigger value="overview">
-                <Bell className="mr-2 h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="analytics">
-                <BellRing className="mr-2 h-4 w-4" />
-                Delivery Analytics
-              </TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-[400px] grid-cols-2 mb-4">
+            <TabsTrigger value="overview">
+              <Bell className="mr-2 h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <BellRing className="mr-2 h-4 w-4" />
+              Delivery Analytics
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="overview">
-              <DataTable
-                data={notificationsData}
-                columns={columns}
-                title="Notification Management"
-                pagination={true}
-                isLoading={isLoading}
-                pageIndex={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                totalItems={totalItems}
-                showAddButton={true}
-              />
-            </TabsContent>
+          <TabsContent value="overview">
+            <DataTable
+              data={notificationsData}
+              columns={columns}
+              title="Notification Management"
+              pagination={true}
+              isLoading={isLoading}
+              pageIndex={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              totalItems={totalItems}
+              showAddButton={true}
+            />
+          </TabsContent>
 
-            <TabsContent value="analytics">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Delivery Success Rate</CardTitle>
-                    <CardDescription>Last 30 days</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">98.2%</div>
-                    <Progress value={98.2} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      +2.1% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Open Rate</CardTitle>
-                    <CardDescription>Last 30 days</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">62.5%</div>
-                    <Progress value={62.5} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      -1.8% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Click Rate</CardTitle>
-                    <CardDescription>Last 30 days</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">37.8%</div>
-                    <Progress value={37.8} className="mt-2" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      +4.3% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
+          <TabsContent value="analytics">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>Channel Performance</CardTitle>
-                  <CardDescription>Delivery success by channel</CardDescription>
+                <CardHeader className="pb-2">
+                  <CardTitle>Delivery Success Rate</CardTitle>
+                  <CardDescription>Last 30 days</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">Email</span>
-                        <span className="text-sm">98.7%</span>
-                      </div>
-                      <Progress value={98.7} />
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">In-App</span>
-                        <span className="text-sm">99.9%</span>
-                      </div>
-                      <Progress value={99.9} />
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">SMS</span>
-                        <span className="text-sm">95.2%</span>
-                      </div>
-                      <Progress value={95.2} />
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">
-                          Push Notification
-                        </span>
-                        <span className="text-sm">89.6%</span>
-                      </div>
-                      <Progress value={89.6} />
-                    </div>
-                  </div>
+                  <div className="text-2xl font-bold">98.2%</div>
+                  <Progress value={98.2} className="mt-2" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    +2.1% from last month
+                  </p>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs> */}
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle>Open Rate</CardTitle>
+                  <CardDescription>Last 30 days</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">62.5%</div>
+                  <Progress value={62.5} className="mt-2" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    -1.8% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle>Click Rate</CardTitle>
+                  <CardDescription>Last 30 days</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">37.8%</div>
+                  <Progress value={37.8} className="mt-2" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    +4.3% from last month
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Channel Performance</CardTitle>
+                <CardDescription>Delivery success by channel</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Email</span>
+                      <span className="text-sm">98.7%</span>
+                    </div>
+                    <Progress value={98.7} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">In-App</span>
+                      <span className="text-sm">99.9%</span>
+                    </div>
+                    <Progress value={99.9} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">SMS</span>
+                      <span className="text-sm">95.2%</span>
+                    </div>
+                    <Progress value={95.2} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        Push Notification
+                      </span>
+                      <span className="text-sm">89.6%</span>
+                    </div>
+                    <Progress value={89.6} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Detail Modal */}

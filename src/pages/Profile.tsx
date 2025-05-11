@@ -23,7 +23,7 @@ import { Loader2, Pencil, Save, User, Settings } from "lucide-react";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserService from "@/services/UserService";
-import UserSettingsComponent from "@/components/users/UserSettingsComponent";
+import UserSettingsComponent from "@/components/user/UserSettingsComponent";
 
 const profileSchema = z.object({
   firstName: z.string().optional(),

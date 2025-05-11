@@ -102,14 +102,14 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarNav collapsed={collapsed} />
         <div className="mt-auto p-2 border-t border-sidebar-border">
           {!collapsed ? (
-            <div className="flex items-center justify-between">
-              <UserMenu />
+            <div className={cn("flex items-center justify-between")}>
+              <UserMenu collapsed />
               {!collapsed && (
                 <span className="text-sm text-muted-foreground">v1.0.0</span>
               )}
             </div>
           ) : (
-            <UserMenu />
+            <UserMenu collapsed />
           )}
         </div>
 

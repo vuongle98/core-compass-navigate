@@ -1,4 +1,10 @@
-import { Bot, BotCommand, BotHistory, BotScheduledMessage } from "@/types/Bot";
+import {
+  Bot,
+  BotCommand,
+  BotHistory,
+  BotScheduledMessage,
+  BotStatistics,
+} from "@/types/Bot";
 import EnhancedApiService from "./EnhancedApiService";
 import LoggingService from "./LoggingService";
 
@@ -402,6 +408,32 @@ class BotService {
         "bot_service",
         "get_bot_status_history_failed",
         `Failed to fetch bot status history for bot ${botId}`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get bot statistics
+   * @returns Bot statistics
+   * @throws Error if the fetching fails
+   */
+  static async getStatistics() {
+    try {
+      LoggingService.info(
+        "bot_service",
+        "get_statistics",
+        "Fetching bot statistics"
+      );
+      return await EnhancedApiService.get<BotStatistics>(
+        "/api/v1/bots/statistics"
+      );
+    } catch (error) {
+      LoggingService.error(
+        "bot_service",
+        "get_statistics_failed",
+        "Failed to fetch bot statistics",
         error
       );
       throw error;
