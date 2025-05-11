@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters } from "@/components/common/DataFilters";
@@ -346,157 +346,154 @@ const Files = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs items={[{ label: "Files", path: "/files" }]} />
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs items={[{ label: "Files", path: "/files" }]} />
 
-        <PageHeader title="Files" description="Manage your files">
-          <div {...getRootProps()} className="mt-4">
-            <Input {...getInputProps()} id="upload" className="hidden" />
-            <Label htmlFor="upload" className="cursor-pointer">
-              <Button>Upload Files</Button>
-            </Label>
-          </div>
-        </PageHeader>
-        <DataFilters
-          filters={{ search: searchTerm }}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setSearchTerm(newFilters.search as string);
-            const updateSearchParams = (filters: QueryFilters) => {
-              const params = new URLSearchParams();
-              Object.entries(filters).forEach(([key, value]) => {
-                if (value !== undefined) {
-                  params.set(key, value.toString());
-                }
-              });
-              setSearchParams(params);
-            };
-            updateSearchParams(newFilters);
-          }}
-          onReset={() => {
-            setSearchTerm("");
-            setSearchParams({});
-          }}
-          className="mt-4"
-        />
-
-        <div className="mt-4">
-          <DataTable
-            data={filesData}
-            columns={columns}
-            title="Files"
-            pagination={true}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            isLoading={isLoading}
-          />
+      <PageHeader title="Files" description="Manage your files">
+        <div {...getRootProps()} className="mt-4">
+          <Input {...getInputProps()} id="upload" className="hidden" />
+          <Label htmlFor="upload" className="cursor-pointer">
+            <Button>Upload Files</Button>
+          </Label>
         </div>
+      </PageHeader>
+      <DataFilters
+        filters={{ search: searchTerm }}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setSearchTerm(newFilters.search as string);
+          const updateSearchParams = (filters: QueryFilters) => {
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+              if (value !== undefined) {
+                params.set(key, value.toString());
+              }
+            });
+            setSearchParams(params);
+          };
+          updateSearchParams(newFilters);
+        }}
+        onReset={() => {
+          setSearchTerm("");
+          setSearchParams({});
+        }}
+        className="mt-4"
+      />
 
-        {/* view file dialog */}
-        {selectedItem && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closeItemDetail}
-            title="File Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div className="flex items-center">
-                {selectedItem.contentType.startsWith("image/") ||
-                  (["jpg", "png", "gif"].includes(selectedItem.extension) ? (
-                    // Show image preview if the file is an image
-                    <img
-                      src={selectedItem.path}
-                      alt={selectedItem.name}
-                      className="mr-2 h-16 w-16 object-cover rounded"
-                    />
-                  ) : (
-                    <LucideFile className="mr-2 h-4 w-4" />
-                  ))}
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Name</h3>
-                <p className="mt-1">{selectedItem.name}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Extension</h3>
-                <p className="mt-1">{selectedItem.extension}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Content type</h3>
-                <p className="mt-1">{selectedItem.contentType}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Size</h3>
-                <p className="mt-1">{selectedItem.size} KB</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Created At</h3>
-                <p className="mt-1">{selectedItem.createdAt}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Updated At</h3>
-                <p className="mt-1">{selectedItem.updatedAt}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Path</h3>
-                <p className="mt-1">{selectedItem.path}</p>
+      <div className="mt-4">
+        <DataTable
+          data={filesData}
+          columns={columns}
+          title="Files"
+          pagination={true}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* view file dialog */}
+      {selectedItem && (
+        <DetailViewModal
+          isOpen={isDetailOpen}
+          onClose={closeItemDetail}
+          title="File Details"
+          size="md"
+          showCloseButton={false}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center">
+              {selectedItem.contentType.startsWith("image/") ||
+                (["jpg", "png", "gif"].includes(selectedItem.extension) ? (
+                  // Show image preview if the file is an image
+                  <img
+                    src={selectedItem.path}
+                    alt={selectedItem.name}
+                    className="mr-2 h-16 w-16 object-cover rounded"
+                  />
+                ) : (
+                  <LucideFile className="mr-2 h-4 w-4" />
+                ))}
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Name</h3>
+              <p className="mt-1">{selectedItem.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Extension</h3>
+              <p className="mt-1">{selectedItem.extension}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Content type</h3>
+              <p className="mt-1">{selectedItem.contentType}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Size</h3>
+              <p className="mt-1">{selectedItem.size} KB</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Created At</h3>
+              <p className="mt-1">{selectedItem.createdAt}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Updated At</h3>
+              <p className="mt-1">{selectedItem.updatedAt}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Path</h3>
+              <p className="mt-1">{selectedItem.path}</p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
+
+      {/* Share File Dialog - Replace the native select with Shadcn UI Select */}
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share File</DialogTitle>
+            <DialogDescription>
+              Choose how you want to share this file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="shareType" className="text-right">
+                Share Type
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={shareType}
+                  onValueChange={(value) => setShareType(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select share type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </DetailViewModal>
-        )}
-
-        {/* Share File Dialog - Replace the native select with Shadcn UI Select */}
-        <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Share File</DialogTitle>
-              <DialogDescription>
-                Choose how you want to share this file.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="shareType" className="text-right">
-                  Share Type
-                </Label>
-                <div className="col-span-3">
-                  <Select
-                    value={shareType}
-                    onValueChange={(value) => setShareType(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select share type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public</SelectItem>
-                      <SelectItem value="private">Private</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setIsShareDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" onClick={handleShareConfirm}>
-                Share
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsShareDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleShareConfirm}>
+              Share
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

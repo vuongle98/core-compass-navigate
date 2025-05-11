@@ -1,13 +1,12 @@
-
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import useLocalStorage from '@/hooks/use-local-storage';
-import { ThemeToggle } from '../../ThemeToggle';
-import { SidebarNav } from './SidebarNav';
-import { UserMenu } from '../UserMenu';
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import useLocalStorage from "@/hooks/use-local-storage";
+import { ThemeToggle } from "../../ThemeToggle";
+import { SidebarNav } from "./SidebarNav";
+import { UserMenu } from "../UserMenu";
 
 interface SidebarProps {
   className?: string;
@@ -15,10 +14,13 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const isMobile = useIsMobile();
-  
-  const [collapsed, setCollapsed] = useLocalStorage('sidebar-collapsed', isMobile);
+
+  const [collapsed, setCollapsed] = useLocalStorage(
+    "sidebar-collapsed",
+    isMobile
+  );
   const [hidden, setHidden] = useState(isMobile);
-  
+
   // Update collapsed state when screen size changes
   useEffect(() => {
     if (isMobile) {
@@ -27,12 +29,12 @@ export function Sidebar({ className }: SidebarProps) {
       setHidden(false);
     }
   }, [isMobile]);
-  
+
   // Toggle sidebar function
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
-  
+
   const toggleVisibility = () => {
     setHidden(!hidden);
   };
@@ -52,19 +54,21 @@ export function Sidebar({ className }: SidebarProps) {
           <Menu size={18} />
         </Button>
       )}
-    
+
       <aside
         className={cn(
-          'bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen z-40',
-          collapsed ? 'w-16' : 'w-64',
-          hidden ? 'hidden' : 'flex',
-          isMobile ? 'fixed inset-y-0 left-0 shadow-xl' : 'sticky top-0',
+          "bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen z-40",
+          collapsed ? "w-16" : "w-64",
+          hidden ? "hidden" : "flex",
+          isMobile ? "fixed inset-y-0 left-0 shadow-xl" : "sticky top-0",
           className
         )}
       >
         <div className="p-4 flex items-center justify-between border-b border-sidebar-border">
           {!collapsed && (
-            <h2 className="text-lg font-semibold text-sidebar-foreground">CoreApp</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+              CoreApp
+            </h2>
           )}
           <div className="flex items-center ml-auto">
             {!collapsed && !isMobile && <ThemeToggle />}
@@ -86,19 +90,23 @@ export function Sidebar({ className }: SidebarProps) {
                 className={collapsed ? "mx-auto" : ""}
                 type="button"
               >
-                {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                {collapsed ? (
+                  <ChevronRight size={18} />
+                ) : (
+                  <ChevronLeft size={18} />
+                )}
               </Button>
             )}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <SidebarNav collapsed={collapsed} />
-        </div>
+        <SidebarNav collapsed={collapsed} />
         <div className="mt-auto p-2 border-t border-sidebar-border">
           {!collapsed ? (
             <div className="flex items-center justify-between">
               <UserMenu />
-              {!collapsed && <span className="text-sm text-muted-foreground">v1.0.0</span>}
+              {!collapsed && (
+                <span className="text-sm text-muted-foreground">v1.0.0</span>
+              )}
             </div>
           ) : (
             <UserMenu />
@@ -107,8 +115,8 @@ export function Sidebar({ className }: SidebarProps) {
 
         {/* Backdrop overlay for mobile */}
         {isMobile && !hidden && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-30" 
+          <div
+            className="fixed inset-0 bg-black/50 z-30"
             onClick={toggleVisibility}
             aria-hidden="true"
           />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import useApiQuery from "@/hooks/use-api-query";
@@ -193,60 +193,57 @@ const Blogs = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader title="Blogs" description="Manage blog posts" />
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          className="mt-4"
-        />
-        {isLoading ? (
-          <div className="mt-4 space-y-3">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ) : (
-          <div className="mt-4">
-            <DataTable
-              addButtonText="Create new"
-              onAddClick={handleAddBlog}
-              data={blogs || []}
-              columns={columns}
-              title="Blog Posts"
-              pagination={true}
-              showAddButton={true}
-              pageIndex={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              totalItems={totalItems}
-            />
-          </div>
-        )}
+    <div className="flex-1 overflow-y-auto p-8">
+      <PageHeader title="Blogs" description="Manage blog posts" />
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        className="mt-4"
+      />
+      {isLoading ? (
+        <div className="mt-4 space-y-3">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      ) : (
+        <div className="mt-4">
+          <DataTable
+            addButtonText="Create new"
+            onAddClick={handleAddBlog}
+            data={blogs || []}
+            columns={columns}
+            title="Blog Posts"
+            pagination={true}
+            showAddButton={true}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
+          />
+        </div>
+      )}
 
-        {/* Delete Confirmation Dialog */}
-        {isDialogOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-md shadow-lg">
-              <h2 className="text-lg font-semibold mb-4">Delete Blog</h2>
-              <p>Are you sure you want to delete "{selectedBlog?.title}"?</p>
-              <div className="mt-4 flex justify-end space-x-2">
-                <Button variant="ghost" onClick={cancelDelete}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" onClick={confirmDelete}>
-                  Delete
-                </Button>
-              </div>
+      {/* Delete Confirmation Dialog */}
+      {isDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-md shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Delete Blog</h2>
+            <p>Are you sure you want to delete "{selectedBlog?.title}"?</p>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button variant="ghost" onClick={cancelDelete}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Delete
+              </Button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 };

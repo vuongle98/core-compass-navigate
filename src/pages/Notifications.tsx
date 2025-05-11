@@ -1,18 +1,9 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import {
-  Archive,
-  Check,
-  Download,
-  FileUp,
-  Trash2,
-  Upload,
-  Bell,
-  BellRing,
-} from "lucide-react";
+import { Archive, Check, Download, FileUp, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -22,15 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import useApiQuery from "@/hooks/use-api-query";
 import useDebounce from "@/hooks/use-debounce";
 import DataFilters from "@/components/common/DataFilters";
@@ -84,6 +66,70 @@ const Notifications = () => {
     },
     {
       id: 5,
+      title: "Subscription Renewal",
+      channel: "Email",
+      audience: "Premium Users",
+      scheduledFor: "2025-05-01",
+      status: "Scheduled",
+      content:
+        "Your subscription will renew soon. Please update payment details if needed.",
+      priority: "medium",
+    },
+    {
+      id: 6,
+      title: "System Maintenance",
+      channel: "Email, In-App",
+      audience: "All Users",
+      scheduledFor: "2025-04-20",
+      status: "Scheduled",
+      content:
+        "The system will undergo maintenance from 2-4 AM EST. Please save your work.",
+      priority: "medium",
+    },
+    {
+      id: 7,
+      title: "New Feature Announcement",
+      channel: "In-App",
+      audience: "Premium Users",
+      scheduledFor: "2025-04-18",
+      status: "Sent",
+      content:
+        "We've added exciting new features to your premium subscription!",
+      priority: "low",
+    },
+    {
+      id: 8,
+      title: "Account Verification",
+      channel: "Email",
+      audience: "New Users",
+      scheduledFor: "Automated",
+      status: "Active",
+      content: "Please verify your account to access all features.",
+      priority: "high",
+    },
+    {
+      id: 9,
+      title: "Holiday Notice",
+      channel: "Email, SMS",
+      audience: "All Users",
+      scheduledFor: "2025-04-30",
+      status: "Draft",
+      content: "Our offices will be closed during the upcoming holiday.",
+      priority: "low",
+    },
+    {
+      id: 10,
+      title: "Subscription Renewal",
+      channel: "Email",
+      audience: "Premium Users",
+      scheduledFor: "2025-05-01",
+      status: "Scheduled",
+      content:
+        "Your subscription will renew soon. Please update payment details if needed.",
+      priority: "medium",
+    },
+    {
+      id: 11,
       title: "Subscription Renewal",
       channel: "Email",
       audience: "Premium Users",
@@ -374,83 +420,82 @@ const Notifications = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
-        <PageHeader
-          title="Notifications"
-          description="Manage system notifications"
-          actions={
-            <div className="flex space-x-2">
-              {selectedItems.length > 0 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete ({selectedItems.length})
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkArchive}
-                  >
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkPublish}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Publish
-                  </Button>
-                </>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsExportModalOpen(true)}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </div>
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
+      <PageHeader
+        title="Notifications"
+        description="Manage system notifications"
+        actions={
+          <div className="flex space-x-2">
+            {selectedItems.length > 0 && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleBulkDelete}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete ({selectedItems.length})
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBulkArchive}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleBulkPublish}>
+                  <Check className="mr-2 h-4 w-4" />
+                  Publish
+                </Button>
+              </>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsExportModalOpen(true)}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        }
+      />
+
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+          // Update the search term when filters change
+          if (newFilters.search !== undefined) {
+            setSearchTerm(newFilters.search.toString());
           }
-        />
+        }}
+        onReset={() => {
+          resetFilters();
+          setSearchTerm("");
+          refresh();
+        }}
+        className="mb-4"
+      />
 
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-            // Update the search term when filters change
-            if (newFilters.search !== undefined) {
-              setSearchTerm(newFilters.search.toString());
-            }
-          }}
-          onReset={() => {
-            resetFilters();
-            setSearchTerm("");
-            refresh();
-          }}
-          className="mb-4"
+      <div className="mt-4">
+        <DataTable
+          data={notificationsData}
+          columns={columns}
+          title="Notification Management"
+          pagination={true}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          showAddButton={true}
         />
-
-        <div className="mt-4">
-          <Tabs
+        {/* <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
@@ -568,165 +613,162 @@ const Notifications = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
-        </div>
+          </Tabs> */}
+      </div>
 
-        {/* Detail Modal */}
-        <Dialog
-          open={showDetails !== null}
-          onOpenChange={() => setShowDetails(null)}
-        >
-          <DialogContent className="sm:max-w-lg">
-            {showDetails !== null &&
-              (() => {
-                const notification = notificationsData.find(
-                  (n) => n.id === showDetails
-                );
-                if (!notification) return null;
+      {/* Detail Modal */}
+      <Dialog
+        open={showDetails !== null}
+        onOpenChange={() => setShowDetails(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          {showDetails !== null &&
+            (() => {
+              const notification = notificationsData.find(
+                (n) => n.id === showDetails
+              );
+              if (!notification) return null;
 
-                return (
-                  <>
-                    <DialogHeader>
-                      <DialogTitle>{notification.title}</DialogTitle>
-                      <DialogDescription>
-                        Scheduled for {notification.scheduledFor} •{" "}
-                        {notification.audience}
-                      </DialogDescription>
-                    </DialogHeader>
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>{notification.title}</DialogTitle>
+                    <DialogDescription>
+                      Scheduled for {notification.scheduledFor} •{" "}
+                      {notification.audience}
+                    </DialogDescription>
+                  </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                          Content
-                        </h3>
-                        <p>{notification.content}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                            Status
-                          </h3>
-                          <p>{notification.status}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                            Channel
-                          </h3>
-                          <p>{notification.channel}</p>
-                        </div>
-                      </div>
+                  <div className="grid gap-4 py-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                        Content
+                      </h3>
+                      <p>{notification.content}</p>
                     </div>
 
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowDetails(null)}
-                      >
-                        Close
-                      </Button>
-                      {notification.status !== "Sent" && (
-                        <Button
-                          onClick={() => {
-                            setNotifications((prev) =>
-                              prev.map((item) =>
-                                item.id === showDetails
-                                  ? { ...item, status: "Sent" }
-                                  : item
-                              )
-                            );
-                            toast.success("Notification published");
-                            setShowDetails(null);
-                          }}
-                        >
-                          Publish Now
-                        </Button>
-                      )}
-                    </DialogFooter>
-                  </>
-                );
-              })()}
-          </DialogContent>
-        </Dialog>
-
-        {/* Import Modal */}
-        <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Import Notifications</DialogTitle>
-              <DialogDescription>
-                Upload a CSV or Excel file to import notifications
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <FileUp className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or
-                      drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      CSV, XLSX (MAX. 10MB)
-                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                          Status
+                        </h3>
+                        <p>{notification.status}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                          Channel
+                        </h3>
+                        <p>{notification.channel}</p>
+                      </div>
+                    </div>
                   </div>
-                  <input id="dropzone-file" type="file" className="hidden" />
-                </label>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsImportModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleImportCSV}>Import</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
-        {/* Export Modal */}
-        <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Export Notifications</DialogTitle>
-              <DialogDescription>
-                Choose a format to export your notifications
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="flex justify-around">
-                <Button
-                  variant="outline"
-                  className="w-40 h-32 flex flex-col items-center justify-center"
-                  onClick={() => handleExportData("csv")}
-                >
-                  <FileUp className="w-8 h-8 mb-4" />
-                  <span>CSV</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-40 h-32 flex flex-col items-center justify-center"
-                  onClick={() => handleExportData("excel")}
-                >
-                  <FileUp className="w-8 h-8 mb-4" />
-                  <span>Excel</span>
-                </Button>
-              </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDetails(null)}
+                    >
+                      Close
+                    </Button>
+                    {notification.status !== "Sent" && (
+                      <Button
+                        onClick={() => {
+                          setNotifications((prev) =>
+                            prev.map((item) =>
+                              item.id === showDetails
+                                ? { ...item, status: "Sent" }
+                                : item
+                            )
+                          );
+                          toast.success("Notification published");
+                          setShowDetails(null);
+                        }}
+                      >
+                        Publish Now
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </>
+              );
+            })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Modal */}
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Notifications</DialogTitle>
+            <DialogDescription>
+              Upload a CSV or Excel file to import notifications
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <FileUp className="w-8 h-8 mb-4 text-gray-500" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500">CSV, XLSX (MAX. 10MB)</p>
+                </div>
+                <input id="dropzone-file" type="file" className="hidden" />
+              </label>
             </div>
-            <DialogFooter>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleImportCSV}>Import</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Modal */}
+      <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Notifications</DialogTitle>
+            <DialogDescription>
+              Choose a format to export your notifications
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex justify-around">
               <Button
                 variant="outline"
-                onClick={() => setIsExportModalOpen(false)}
+                className="w-40 h-32 flex flex-col items-center justify-center"
+                onClick={() => handleExportData("csv")}
               >
-                Cancel
+                <FileUp className="w-8 h-8 mb-4" />
+                <span>CSV</span>
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
+              <Button
+                variant="outline"
+                className="w-40 h-32 flex flex-col items-center justify-center"
+                onClick={() => handleExportData("excel")}
+              >
+                <FileUp className="w-8 h-8 mb-4" />
+                <span>Excel</span>
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsExportModalOpen(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

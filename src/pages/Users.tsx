@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { useState, useCallback, useEffect } from "react";
@@ -331,68 +331,62 @@ const Users = () => {
   ];
 
   return (
-    <div className="flex min-h-screen h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        <Breadcrumbs />
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
 
-        <div className="mb-4">
-          <PageHeader
-            title="Users"
-            description="Manage your application users"
-            showAddButton={false}
-          />
-        </div>
+      <PageHeader
+        title="Users"
+        description="Manage your application users"
+        showAddButton={false}
+      />
 
-        <div className="mb-4">
-          <DataFilters
-            filters={filters}
-            setFilters={setFilters}
-            resetFilters={resetFilters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-            }}
-            onReset={() => {
-              resetFilters();
-              refresh();
-            }}
-          />
-        </div>
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+        }}
+        onReset={() => {
+          resetFilters();
+          refresh();
+        }}
+        className="mb-4"
+      />
 
-        <div className="mb-4">
-          <DataTable
-            data={userData}
-            columns={columns}
-            title="User Management"
-            pagination={true}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            showAddButton={true}
-            onAddClick={() => setIsCreateDialogOpen(true)}
-          />
-        </div>
-
-        {selectedUser && (
-          <UserProfile
-            userId={selectedUser.id}
-            isOpen={isProfileOpen}
-            onClose={closeUserProfile}
-          />
-        )}
-
-        <CreateUserDialog
-          isOpen={isCreateDialogOpen}
-          onClose={() => {
-            setIsCreateDialogOpen(false);
-          }}
-          onCreate={handleAddUser}
+      <div className="mb-4">
+        <DataTable
+          data={userData}
+          columns={columns}
+          title="User Management"
+          pagination={true}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          showAddButton={true}
+          onAddClick={() => setIsCreateDialogOpen(true)}
         />
-      </main>
+      </div>
+
+      {selectedUser && (
+        <UserProfile
+          userId={selectedUser.id}
+          isOpen={isProfileOpen}
+          onClose={closeUserProfile}
+        />
+      )}
+
+      <CreateUserDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => {
+          setIsCreateDialogOpen(false);
+        }}
+        onCreate={handleAddUser}
+      />
     </div>
   );
 };

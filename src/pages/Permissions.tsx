@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
@@ -319,177 +319,169 @@ const Permissions = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
-        <PageHeader
-          title="Permissions"
-          description="Manage system permissions"
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
+      <PageHeader title="Permissions" description="Manage system permissions" />
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        className="mt-4"
+      />
+      <div className="mt-4">
+        <DataTable
+          data={permissionData}
+          columns={columns}
+          title="Permission Management"
+          pagination={true}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          showAddButton={true}
+          onAddClick={openCreateDialog}
         />
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          className="mt-4"
-        />
-        <div className="mt-4">
-          <DataTable
-            data={permissionData}
-            columns={columns}
-            title="Permission Management"
-            pagination={true}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            showAddButton={true}
-            onAddClick={openCreateDialog}
-          />
-        </div>
+      </div>
 
-        {selectedPermission && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closePermissionDetail}
-            title="Permission Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium">Name</h3>
-                <p className="mt-1">{selectedPermission.name}</p>
+      {selectedPermission && (
+        <DetailViewModal
+          isOpen={isDetailOpen}
+          onClose={closePermissionDetail}
+          title="Permission Details"
+          size="md"
+          showCloseButton={false}
+        >
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium">Name</h3>
+              <p className="mt-1">{selectedPermission.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Code</h3>
+              <p className="mt-1">{selectedPermission.code}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Description</h3>
+              <p className="mt-1">{selectedPermission.description}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Module</h3>
+              <p className="mt-1">{selectedPermission.module}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Status</h3>
+              <p className="mt-1">
+                {selectedPermission.isActive ? "Active" : "Inactive"}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Created At</h3>
+              <p className="mt-1">{selectedPermission.createdAt}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Updated At</h3>
+              <p className="mt-1">{selectedPermission.updatedAt}</p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingPermission ? "Edit Permission" : "Create New Permission"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingPermission
+                ? "Make changes to the permission details below."
+                : "Enter the details for the new permission."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="code">Code</Label>
+                <Input
+                  id="code"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  placeholder="permission:action"
+                  required
+                />
               </div>
-              <div>
-                <h3 className="text-sm font-medium">Code</h3>
-                <p className="mt-1">{selectedPermission.code}</p>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Permission Name"
+                  required
+                />
               </div>
-              <div>
-                <h3 className="text-sm font-medium">Description</h3>
-                <p className="mt-1">{selectedPermission.description}</p>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Permission description"
+                  rows={3}
+                />
               </div>
-              <div>
-                <h3 className="text-sm font-medium">Module</h3>
-                <p className="mt-1">{selectedPermission.module}</p>
+              <div className="grid gap-2">
+                <Label htmlFor="module">Module</Label>
+                <Select
+                  value={formData.module}
+                  onValueChange={handleModuleChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Users">Users</SelectItem>
+                    <SelectItem value="Roles">Roles</SelectItem>
+                    <SelectItem value="Permissions">Permissions</SelectItem>
+                    <SelectItem value="System">System</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <h3 className="text-sm font-medium">Status</h3>
-                <p className="mt-1">
-                  {selectedPermission.isActive ? "Active" : "Inactive"}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Created At</h3>
-                <p className="mt-1">{selectedPermission.createdAt}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Updated At</h3>
-                <p className="mt-1">{selectedPermission.updatedAt}</p>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={handleCheckboxChange}
+                />
+                <Label htmlFor="isActive">Active</Label>
               </div>
             </div>
-          </DetailViewModal>
-        )}
-
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingPermission
-                  ? "Edit Permission"
-                  : "Create New Permission"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingPermission
-                  ? "Make changes to the permission details below."
-                  : "Enter the details for the new permission."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="code">Code</Label>
-                  <Input
-                    id="code"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleInputChange}
-                    placeholder="permission:action"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Permission Name"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Permission description"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="module">Module</Label>
-                  <Select
-                    value={formData.module}
-                    onValueChange={handleModuleChange}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a module" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Users">Users</SelectItem>
-                      <SelectItem value="Roles">Roles</SelectItem>
-                      <SelectItem value="Permissions">Permissions</SelectItem>
-                      <SelectItem value="System">System</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={handleCheckboxChange}
-                  />
-                  <Label htmlFor="isActive">Active</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting
-                    ? "Processing..."
-                    : editingPermission
-                    ? "Save Changes"
-                    : "Create Permission"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </main>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? "Processing..."
+                  : editingPermission
+                  ? "Save Changes"
+                  : "Create Permission"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

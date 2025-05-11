@@ -98,7 +98,7 @@ class FeatureFlagService {
     }
 
     // Default to false if not found
-    return false;
+    return true;
   }
 
   /**

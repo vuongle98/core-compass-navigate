@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { toast } from "@/components/ui/use-toast";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
@@ -258,88 +258,85 @@ const Tokens = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
 
-        <PageHeader
-          title="API Tokens"
-          description="Manage API access tokens"
+      <PageHeader
+        title="API Tokens"
+        description="Manage API access tokens"
+        showAddButton={false}
+      />
+
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+        }}
+        onReset={() => {
+          resetFilters();
+          refresh();
+        }}
+        className="mt-4"
+      />
+
+      <div className="mt-4">
+        <DataTable
+          data={tokensData}
+          columns={columns}
+          title="Token Management"
+          pagination={true}
           showAddButton={false}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
         />
+      </div>
 
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-          }}
-          onReset={() => {
-            resetFilters();
-            refresh();
-          }}
-          className="mt-4"
-        />
-
-        <div className="mt-4">
-          <DataTable
-            data={tokensData}
-            columns={columns}
-            title="Token Management"
-            pagination={true}
-            showAddButton={false}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-          />
-        </div>
-
-        {/* Token Detail Modal */}
-        {selectedToken && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closeTokenDetail}
-            title="Token Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium">Token</h3>
-                <p className="mt-1">{selectedToken.token}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Issued at</h3>
-                <p className="mt-1">{selectedToken.issuedAt}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Expire at</h3>
-                <p className="mt-1">{selectedToken.expireAt}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Status</h3>
-                <p className="mt-1">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedToken.blacklisted
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {selectedToken.blacklisted ? "Inactive" : "Active"}
-                  </span>
-                </p>
-              </div>
+      {/* Token Detail Modal */}
+      {selectedToken && (
+        <DetailViewModal
+          isOpen={isDetailOpen}
+          onClose={closeTokenDetail}
+          title="Token Details"
+          size="md"
+          showCloseButton={false}
+        >
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium">Token</h3>
+              <p className="mt-1">{selectedToken.token}</p>
             </div>
-          </DetailViewModal>
-        )}
-      </main>
+            <div>
+              <h3 className="text-sm font-medium">Issued at</h3>
+              <p className="mt-1">{selectedToken.issuedAt}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Expire at</h3>
+              <p className="mt-1">{selectedToken.expireAt}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Status</h3>
+              <p className="mt-1">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedToken.blacklisted
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {selectedToken.blacklisted ? "Inactive" : "Active"}
+                </span>
+              </p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
     </div>
   );
 };

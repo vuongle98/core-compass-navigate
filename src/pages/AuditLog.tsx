@@ -1,12 +1,9 @@
-
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/button";
-import {
-  Download, SlidersHorizontal
-} from "lucide-react";
+import { Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -200,8 +197,8 @@ const AuditLog = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (info: { row: { original: AuditLogType } }) => (
-        <span className="text-muted-foreground">{info.row.original.id}</span>
+      cell: (auditLog: AuditLogType) => (
+        <span className="text-muted-foreground">{auditLog.id}</span>
       ),
     },
     {
@@ -211,8 +208,8 @@ const AuditLog = () => {
     {
       header: "User",
       accessorKey: "user",
-      cell: (info: { row: { original: AuditLogType } }) => (
-        <span>{info.row.original.user?.username || "Unknown"}</span>
+      cell: (auditLog: AuditLogType) => (
+        <span>{auditLog.user?.username || "Unknown"}</span>
       ),
     },
     {
@@ -230,89 +227,84 @@ const AuditLog = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
-        <PageHeader
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
+      <PageHeader
+        title="Audit Log"
+        description="Monitor system activities and user actions"
+        actions={
+          <div className="flex space-x-2">
+            {selectedItems.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleBulkDelete}>
+                Delete ({selectedItems.length})
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => handleExportData("csv")}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button onClick={() => setIsFiltersModalOpen(true)}>
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </div>
+        }
+      />
+
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+        }}
+        onReset={() => {
+          resetFilters();
+          refresh();
+        }}
+        className="mt-4"
+      />
+
+      <div className="mt-4">
+        <DataTable
+          data={auditLogsData}
+          columns={columns}
           title="Audit Log"
-          description="Monitor system activities and user actions"
-          actions={
-            <div className="flex space-x-2">
-              {selectedItems.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleBulkDelete}>
-                  Delete ({selectedItems.length})
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => handleExportData("csv")}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button onClick={() => setIsFiltersModalOpen(true)}>
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
-              </Button>
-            </div>
-          }
+          pagination={true}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          showAddButton={false}
         />
+      </div>
 
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-          }}
-          onReset={() => {
-            resetFilters();
-            refresh();
-          }}
-          className="mt-4"
-        />
-
-        <div className="mt-4">
-          <DataTable
-            data={auditLogsData}
-            columns={columns}
-            title="Audit Log"
-            pagination={true}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            showAddButton={false}
-          />
-        </div>
-
-        {/* Filters Modal */}
-        <Dialog open={isFiltersModalOpen} onOpenChange={setIsFiltersModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Filters</DialogTitle>
-              <DialogDescription>
-                Adjust the filters to refine the audit log data.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {/* Add filter components here */}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsFiltersModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={() => setIsFiltersModalOpen(false)}>
-                Apply
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
+      {/* Filters Modal */}
+      <Dialog open={isFiltersModalOpen} onOpenChange={setIsFiltersModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filters</DialogTitle>
+            <DialogDescription>
+              Adjust the filters to refine the audit log data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Add filter components here */}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsFiltersModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => setIsFiltersModalOpen(false)}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

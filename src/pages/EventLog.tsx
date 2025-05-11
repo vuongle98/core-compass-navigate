@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { toast } from "sonner";
@@ -246,8 +246,8 @@ const EventLog = () => {
     {
       header: "#",
       accessorKey: "id",
-      cell: (info: { row: { original: Event } }) => (
-        <span className="text-muted-foreground">{info.row.original.id}</span>
+      cell: (event: Event) => (
+        <span className="text-muted-foreground">{event.id}</span>
       ),
     },
     { header: "Event", accessorKey: "event" as const },
@@ -255,8 +255,8 @@ const EventLog = () => {
     {
       header: "Level",
       accessorKey: "level" as const,
-      cell: (info: { row: { original: Event } }) => {
-        const level = info.row.original.level;
+      cell: (event: Event) => {
+        const level = event.level;
         let variant: "default" | "secondary" | "destructive" | "outline" =
           "default";
 
@@ -273,86 +273,79 @@ const EventLog = () => {
     {
       header: "Message",
       accessorKey: "message" as const,
-      cell: (info: { row: { original: Event } }) => (
-        <div className="max-w-xs truncate">{info.row.original.message}</div>
+      cell: (event: Event) => (
+        <div className="max-w-xs truncate">{event.message}</div>
       ),
     },
     { header: "User", accessorKey: "user" as const },
     {
       header: "Details",
       accessorKey: "details" as const,
-      cell: (info: { row: { original: Event } }) => (
+      cell: (event: Event) => (
         <div className="max-w-xs truncate text-xs text-muted-foreground">
-          {info.row.original.details}
+          {event.details}
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader
-          title="Event Log"
-          description="View system events and application logs"
-          actions={
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={refreshData}
-                disabled={loading}
-              >
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-              <Button variant="outline" onClick={exportLogs}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button variant="outline" onClick={clearLogs}>
-                <Trash className="mr-2 h-4 w-4" />
-                Clear Logs
-              </Button>
-            </div>
-          }
-        />
-        <DataFilters
-          filters={filters}
-          setFilters={handleFilterChange}
-          resetFilters={resetFilters}
-          onChange={handleFilterChange}
-          onReset={resetFilters}
-          options={filterOptions}
-          className="mt-4"
-          showToggle={false}
-        />
-        <div className="mt-4">
-          {events.length === 0 ? (
-            <div className="border rounded-lg p-8 text-center mt-4">
-              <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No logs found</h3>
-              <p className="text-muted-foreground mb-4">
-                There are no event logs available or matching your filters.
-              </p>
-              <Button onClick={refreshData}>Refresh Logs</Button>
-            </div>
-          ) : (
-            <DataTable
-              data={filteredEvents}
-              columns={columns}
-              title="System Events"
-              pagination={true}
-              initialPageSize={10}
-              showAddButton={false}
-              pageIndex={0}
-              pageSize={10}
-              onPageChange={() => {}}
-              totalItems={filteredEvents.length}
-            />
-          )}
-        </div>
-      </main>
+    <div className="flex-1 overflow-y-auto p-8">
+      <PageHeader
+        title="Event Log"
+        description="View system events and application logs"
+        actions={
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={refreshData} disabled={loading}>
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button variant="outline" onClick={exportLogs}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={clearLogs}>
+              <Trash className="mr-2 h-4 w-4" />
+              Clear Logs
+            </Button>
+          </div>
+        }
+      />
+      <DataFilters
+        filters={filters}
+        setFilters={handleFilterChange}
+        resetFilters={resetFilters}
+        onChange={handleFilterChange}
+        onReset={resetFilters}
+        options={filterOptions}
+        className="mt-4"
+        showToggle={false}
+      />
+      <div className="mt-4">
+        {events.length === 0 ? (
+          <div className="border rounded-lg p-8 text-center mt-4">
+            <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No logs found</h3>
+            <p className="text-muted-foreground mb-4">
+              There are no event logs available or matching your filters.
+            </p>
+            <Button onClick={refreshData}>Refresh Logs</Button>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredEvents}
+            columns={columns}
+            title="System Events"
+            pagination={true}
+            initialPageSize={10}
+            showAddButton={false}
+            pageIndex={0}
+            pageSize={10}
+            onPageChange={() => {}}
+            totalItems={filteredEvents.length}
+          />
+        )}
+      </div>
     </div>
   );
 };

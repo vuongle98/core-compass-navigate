@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
@@ -375,170 +375,167 @@ const Roles = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        <Breadcrumbs />
-        <PageHeader
-          title="Roles"
-          description="Manage user roles and permissions"
-          showAddButton={false}
-        />
+    <div className="flex-1 overflow-y-auto p-4 p-8">
+      <Breadcrumbs />
+      <PageHeader
+        title="Roles"
+        description="Manage user roles and permissions"
+        showAddButton={false}
+      />
 
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-          }}
-          onReset={() => {
-            resetFilters();
-            refresh();
-          }}
-          className="mt-4"
-        />
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+        }}
+        onReset={() => {
+          resetFilters();
+          refresh();
+        }}
+        className="mt-4"
+      />
 
-        <div className="mt-4">
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ) : (
-            <DataTable
-              data={roleData}
-              columns={columns}
-              title="User Roles"
-              pagination={true}
-              showAddButton={true}
-              onAddClick={openCreateDialog}
-              pageIndex={page}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              totalItems={totalItems}
-              isLoading={isLoading}
-            />
-          )}
-        </div>
-
-        {selectedItem && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closeItemDetail}
-            title="Role Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium">Code</h3>
-                <p className="mt-1">{selectedItem.code}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Name</h3>
-                <p className="mt-1">{selectedItem.name}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Description</h3>
-                <p className="mt-1">{selectedItem.description}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Permissions</h3>
-                {selectedItem.permissions?.length > 0 ? (
-                  <ScrollArea className="h-40">
-                    <div className="flex flex-col space-y-1">
-                      {selectedItem.permissions.map((permission) => (
-                        <Badge key={permission.id}>{permission.name}</Badge>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <p className="mt-1">No permissions assigned</p>
-                )}
-              </div>
-            </div>
-          </DetailViewModal>
+      <div className="mt-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : (
+          <DataTable
+            data={roleData}
+            columns={columns}
+            title="User Roles"
+            pagination={true}
+            showAddButton={true}
+            onAddClick={openCreateDialog}
+            pageIndex={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            totalItems={totalItems}
+            isLoading={isLoading}
+          />
         )}
+      </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingRole ? "Edit Role" : "Create New Role"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingRole
-                  ? "Make changes to the role details below."
-                  : "Enter the details for the new role."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="code">Code</Label>
-                  <Input
-                    id="code"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleInputChange}
-                    placeholder="ROLE_CODE"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Role Name"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Role description and permissions"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <PermissionSelect
-                    value={formData.permissions || []}
-                    onChange={handlePermissionsChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
+      {selectedItem && (
+        <DetailViewModal
+          isOpen={isDetailOpen}
+          onClose={closeItemDetail}
+          title="Role Details"
+          size="md"
+          showCloseButton={false}
+        >
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium">Code</h3>
+              <p className="mt-1">{selectedItem.code}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Name</h3>
+              <p className="mt-1">{selectedItem.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Description</h3>
+              <p className="mt-1">{selectedItem.description}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Permissions</h3>
+              {selectedItem.permissions?.length > 0 ? (
+                <ScrollArea className="h-40">
+                  <div className="flex flex-col space-y-1">
+                    {selectedItem.permissions.map((permission) => (
+                      <Badge key={permission.id}>{permission.name}</Badge>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="mt-1">No permissions assigned</p>
+              )}
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingRole ? "Edit Role" : "Create New Role"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingRole
+                ? "Make changes to the role details below."
+                : "Enter the details for the new role."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label htmlFor="code">Code</Label>
+                <Input
+                  id="code"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  placeholder="ROLE_CODE"
+                />
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Role Name"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Role description and permissions"
+                  rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <PermissionSelect
+                  value={formData.permissions || []}
+                  onChange={handlePermissionsChange}
                   disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting
-                    ? "Processing..."
-                    : editingRole
-                    ? "Save Changes"
-                    : "Create Role"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </main>
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? "Processing..."
+                  : editingRole
+                  ? "Save Changes"
+                  : "Create Role"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters } from "@/components/common/DataFilters";
@@ -401,88 +401,85 @@ const Bots = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader
+    <div className="flex-1 overflow-y-auto p-8">
+      <PageHeader
+        title="Telegram Bots"
+        description="Manage your Telegram bots"
+        actions={
+          <div className="flex space-x-2">
+            {selectedBots.length > 0 && (
+              <BotBulkActions
+                selectedCount={selectedBots.length}
+                actions={bulkActions}
+              />
+            )}
+          </div>
+        }
+      />
+
+      <BotStatsCards
+        totalBots={botsData?.length || 0}
+        activeBots={getActiveBotsCount()}
+      />
+
+      <div className="mt-4">
+        <DataFilters
+          className="mb-4"
+          filters={filters}
+          setFilters={setFilters}
+          resetFilters={resetFilters}
+          options={filterOptions}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+            // Update the search term when filters change
+            if (newFilters.search !== undefined) {
+              setSearchTerm(newFilters.search.toString());
+            }
+          }}
+          onReset={() => {
+            resetFilters();
+            setSearchTerm("");
+            refresh();
+          }}
+        />
+
+        <DataTable
+          data={botsData || []}
+          columns={columns}
           title="Telegram Bots"
-          description="Manage your Telegram bots"
-          actions={
-            <div className="flex space-x-2">
-              {selectedBots.length > 0 && (
-                <BotBulkActions
-                  selectedCount={selectedBots.length}
-                  actions={bulkActions}
-                />
-              )}
-            </div>
-          }
+          pagination={true}
+          initialPageSize={pagination.pageSize}
+          pageSizeOptions={[5, 10, 25, 50]}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          showAddButton={true}
+          onAddClick={() => setIsCreateModalOpen(true)}
         />
+      </div>
 
-        <BotStatsCards
-          totalBots={botsData?.length || 0}
-          activeBots={getActiveBotsCount()}
-        />
+      <DetailViewModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={selectedBot?.name || "Bot Details"}
+        size="full"
+        showCloseButton={false}
+      >
+        {selectedBot && <BotDetail bot={selectedBot} onRefresh={refresh} />}
+      </DetailViewModal>
 
-        <div className="mt-4">
-          <DataFilters
-            className="mb-4"
-            filters={filters}
-            setFilters={setFilters}
-            resetFilters={resetFilters}
-            options={filterOptions}
-            onChange={(newFilters) => {
-              setFilters(newFilters);
-              // Update the search term when filters change
-              if (newFilters.search !== undefined) {
-                setSearchTerm(newFilters.search.toString());
-              }
-            }}
-            onReset={() => {
-              resetFilters();
-              setSearchTerm("");
-              refresh();
-            }}
-          />
-
-          <DataTable
-            data={botsData || []}
-            columns={columns}
-            title="Telegram Bots"
-            pagination={true}
-            initialPageSize={pagination.pageSize}
-            pageSizeOptions={[5, 10, 25, 50]}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-            showAddButton={true}
-            onAddClick={() => setIsCreateModalOpen(true)}
-          />
-        </div>
-
-        <DetailViewModal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          title={selectedBot?.name || "Bot Details"}
-          size="full"
-          showCloseButton={false}
-        >
-          {selectedBot && <BotDetail bot={selectedBot} onRefresh={refresh} />}
-        </DetailViewModal>
-
-        <DetailViewModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          title="Create New Bot"
-          size="lg"
-          showCloseButton={false}
-        >
-          <BotForm onSubmit={handleCreateBot} />
-        </DetailViewModal>
-      </main>
+      <DetailViewModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Create New Bot"
+        size="lg"
+        showCloseButton={false}
+      >
+        <BotForm onSubmit={handleCreateBot} />
+      </DetailViewModal>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -145,7 +145,7 @@ const BlogDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex min-h-screen overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-y-auto p-8">
           <Breadcrumbs />
@@ -167,98 +167,93 @@ const BlogDetail = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
-        <PageHeader
-          title={post.title}
-          description={`Published on ${formatDate(post.publishedAt)}`}
-          actions={
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => navigate("/blog")}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Blog
-              </Button>
-              {user && user.id === post.author.id && (
-                <>
-                  <Button variant="outline" onClick={handleEdit}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="destructive" onClick={handleDelete}>
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                </>
-              )}
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
+      <PageHeader
+        title={post.title}
+        description={`Published on ${formatDate(post.publishedAt)}`}
+        actions={
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => navigate("/blog")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Blog
+            </Button>
+            {user && user.id === post.author.id && (
+              <>
+                <Button variant="outline" onClick={handleEdit}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+                <Button variant="destructive" onClick={handleDelete}>
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </>
+            )}
+          </div>
+        }
+      />
+
+      <div className="mt-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4 mb-6">
+              <Avatar>
+                <AvatarImage src={post.author.avatar} />
+                <AvatarFallback>
+                  {formatAuthorName(post.author).substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium">
+                  {formatAuthorName(post.author)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {post.updatedAt !== post.publishedAt
+                    ? `Updated on ${formatDate(post.updatedAt)}`
+                    : `Published on ${formatDate(post.publishedAt)}`}
+                </div>
+              </div>
             </div>
-          }
-        />
 
-        <div className="mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4 mb-6">
-                <Avatar>
-                  <AvatarImage src={post.author.avatar} />
-                  <AvatarFallback>
-                    {formatAuthorName(post.author)
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">
-                    {formatAuthorName(post.author)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {post.updatedAt !== post.publishedAt
-                      ? `Updated on ${formatDate(post.updatedAt)}`
-                      : `Published on ${formatDate(post.publishedAt)}`}
-                  </div>
-                </div>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {post.tags.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+
+            <div
+              className="prose prose-sm sm:prose lg:prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+
+            <div className="flex items-center space-x-6 mt-8 pt-6 border-t">
+              <div className="flex items-center text-muted-foreground">
+                <Eye className="mr-2 h-4 w-4" />
+                <span>{post.views} views</span>
               </div>
-
-              <div className="flex flex-wrap gap-2 mb-6">
-                {post.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                  </Badge>
-                ))}
+              <div className="flex items-center text-muted-foreground">
+                <ThumbsUp className="mr-2 h-4 w-4" />
+                <span>{post.likes} likes</span>
               </div>
-
-              <div
-                className="prose prose-sm sm:prose lg:prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-
-              <div className="flex items-center space-x-6 mt-8 pt-6 border-t">
-                <div className="flex items-center text-muted-foreground">
-                  <Eye className="mr-2 h-4 w-4" />
-                  <span>{post.views} views</span>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                  <ThumbsUp className="mr-2 h-4 w-4" />
-                  <span>{post.likes} likes</span>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>{post.comments} comments</span>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>{formatDate(post.publishedAt)}</span>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span>{format(new Date(post.publishedAt), "h:mm a")}</span>
-                </div>
+              <div className="flex items-center text-muted-foreground">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                <span>{post.comments} comments</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+              <div className="flex items-center text-muted-foreground">
+                <Calendar className="mr-2 h-4 w-4" />
+                <span>{formatDate(post.publishedAt)}</span>
+              </div>
+              <div className="flex items-center text-muted-foreground">
+                <Clock className="mr-2 h-4 w-4" />
+                <span>{format(new Date(post.publishedAt), "h:mm a")}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <AlertDialog
         open={isDeleteDialogOpen}

@@ -37,7 +37,8 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ChatButton from "./components/chat/ChatButton";
 import { useFeatureFlag } from "./hooks/use-feature-flag";
 import EndpointSecures from "./pages/EndpointSecure";
-import ServiceManagement from './pages/ServiceManagement';
+import ServiceManagement from "./pages/ServiceManagement";
+import { Sidebar } from "./components/layout/sidebar/Sidebar";
 
 // Create a protected route component using our new useAuth hook
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -89,200 +90,210 @@ function App() {
             <Sonner />
             <MiniToastContainer />
             <Router>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute>
-                      <Users />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/account-settings"
-                  element={
-                    <ProtectedRoute>
-                      <UserAccountSettings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/roles"
-                  element={
-                    <ProtectedRoute>
-                      <Roles />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/permissions"
-                  element={
-                    <ProtectedRoute>
-                      <Permissions />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/tokens"
-                  element={
-                    <ProtectedRoute>
-                      <Tokens />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/files"
-                  element={
-                    <ProtectedRoute>
-                      <Files />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/notifications"
-                  element={
-                    <ProtectedRoute>
-                      <Notifications />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/configuration"
-                  element={
-                    <ProtectedRoute>
-                      <Configuration />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/endpoint-secure"
-                  element={
-                    <ProtectedRoute>
-                      <EndpointSecures />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/feature-flags"
-                  element={
-                    <ProtectedRoute>
-                      <FeatureFlags />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/audit-log"
-                  element={
-                    <ProtectedRoute>
-                      <AuditLog />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/user-request-log"
-                  element={
-                    <ProtectedRoute>
-                      <UserRequestLog />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/event-log"
-                  element={
-                    <ProtectedRoute>
-                      <EventLog />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bots"
-                  element={
-                    <ProtectedRoute>
-                      <Bots />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bots/:id/edit"
-                  element={
-                    <ProtectedRoute>
-                      <BotEdit />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bots/:id/schedule"
-                  element={
-                    <ProtectedRoute>
-                      <BotSchedule />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Blog routes */}
-                <Route
-                  path="/blogs"
-                  element={
-                    <ProtectedRoute>
-                      <Blogs />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/blogs/new"
-                  element={
-                    <ProtectedRoute>
-                      <BlogNew />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/blogs/:id/edit"
-                  element={
-                    <ProtectedRoute>
-                      <BlogEdit />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/blogs/:id"
-                  element={
-                    <ProtectedRoute>
-                      <BlogDetail />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/services"
-                  element={
-                    <ProtectedRoute>
-                      <ServiceManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <div className="flex min-h-screen">
+                {/* Sidebar */}
+                <ProtectedRoute>
+                  <Sidebar />
+                </ProtectedRoute>
 
-              {/* ChatButton is conditionally rendered based on feature flag */}
-              <ProtectedRoute>
-                <ChatButtonWrapper />
-              </ProtectedRoute>
+                {/* Main Content */}
+                <main className="flex-1 overflow-y-auto">
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute>
+                          <Index />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/users"
+                      element={
+                        <ProtectedRoute>
+                          <Users />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/account-settings"
+                      element={
+                        <ProtectedRoute>
+                          <UserAccountSettings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/roles"
+                      element={
+                        <ProtectedRoute>
+                          <Roles />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/permissions"
+                      element={
+                        <ProtectedRoute>
+                          <Permissions />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tokens"
+                      element={
+                        <ProtectedRoute>
+                          <Tokens />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/files"
+                      element={
+                        <ProtectedRoute>
+                          <Files />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/notifications"
+                      element={
+                        <ProtectedRoute>
+                          <Notifications />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/configuration"
+                      element={
+                        <ProtectedRoute>
+                          <Configuration />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/endpoint-secure"
+                      element={
+                        <ProtectedRoute>
+                          <EndpointSecures />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/feature-flags"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureFlags />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/audit-log"
+                      element={
+                        <ProtectedRoute>
+                          <AuditLog />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/user-request-log"
+                      element={
+                        <ProtectedRoute>
+                          <UserRequestLog />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/event-log"
+                      element={
+                        <ProtectedRoute>
+                          <EventLog />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bots"
+                      element={
+                        <ProtectedRoute>
+                          <Bots />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bots/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <BotEdit />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bots/:id/schedule"
+                      element={
+                        <ProtectedRoute>
+                          <BotSchedule />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Blog routes */}
+                    <Route
+                      path="/blogs"
+                      element={
+                        <ProtectedRoute>
+                          <Blogs />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/blogs/new"
+                      element={
+                        <ProtectedRoute>
+                          <BlogNew />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/blogs/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <BlogEdit />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/blogs/:id"
+                      element={
+                        <ProtectedRoute>
+                          <BlogDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/services"
+                      element={
+                        <ProtectedRoute>
+                          <ServiceManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+
+                  {/* ChatButton is conditionally rendered based on feature flag */}
+                  <ProtectedRoute>
+                    <ChatButtonWrapper />
+                  </ProtectedRoute>
+                </main>
+              </div>
             </Router>
           </TooltipProvider>
         </AuthProvider>

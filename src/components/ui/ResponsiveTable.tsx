@@ -1,10 +1,18 @@
-
-import React from 'react';
-import { Column } from '@/types/Common';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from './card';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React from "react";
+import { Column } from "@/types/Common";
+import {
+  ActionsTableCell,
+  ActionsTableHead,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./table";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "./card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface ResponsiveTableProps<T> {
   data: T[];
@@ -28,7 +36,11 @@ export function ResponsiveTable<T>({
   const isMobile = useIsMobile();
 
   if (isLoading) {
-    return <div className="flex items-center justify-center p-6">Loading data...</div>;
+    return (
+      <div className="flex items-center justify-center p-6">
+        Loading data...
+      </div>
+    );
   }
 
   if (data.length === 0) {
@@ -42,18 +54,10 @@ export function ResponsiveTable<T>({
   // Helper function to render cell value based on column definition
   const renderCellValue = (item: T, column: Column<T>) => {
     if (!column.cell) {
-      return (item as any)[column.accessorKey];
+      return item[column.accessorKey];
     }
 
-    // Check if the cell function expects { row: { original: T } } format
-    const cellFn = column.cell;
-    try {
-      // First try with the info object format
-      return cellFn({ row: { original: item } } as any);
-    } catch (e) {
-      // Fall back to direct item format if the above fails
-      return (cellFn as (item: T) => React.ReactNode)(item);
-    }
+    return (column.cell as (item: T) => React.ReactNode)(item);
   };
 
   // Display as cards on mobile
@@ -61,10 +65,10 @@ export function ResponsiveTable<T>({
     return (
       <div className="space-y-4">
         {data.map((item, itemIndex) => (
-          <Card 
-            key={itemIndex} 
+          <Card
+            key={itemIndex}
             className={cn(
-              "overflow-hidden", 
+              "overflow-hidden",
               onRowClick && "cursor-pointer hover:border-primary/50",
               className
             )}
@@ -74,21 +78,32 @@ export function ResponsiveTable<T>({
               <div className="divide-y">
                 {columns.map((column, colIndex) => {
                   // Skip rendering if there's no data or it's not meant to be displayed
-                  if (column.accessorKey === "actions" || column.id === "actions") {
+                  if (
+                    column.accessorKey === "actions" ||
+                    column.id === "actions"
+                  ) {
                     return (
-                      <div key={`${itemIndex}-${colIndex}`} className="px-4 py-2 flex justify-end">
+                      <div
+                        key={`${itemIndex}-${colIndex}`}
+                        className="px-4 py-2 flex justify-end"
+                      >
                         {renderCellValue(item, column)}
                       </div>
                     );
                   }
-                  
+
                   const value = renderCellValue(item, column);
-                    
+
                   if (value === undefined || value === null) return null;
-                  
+
                   return (
-                    <div key={`${itemIndex}-${colIndex}`} className="px-4 py-2 flex justify-between items-center">
-                      <div className="font-medium text-sm text-muted-foreground">{column.header}</div>
+                    <div
+                      key={`${itemIndex}-${colIndex}`}
+                      className="px-4 py-2 flex justify-between items-center"
+                    >
+                      <div className="font-medium text-sm text-muted-foreground">
+                        {column.header}
+                      </div>
                       <div>{value}</div>
                     </div>
                   );
@@ -107,11 +122,20 @@ export function ResponsiveTable<T>({
       <Table className={className}>
         <TableHeader>
           <TableRow>
-            {columns.map((column) => (
-              <TableHead key={column.accessorKey} className={cn(column.id)}>
-                {column.header}
-              </TableHead>
-            ))}
+            {columns.map((column) =>
+              column.accessorKey == "actions" ? (
+                <ActionsTableHead
+                  key={column.accessorKey}
+                  className={cn("text-right", column.id)}
+                >
+                  {column.header}
+                </ActionsTableHead>
+              ) : (
+                <TableHead key={column.accessorKey} className={cn(column.id)}>
+                  {column.header}
+                </TableHead>
+              )
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -121,11 +145,20 @@ export function ResponsiveTable<T>({
               onClick={onRowClick ? () => onRowClick(item) : undefined}
               className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
             >
-              {columns.map((column) => (
-                <TableCell key={`${index}-${column.accessorKey}`}>
-                  {renderCellValue(item, column)}
-                </TableCell>
-              ))}
+              {columns.map((column) =>
+                column.accessorKey == "actions" ? (
+                  <ActionsTableCell
+                    key={`${index}-${column.accessorKey}`}
+                    className={cn("text-right", column.id)}
+                  >
+                    {renderCellValue(item, column)}
+                  </ActionsTableCell>
+                ) : (
+                  <TableCell key={`${index}-${column.accessorKey}`}>
+                    {renderCellValue(item, column)}
+                  </TableCell>
+                )
+              )}
             </TableRow>
           ))}
         </TableBody>

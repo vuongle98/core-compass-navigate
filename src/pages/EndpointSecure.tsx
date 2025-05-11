@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import DataFilters from "@/components/common/DataFilters";
@@ -206,91 +206,88 @@ const EndpointSecures = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <Breadcrumbs />
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
 
-        <PageHeader
+      <PageHeader
+        title="Endpoint Management"
+        description="Manage access endpoints"
+        showAddButton={false}
+      />
+      <DataFilters
+        filters={filters}
+        setFilters={setFilters}
+        resetFilters={resetFilters}
+        options={filterOptions}
+        onChange={(newFilters) => {
+          setFilters(newFilters);
+          // Update the search term when filters change
+          if (newFilters.search !== undefined) {
+            setSearchTerm(newFilters.search.toString());
+          }
+        }}
+        onReset={() => {
+          resetFilters();
+          setSearchTerm("");
+          refresh();
+        }}
+        className="mt-4"
+      />
+      <div className="mt-4">
+        <DataTable
+          data={endpointSecuresData}
+          columns={columns}
           title="Endpoint Management"
-          description="Manage access endpoints"
+          pagination={true}
           showAddButton={false}
+          isLoading={isLoading}
+          pageIndex={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
         />
-        <DataFilters
-          filters={filters}
-          setFilters={setFilters}
-          resetFilters={resetFilters}
-          options={filterOptions}
-          onChange={(newFilters) => {
-            setFilters(newFilters);
-            // Update the search term when filters change
-            if (newFilters.search !== undefined) {
-              setSearchTerm(newFilters.search.toString());
-            }
-          }}
-          onReset={() => {
-            resetFilters();
-            setSearchTerm("");
-            refresh();
-          }}
-          className="mt-4"
-        />
-        <div className="mt-4">
-          <DataTable
-            data={endpointSecuresData}
-            columns={columns}
-            title="Endpoint Management"
-            pagination={true}
-            showAddButton={false}
-            isLoading={isLoading}
-            pageIndex={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            totalItems={totalItems}
-          />
-        </div>
+      </div>
 
-        {/* Endpoint Detail Modal */}
-        {selectedEndpoint && (
-          <DetailViewModal
-            isOpen={isDetailOpen}
-            onClose={closeEndpointDetail}
-            title="Endpoint Details"
-            size="md"
-            showCloseButton={false}
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium">Endpoint</h3>
-                <p className="mt-1">{selectedEndpoint.endpointPattern}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Method</h3>
-                <p className="mt-1">{selectedEndpoint.method}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Authority</h3>
-                <p className="mt-1">{selectedEndpoint.authority}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium">Is role</h3>
-                <p className="mt-1">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedEndpoint.isRole
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {selectedEndpoint.isRole ? "Is role" : "Not use role"}
-                  </span>
-                </p>
-              </div>
+      {/* Endpoint Detail Modal */}
+      {selectedEndpoint && (
+        <DetailViewModal
+          isOpen={isDetailOpen}
+          onClose={closeEndpointDetail}
+          title="Endpoint Details"
+          size="md"
+          showCloseButton={false}
+        >
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium">Endpoint</h3>
+              <p className="mt-1">{selectedEndpoint.endpointPattern}</p>
             </div>
-          </DetailViewModal>
-        )}
-      </main>
+            <div>
+              <h3 className="text-sm font-medium">Method</h3>
+              <p className="mt-1">{selectedEndpoint.method}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Authority</h3>
+              <p className="mt-1">{selectedEndpoint.authority}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Is role</h3>
+              <p className="mt-1">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedEndpoint.isRole
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {selectedEndpoint.isRole ? "Is role" : "Not use role"}
+                </span>
+              </p>
+            </div>
+          </div>
+        </DetailViewModal>
+      )}
     </div>
   );
 };
