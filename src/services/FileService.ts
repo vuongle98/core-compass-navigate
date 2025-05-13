@@ -60,10 +60,21 @@ class FileService {
    * @returns The created file
    * @throws Error if the creation fails
    */
-  static async createFile(data: Partial<FileItem>): Promise<FileItem> {
+  static async uploadFile(file: File): Promise<FileItem> {
     try {
+      const formData = new FormData();
+      formData.append("file", file);
+
       LoggingService.info("file_service", "create_file", "Creating new file");
-      return await EnhancedApiService.post<FileItem>(this.API_ENDPOINT, data);
+      return await EnhancedApiService.post<FileItem>(
+        this.API_ENDPOINT,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     } catch (error) {
       LoggingService.error(
         "file_service",

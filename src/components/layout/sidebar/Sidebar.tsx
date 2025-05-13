@@ -30,6 +30,17 @@ export function Sidebar({ className }: SidebarProps) {
     }
   }, [isMobile]);
 
+  useEffect(() => {
+    if (isMobile && !hidden) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobile, hidden]);
+
   // Toggle sidebar function
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -55,12 +66,30 @@ export function Sidebar({ className }: SidebarProps) {
         </Button>
       )}
 
+      {/* Backdrop overlay for mobile */}
+        {isMobile && !hidden && (
+          <div
+            className="fixed inset-0 bg-black/95 z-40"
+            onClick={toggleVisibility}
+            aria-hidden="true"
+          />
+        )}
+
       <aside
         className={cn(
           "bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col h-screen z-40",
           collapsed ? "w-16" : "w-64",
           hidden ? "hidden" : "flex",
-          isMobile ? "fixed inset-y-0 left-0 shadow-xl" : "sticky top-0",
+          isMobile
+            ? [
+                "fixed inset-0 w-screen h-screen shadow-xl", // Fullscreen on mobile
+                hidden ? "hidden" : "flex",
+              ]
+            : [
+                collapsed ? "w-16" : "w-64",
+                "sticky top-0",
+                hidden ? "hidden" : "flex",
+              ],
           className
         )}
       >
@@ -112,15 +141,6 @@ export function Sidebar({ className }: SidebarProps) {
             <UserMenu collapsed />
           )}
         </div>
-
-        {/* Backdrop overlay for mobile */}
-        {isMobile && !hidden && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30"
-            onClick={toggleVisibility}
-            aria-hidden="true"
-          />
-        )}
       </aside>
     </>
   );

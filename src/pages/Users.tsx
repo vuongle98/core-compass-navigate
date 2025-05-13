@@ -120,7 +120,7 @@ const Users = () => {
       ],
     },
     {
-      id: "roles",
+      id: "roleIds",
       label: "Roles",
       type: "searchable-select",
       endpoint: "/api/role",
@@ -164,6 +164,7 @@ const Users = () => {
         description: "Could not connect to the server. Please try again later.",
       });
     },
+    debounceMs: 300,
     mockData: {
       content: mockUsers,
       totalElements: mockUsers.length,

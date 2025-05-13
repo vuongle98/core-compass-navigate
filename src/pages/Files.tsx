@@ -35,56 +35,44 @@ import { DetailViewModal } from "@/components/ui/detail-view-modal";
 import { useDetailView } from "@/hooks/use-detail-view";
 import { FilterOption } from "@/types/Common";
 
-// Define a type for filter values
-interface QueryFilters {
-  [key: string]: string | number | boolean | null | undefined | unknown[];
-}
-
 const Files = () => {
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [shareType, setShareType] = useState("public");
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Mock data
-  useEffect(() => {
-    // Simulate fetching files from an API
-    const mockFiles: FileItem[] = [
-      {
-        id: 1,
-        name: "Document.pdf",
-        size: 2.5,
-        contentType: "pdf",
-        extension: "pdf",
-        createdAt: "2023-01-01",
-        path: "/files/Document.pdf",
-        updatedAt: "2023-01-01",
-      },
-      {
-        id: 2,
-        name: "Image.jpg",
-        size: 1.2,
-        extension: "jpg",
-        contentType: "jpg",
-        createdAt: "2023-02-15",
-        path: "/files/Image.jpg",
-        updatedAt: "2023-02-15",
-      },
-      {
-        id: 3,
-        name: "Presentation.pptx",
-        size: 3.8,
-        extension: "pptx",
-        contentType: "pptx",
-        createdAt: "2023-03-20",
-        path: "/files/Presentation.pptx",
-        updatedAt: "2023-03-20",
-      },
-    ];
-    setFiles(mockFiles);
-  }, []);
+  const mockFiles: FileItem[] = [
+    {
+      id: 1,
+      name: "Document.pdf",
+      size: 2.5,
+      contentType: "pdf",
+      extension: "pdf",
+      createdAt: "2023-01-01",
+      path: "/files/Document.pdf",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: 2,
+      name: "Image.jpg",
+      size: 1.2,
+      extension: "jpg",
+      contentType: "jpg",
+      createdAt: "2023-02-15",
+      path: "/files/Image.jpg",
+      updatedAt: "2023-02-15",
+    },
+    {
+      id: 3,
+      name: "Presentation.pptx",
+      size: 3.8,
+      extension: "pptx",
+      contentType: "pptx",
+      createdAt: "2023-03-20",
+      path: "/files/Presentation.pptx",
+      updatedAt: "2023-03-20",
+    },
+  ];
 
   // Use our custom API query hook
   const {
@@ -105,7 +93,7 @@ const Files = () => {
     initialPageSize: 10,
     persistFilters: true,
     mockData: {
-      content: files,
+      content: mockFiles,
       totalElements: 3,
       totalPages: 1,
       number: 0,
@@ -114,44 +102,32 @@ const Files = () => {
   });
 
   // Dropzone configuration
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      acceptedFiles.forEach(async (uploadedFile) => {
-        const filename = uploadedFile.name;
-        const uploadDate = new Date().toISOString().split("T")[0]; // Format as YYYY-MM-DD
-        const newFile: FileItem = {
-          id: 1000, // Generate a unique ID
-          name: filename,
-          size: uploadedFile.size / 1024, // Convert to KB
-          contentType: uploadedFile.type.split("/")[1], // Extract file extension
-          createdAt: uploadDate,
-          path: URL.createObjectURL(uploadedFile), // Create a local URL for display
-          extension: filename.split(".").pop() || "",
-        };
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    acceptedFiles.forEach(async (uploadedFile) => {
+      const filename = uploadedFile.name;
 
-        setFiles((prevFiles) => [...prevFiles, newFile]);
-        toast.success(`${filename} uploaded successfully`);
+      try {
+        const newFile = await FileService.uploadFile(uploadedFile);
 
-        try {
-          // Simulate API call to upload file
-          // In a real app, you'd send the file to your server here
-          // await apiService.uploadFile(file);
-          LoggingService.logUserAction(
-            "files",
-            "upload",
-            "File uploaded successfully",
-            { filename, size: uploadedFile.size }
-          );
-        } catch (error) {
-          console.error("File upload error:", error);
-          toast.error(`Failed to upload ${filename}`);
-        }
-      });
-    },
-    [setFiles]
-  );
+        toast.success(`${newFile.name} uploaded successfully`);
 
-  const { getRootProps, getInputProps } = useDropzone({ onDrop });
+        LoggingService.logUserAction(
+          "files",
+          "upload",
+          "File uploaded successfully",
+          { name: filename, size: uploadedFile.size }
+        );
+      } catch (error) {
+        console.error("File upload error:", error);
+        toast.error(`Failed to upload ${filename}`);
+      }
+    });
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: true,
+  });
 
   // Setup for detail view modal
   const {
@@ -190,7 +166,7 @@ const Files = () => {
         { value: "jpg", label: "JPG" },
         { value: "pptx", label: "PPTX" },
       ],
-    }
+    },
   ];
 
   // Actions for files
@@ -198,7 +174,7 @@ const Files = () => {
     return [
       {
         type: "view" as ActionType,
-        label: "View File",
+        label: "View info",
         onClick: () => handleViewFile(file),
       },
       {
@@ -216,7 +192,6 @@ const Files = () => {
 
   // Handle file operations
   const handleDeleteFile = async (file: FileItem) => {
-    setFiles(files.filter((f) => f.id !== file.id));
     toast.success(`${file.name} deleted successfully`);
 
     try {
@@ -262,8 +237,6 @@ const Files = () => {
 
       // Download the file using FileService
       const blob = await FileService.downloadFile(file.id);
-
-      console.log("Blob data:", blob);
 
       // Create a temporary URL for the blob
       const url = window.URL.createObjectURL(blob);
@@ -357,38 +330,20 @@ const Files = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-8">
-      <Breadcrumbs items={[{ label: "Files", path: "/files" }]} />
-
+      <Breadcrumbs />
       <PageHeader title="Files" description="Manage your files">
         <div {...getRootProps()} className="mt-4">
           <Input {...getInputProps()} id="upload" className="hidden" />
           <Label htmlFor="upload" className="cursor-pointer">
             <Button>Upload Files</Button>
           </Label>
+          {isDragActive && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-500/80 rounded-lg border-2 border-dashed border-white text-white text-lg font-semibold pointer-events-none">
+              Drop files here to upload
+            </div>
+          )}
         </div>
       </PageHeader>
-      {/* <DataFilters
-        filters={{ search: searchTerm }}
-        options={filterOptions}
-        onChange={(newFilters) => {
-          setSearchTerm(newFilters.search as string);
-          const updateSearchParams = (filters: QueryFilters) => {
-            const params = new URLSearchParams();
-            Object.entries(filters).forEach(([key, value]) => {
-              if (value !== undefined) {
-                params.set(key, value.toString());
-              }
-            });
-            setSearchParams(params);
-          };
-          updateSearchParams(newFilters);
-        }}
-        onReset={() => {
-          setSearchTerm("");
-          setSearchParams({});
-        }}
-        className="mt-4"
-      /> */}
 
       <DataFilters
         filters={filters}
