@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -55,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Refresh feature flags after login
           await featureFlagService.refreshFlags();
-        } else {
+        } else if (!keycloak.isLoading) {
+          // Only clear user if Keycloak is not loading
           setUser(null);
           ServiceRegistry.updateCurrentUser(null);
         }
@@ -68,8 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    initAuth();
-  }, [keycloak.isAuthenticated, keycloak.userInfo]);
+    // Only run when authentication state or loading state changes
+    if (!keycloak.isLoading) {
+      initAuth();
+    }
+  }, [keycloak.isAuthenticated, keycloak.isLoading]); // Removed keycloak.userInfo from dependencies
 
   const login = async (
     username: string,
