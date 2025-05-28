@@ -1,3 +1,4 @@
+
 export interface Role {
   id: number;
   code: string;
@@ -37,9 +38,9 @@ export interface UserProfile {
 }
 
 export interface User {
-  id: number;
+  id: string | number;
   email?: string;
-  roles: Role[];
+  roles: Role[] | string[];
   joinDate?: string;
   lastLogin?: string;
   isActive?: boolean;
@@ -49,7 +50,9 @@ export interface User {
   locked?: boolean;
   createdAt?: string;
   updatedAt?: string;
-  name?: string; // Adding name property to User interface
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   roleIds?: number[];
 }
 
