@@ -37,25 +37,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        if (keycloak.isAuthenticated && keycloak.userInfo) {
-          // Convert Keycloak user info to our User type
-          const userData: User = {
-            id: keycloak.userInfo.sub || keycloak.userInfo.preferred_username || "unknown",
-            username: keycloak.userInfo.preferred_username || keycloak.userInfo.name || "user",
-            email: keycloak.userInfo.email || "",
-            roles: keycloak.userInfo.realm_access?.roles || [],
-            name: keycloak.userInfo.name,
-            firstName: keycloak.userInfo.given_name,
-            lastName: keycloak.userInfo.family_name,
-          };
+        if (keycloak.isAuthenticated) {
+          console.log('Keycloak is authenticated, userInfo:', keycloak.userInfo);
           
-          setUser(userData);
-          ServiceRegistry.updateCurrentUser(userData);
+          // Get user info from Keycloak, handling the case where it might be undefined
+          const userInfo = keycloak.userInfo;
           
-          // Refresh feature flags after login
-          await featureFlagService.refreshFlags();
+          if (userInfo) {
+            // Convert Keycloak user info to our User type
+            const userData: User = {
+              id: userInfo.sub || userInfo.preferred_username || "unknown",
+              username: userInfo.preferred_username || userInfo.name || "user",
+              email: userInfo.email || "",
+              roles: userInfo.realm_access?.roles || [],
+              name: userInfo.name,
+              firstName: userInfo.given_name,
+              lastName: userInfo.family_name,
+            };
+            
+            console.log('Setting user data:', userData);
+            setUser(userData);
+            ServiceRegistry.updateCurrentUser(userData);
+            
+            // Refresh feature flags after login
+            await featureFlagService.refreshFlags();
+          } else {
+            console.log('User is authenticated but userInfo is not available yet');
+            // Don't clear the user immediately, just wait for userInfo to be available
+          }
         } else if (!keycloak.isLoading) {
-          // Only clear user if Keycloak is not loading
+          // Only clear user if Keycloak is not loading and not authenticated
+          console.log('Keycloak is not authenticated, clearing user');
           setUser(null);
           ServiceRegistry.updateCurrentUser(null);
         }
@@ -72,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!keycloak.isLoading) {
       initAuth();
     }
-  }, [keycloak.isAuthenticated, keycloak.isLoading]); // Removed keycloak.userInfo from dependencies
+  }, [keycloak.isAuthenticated, keycloak.isLoading, keycloak.userInfo]); // Re-added userInfo but with proper handling
 
   const login = async (
     username: string,
