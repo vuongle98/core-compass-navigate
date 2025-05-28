@@ -12,6 +12,7 @@ interface KeycloakContextType {
   hasRole: (role: string) => boolean;
   hasResourceRole: (resource: string, role: string) => boolean;
   token: string | undefined;
+  initializationFailed: boolean;
 }
 
 const KeycloakContext = createContext<KeycloakContextType | null>(null);
@@ -29,19 +30,31 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [initializationFailed, setInitializationFailed] = useState(false);
 
   useEffect(() => {
     const initKeycloak = async () => {
       try {
         const authenticated = await KeycloakService.init(config);
         setIsAuthenticated(authenticated);
+        setInitializationFailed(KeycloakService.hasInitializationFailed());
         
         if (authenticated) {
           setUserInfo(KeycloakService.getUserInfo());
         }
+
+        if (KeycloakService.hasInitializationFailed()) {
+          console.warn('Keycloak initialization failed - running in development mode');
+          toast.warning('Authentication service unavailable', {
+            description: 'Running in development mode. Some features may be limited.',
+          });
+        }
       } catch (error) {
         console.error('Failed to initialize Keycloak:', error);
-        toast.error('Failed to initialize authentication');
+        setInitializationFailed(true);
+        toast.error('Failed to initialize authentication', {
+          description: 'Running in development mode. Please check your Keycloak configuration.',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -51,6 +64,13 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
   }, [config]);
 
   const login = async () => {
+    if (initializationFailed) {
+      toast.info('Authentication unavailable', {
+        description: 'Please configure Keycloak to enable authentication.',
+      });
+      return;
+    }
+
     try {
       await KeycloakService.login();
       setIsAuthenticated(true);
@@ -62,6 +82,10 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
   };
 
   const logout = async () => {
+    if (initializationFailed) {
+      return;
+    }
+
     try {
       await KeycloakService.logout();
       setIsAuthenticated(false);
@@ -93,6 +117,7 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
         hasRole,
         hasResourceRole,
         token,
+        initializationFailed,
       }}
     >
       {children}

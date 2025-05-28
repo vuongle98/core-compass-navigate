@@ -5,6 +5,7 @@ import LoggingService from './LoggingService';
 class KeycloakService {
   private keycloak: Keycloak | null = null;
   private initialized = false;
+  private initializationFailed = false;
 
   /**
    * Initialize Keycloak
@@ -15,6 +16,8 @@ class KeycloakService {
     clientId: string;
   }): Promise<boolean> {
     try {
+      console.log('Initializing Keycloak with config:', config);
+      
       this.keycloak = new Keycloak({
         url: config.url,
         realm: config.realm,
@@ -25,16 +28,28 @@ class KeycloakService {
         onLoad: 'check-sso',
         silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
         checkLoginIframe: false,
+        pkceMethod: 'S256'
       });
 
       this.initialized = true;
+      this.initializationFailed = false;
       LoggingService.info('keycloak', 'init_success', 'Keycloak initialized successfully');
       
       return authenticated;
     } catch (error) {
+      this.initializationFailed = true;
       LoggingService.error('keycloak', 'init_failed', 'Failed to initialize Keycloak', error);
-      throw error;
+      console.error('Keycloak initialization failed:', error);
+      console.warn('Running in development mode without Keycloak authentication');
+      return false;
     }
+  }
+
+  /**
+   * Check if initialization failed
+   */
+  hasInitializationFailed(): boolean {
+    return this.initializationFailed;
   }
 
   /**
@@ -42,6 +57,10 @@ class KeycloakService {
    */
   async login(): Promise<void> {
     if (!this.keycloak) {
+      if (this.initializationFailed) {
+        console.warn('Keycloak not available - using development mode');
+        return;
+      }
       throw new Error('Keycloak not initialized');
     }
 
@@ -59,6 +78,10 @@ class KeycloakService {
    */
   async logout(): Promise<void> {
     if (!this.keycloak) {
+      if (this.initializationFailed) {
+        console.warn('Keycloak not available - using development mode');
+        return;
+      }
       throw new Error('Keycloak not initialized');
     }
 
@@ -75,6 +98,10 @@ class KeycloakService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
+    if (this.initializationFailed) {
+      // In development mode without Keycloak, return false
+      return false;
+    }
     return this.keycloak?.authenticated ?? false;
   }
 
@@ -82,6 +109,9 @@ class KeycloakService {
    * Get user token
    */
   getToken(): string | undefined {
+    if (this.initializationFailed) {
+      return undefined;
+    }
     return this.keycloak?.token;
   }
 
@@ -89,6 +119,9 @@ class KeycloakService {
    * Get user info
    */
   getUserInfo(): any {
+    if (this.initializationFailed) {
+      return null;
+    }
     return this.keycloak?.tokenParsed;
   }
 
@@ -96,7 +129,7 @@ class KeycloakService {
    * Refresh token
    */
   async refreshToken(): Promise<boolean> {
-    if (!this.keycloak) {
+    if (!this.keycloak || this.initializationFailed) {
       return false;
     }
 
@@ -123,6 +156,9 @@ class KeycloakService {
    * Check if user has role
    */
   hasRole(role: string): boolean {
+    if (this.initializationFailed) {
+      return false;
+    }
     return this.keycloak?.hasRealmRole(role) ?? false;
   }
 
@@ -130,6 +166,9 @@ class KeycloakService {
    * Check if user has resource role
    */
   hasResourceRole(resource: string, role: string): boolean {
+    if (this.initializationFailed) {
+      return false;
+    }
     return this.keycloak?.hasResourceRole(role, resource) ?? false;
   }
 }
