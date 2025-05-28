@@ -51,8 +51,8 @@ const ServiceManagement = () => {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string | number; action: string }) =>
-      ServiceManagementService.updateServiceStatus(id, action as ServiceStatus),
+    mutationFn: ({ id, action }: { id: number, action: ServiceStatus }) =>
+      ServiceManagementService.updateServiceStatus(id, action),
     onSuccess: () => {
       toast.success("Service updated successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -63,7 +63,7 @@ const ServiceManagement = () => {
   });
 
   const deleteServiceMutation = useMutation({
-    mutationFn: (id: string | number) => ServiceManagementService.deleteService(id),
+    mutationFn: (id: number) => ServiceManagementService.deleteService(id),
     onSuccess: () => {
       toast.success("Service deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -79,15 +79,15 @@ const ServiceManagement = () => {
   };
 
   const handleStartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "running" });
+    updateServiceMutation.mutate({ id: service.id as number, action: "running" });
   };
 
   const handleStopService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "stopped" });
+    updateServiceMutation.mutate({ id: service.id as number, action: "stopped" });
   };
 
   const handleRestartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "running" });
+    updateServiceMutation.mutate({ id: service.id as number, action: "running" });
   };
 
   const handleEditService = (service: Service) => {
@@ -97,12 +97,16 @@ const ServiceManagement = () => {
 
   const handleDeleteService = async (service: Service) => {
     if (window.confirm(`Are you sure you want to delete ${service.name}?`)) {
-      deleteServiceMutation.mutate(service.id);
+      deleteServiceMutation.mutate(service.id as number);
     }
   };
 
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ["services"] });
+  };
+
+  const handleCreateService = async (data: ServiceCreateRequest): Promise<void> => {
+    await createServiceMutation.mutateAsync(data);
   };
 
   const columns: Column<Service>[] = [
@@ -131,41 +135,37 @@ const ServiceManagement = () => {
       accessorKey: "createdAt",
       cell: (service: Service) => new Date(service.createdAt).toLocaleDateString(),
     },
-  ];
-
-  const actions = [
     {
-      type: "view" as const,
-      label: "View Details",
-      onClick: handleViewService,
-    },
-    {
-      type: "edit" as const,
-      label: "Edit",
-      onClick: handleEditService,
-    },
-    {
-      type: "danger" as const,
-      label: "Start",
-      onClick: handleStartService,
-      condition: (service: Service) => service.status === "stopped",
-    },
-    {
-      type: "danger" as const,
-      label: "Stop",
-      onClick: handleStopService,
-      condition: (service: Service) => service.status === "running",
-    },
-    {
-      type: "danger" as const,
-      label: "Restart",
-      onClick: handleRestartService,
-      condition: (service: Service) => service.status === "running",
-    },
-    {
-      type: "danger" as const,
-      label: "Delete",
-      onClick: handleDeleteService,
+      header: "Actions",
+      accessorKey: "actions",
+      cell: (service: Service) => (
+        <div className="flex space-x-2">
+          <Button variant="ghost" size="sm" onClick={() => handleViewService(service)}>
+            View
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleEditService(service)}>
+            Edit
+          </Button>
+          {service.status === "stopped" && (
+            <Button variant="ghost" size="sm" onClick={() => handleStartService(service)}>
+              Start
+            </Button>
+          )}
+          {service.status === "running" && (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => handleStopService(service)}>
+                Stop
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleRestartService(service)}>
+                Restart
+              </Button>
+            </>
+          )}
+          <Button variant="destructive" size="sm" onClick={() => handleDeleteService(service)}>
+            Delete
+          </Button>
+        </div>
+      ),
     },
   ];
 
@@ -213,7 +213,7 @@ const ServiceManagement = () => {
                 Refresh
               </Button>
               <CreateServiceDialog
-                onSubmit={(data) => createServiceMutation.mutateAsync(data)}
+                onSubmit={handleCreateService}
               />
             </div>
           }
@@ -238,7 +238,6 @@ const ServiceManagement = () => {
               <DataTable
                 data={services}
                 columns={columns}
-                actions={actions}
                 isLoading={isLoading}
               />
             </div>
