@@ -1,3 +1,4 @@
+
 import { Sidebar } from "@/components/layout/sidebar/Sidebar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -226,10 +227,27 @@ const Users = () => {
         type: "delete",
         label: "Delete User",
         onClick: () => handleDeleteUser(user.id),
-        disabled: user.roles.some((role) => role.name === "SUPER_ADMIN"),
+        disabled: Array.isArray(user.roles) && user.roles.some((role) => 
+          typeof role === 'string' ? role === "SUPER_ADMIN" : role.name === "SUPER_ADMIN"
+        ),
       },
     ];
     return actions;
+  };
+
+  // Helper function to get roles display for the table
+  const getRolesDisplay = (roles: Role[] | string[]) => {
+    if (!roles || roles.length === 0) return [];
+    
+    if (typeof roles[0] === 'string') {
+      return (roles as string[]).map((roleName, index) => ({
+        id: index,
+        name: roleName,
+        description: `Role: ${roleName}`,
+      }));
+    }
+    
+    return roles as Role[];
   };
 
   const columns = [
@@ -259,6 +277,7 @@ const Users = () => {
       sortable: true,
       filterable: true,
       cell: (user: User) => {
+        const displayRoles = getRolesDisplay(user.roles);
         return (
           <Popover>
             <PopoverTrigger asChild>
@@ -266,13 +285,13 @@ const Users = () => {
                 type="button"
                 className="px-2 py-0.5 rounded-full border bg-muted/40 text-xs font-semibold hover:bg-muted/70 cursor-pointer"
                 title={
-                  user.roles && user.roles.length > 0
-                    ? `${user.roles.length} roles`
+                  displayRoles && displayRoles.length > 0
+                    ? `${displayRoles.length} roles`
                     : "No roles"
                 }
                 style={{ minWidth: 32 }}
               >
-                {user.roles?.length || 0} roles
+                {displayRoles?.length || 0} roles
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -281,9 +300,9 @@ const Users = () => {
               className="w-56 p-2 max-h-[250px] overflow-y-auto"
             >
               <div className="font-semibold text-sm mb-2">Roles</div>
-              {user.roles && user.roles.length > 0 ? (
+              {displayRoles && displayRoles.length > 0 ? (
                 <ul className="space-y-1">
-                  {user.roles.map((role) => (
+                  {displayRoles.map((role) => (
                     <li
                       key={role.id || `role-${Math.random()}`}
                       className="border rounded px-2 py-1 bg-muted/40"

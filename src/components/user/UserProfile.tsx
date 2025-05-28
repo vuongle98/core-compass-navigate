@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserRoleAssignment } from "@/components/user/UserRoleAssignment";
-import { User, UserProfile as UserProfileType } from "@/types/Auth";
+import { User, UserProfile as UserProfileType, Role } from "@/types/Auth";
 import UserService from "@/services/UserService";
 import {
   Loader2,
@@ -34,7 +35,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface UserProfileProps {
-  userId: number;
+  userId: string | number;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -72,7 +73,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     if (isOpen && userId) {
       console.log("ddodo");
       setIsLoading(true);
-      UserService.getUser(userId)
+      const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+      UserService.getUser(numericUserId)
         .then((data) => {
           setUser(data);
           // Initialize form with profile data if it exists
@@ -132,6 +134,23 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     }
     return user.username ? user.username[0].toUpperCase() : "?";
   };
+
+  // Convert roles to Role[] format for UserRoleAssignment component
+  const getRolesAsRoleArray = (roles: Role[] | string[]): Role[] => {
+    if (!roles) return [];
+    if (typeof roles[0] === 'string') {
+      // Convert string roles to Role objects (this is a fallback for Keycloak string roles)
+      return (roles as string[]).map((roleName, index) => ({
+        id: index,
+        code: roleName.toUpperCase(),
+        name: roleName,
+        description: `Role: ${roleName}`,
+      }));
+    }
+    return roles as Role[];
+  };
+
+  const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -285,8 +304,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <TabsContent value="roles">
                 <div className="space-y-4">
                   <UserRoleAssignment
-                    userId={userId}
-                    currentRoles={user.roles}
+                    userId={numericUserId}
+                    currentRoles={getRolesAsRoleArray(user.roles)}
                   />
                 </div>
               </TabsContent>
