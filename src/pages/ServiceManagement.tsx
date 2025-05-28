@@ -10,31 +10,34 @@ import { ServiceStatusBadge } from "@/components/services/ServiceStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Play, Square, RefreshCw, Eye, Edit, Trash } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ServiceManagementService from "@/services/ServiceManagementService";
-import { Service, ServiceCreateRequest } from "@/types/Service";
+import { Service, ServiceCreateRequest, ServiceStatus } from "@/types/Service";
 import { Column } from "@/types/Common";
 import { FilterOption } from "@/types/Common";
 
 const ServiceManagement = () => {
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [currentTab, setCurrentTab] = useState("all");
   const queryClient = useQueryClient();
 
-  const { data: services = [], isLoading, refetch } = useQuery({
+  const { data: servicesResponse, isLoading, refetch } = useQuery({
     queryKey: ["services", filters, currentTab],
     queryFn: async () => {
-      const statusFilter = currentTab !== "all" ? { status: currentTab } : {};
+      const statusFilter = currentTab !== "all" ? { status: currentTab as ServiceStatus } : {};
       return ServiceManagementService.getServices({
         ...filters,
         ...statusFilter,
       });
     },
   });
+
+  // Extract services from API response
+  const services = servicesResponse?.success ? servicesResponse.data.content : [];
 
   const createServiceMutation = useMutation({
     mutationFn: (data: ServiceCreateRequest) => ServiceManagementService.createService(data),
@@ -48,8 +51,8 @@ const ServiceManagement = () => {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: ({ id, action }: { id: number; action: string }) =>
-      ServiceManagementService.updateServiceStatus(id, action),
+    mutationFn: ({ id, action }: { id: string | number; action: string }) =>
+      ServiceManagementService.updateServiceStatus(id, action as ServiceStatus),
     onSuccess: () => {
       toast.success("Service updated successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -60,7 +63,7 @@ const ServiceManagement = () => {
   });
 
   const deleteServiceMutation = useMutation({
-    mutationFn: (id: number) => ServiceManagementService.deleteService(id),
+    mutationFn: (id: string | number) => ServiceManagementService.deleteService(id),
     onSuccess: () => {
       toast.success("Service deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -71,20 +74,20 @@ const ServiceManagement = () => {
   });
 
   const handleViewService = (service: Service) => {
-    setSelectedService(service);
+    setSelectedServiceId(service.id);
     setDetailDialogOpen(true);
   };
 
   const handleStartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "start" });
+    updateServiceMutation.mutate({ id: service.id, action: "running" });
   };
 
   const handleStopService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "stop" });
+    updateServiceMutation.mutate({ id: service.id, action: "stopped" });
   };
 
   const handleRestartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id, action: "restart" });
+    updateServiceMutation.mutate({ id: service.id, action: "running" });
   };
 
   const handleEditService = (service: Service) => {
@@ -96,6 +99,10 @@ const ServiceManagement = () => {
     if (window.confirm(`Are you sure you want to delete ${service.name}?`)) {
       deleteServiceMutation.mutate(service.id);
     }
+  };
+
+  const handleStatusChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["services"] });
   };
 
   const columns: Column<Service>[] = [
@@ -162,7 +169,7 @@ const ServiceManagement = () => {
     },
   ];
 
-  const filterOptions: FilterOption[] = [
+  const filterOptions: FilterOption<Service>[] = [
     {
       id: "name",
       label: "Service Name",
@@ -224,8 +231,8 @@ const ServiceManagement = () => {
             <div className="space-y-6">
               <DataFilters
                 filters={filters}
-                onFiltersChange={setFilters}
-                filterOptions={filterOptions}
+                setFilters={setFilters}
+                options={filterOptions}
               />
 
               <DataTable
@@ -238,11 +245,12 @@ const ServiceManagement = () => {
           </TabsContent>
         </Tabs>
 
-        {selectedService && (
+        {selectedServiceId && (
           <ServiceDetailDialog
-            service={selectedService}
-            open={detailDialogOpen}
-            onOpenChange={setDetailDialogOpen}
+            serviceId={selectedServiceId}
+            isOpen={detailDialogOpen}
+            onClose={() => setDetailDialogOpen(false)}
+            onStatusChange={handleStatusChange}
           />
         )}
       </main>
