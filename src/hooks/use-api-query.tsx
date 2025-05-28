@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useQuery, QueryKey } from "@tanstack/react-query";
+import { useQuery, QueryKey, useQueryClient } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import useLocalStorage from "./use-local-storage";
 import useDebounce from "./use-debounce";
@@ -21,6 +22,9 @@ interface UseApiQueryProps<T> {
   mockData?: PaginatedData<T>;
   onError?: (error: Error) => void;
   isPaginated?: boolean;
+  useCache?: boolean;
+  cacheTime?: number;
+  staleTime?: number;
 }
 
 export function useApiQuery<T>({
@@ -35,12 +39,16 @@ export function useApiQuery<T>({
   mockData,
   onError,
   isPaginated = true,
+  useCache = true,
+  cacheTime = 300000, // 5 minutes
+  staleTime = 10000, // 10 seconds
 }: UseApiQueryProps<T>) {
   const storageKey = persistKey || `filters-${endpoint.replace(/\//g, "-")}`;
   const [filtersState, setFiltersState] =
     useState<ApiQueryFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
+  const queryClient = useQueryClient();
 
   // Prevents multiple refetches
   const isInitialMount = useRef(true);
@@ -127,12 +135,22 @@ export function useApiQuery<T>({
         if (isPaginated) {
           const response = await EnhancedApiService.getPaginated<T>(
             endpoint,
-            params
+            params,
+            undefined,
+            useCache,
+            !useCache // forceRefresh when cache is disabled
           );
           return response;
         } else {
           // For non-paginated endpoints
-          const response = await EnhancedApiService.get<T[]>(endpoint, params);
+          const response = await EnhancedApiService.get<T[]>(
+            endpoint, 
+            params, 
+            undefined, 
+            "json", 
+            useCache,
+            !useCache // forceRefresh when cache is disabled
+          );
           // Convert to paginated format for consistency
           return {
             content: response,
@@ -151,7 +169,9 @@ export function useApiQuery<T>({
         throw err;
       }
     },
-    staleTime: 10000, // Cache results for 30 seconds to prevent rapid refetching
+    enabled: useCache,
+    gcTime: useCache ? cacheTime : 0,
+    staleTime: useCache ? staleTime : 0,
     meta: {
       onError: onError,
     },
@@ -173,10 +193,21 @@ export function useApiQuery<T>({
   const totalPages = data?.totalPages || 0;
   const isError = !!error;
 
-  // Manual refresh function
+  // Manual refresh function that invalidates cache
   const refresh = useCallback(() => {
+    if (useCache) {
+      queryClient.invalidateQueries({ queryKey: [...queryKey] });
+    }
     refetch();
-  }, [refetch]);
+  }, [refetch, queryClient, queryKey, useCache]);
+
+  // Force refresh function that bypasses cache
+  const forceRefresh = useCallback(() => {
+    if (useCache) {
+      queryClient.removeQueries({ queryKey: [...queryKey] });
+    }
+    refetch();
+  }, [refetch, queryClient, queryKey, useCache]);
 
   return {
     data: data?.content || [],
@@ -194,6 +225,7 @@ export function useApiQuery<T>({
     setSearch,
     resetFilters,
     refresh,
+    forceRefresh,
   };
 }
 

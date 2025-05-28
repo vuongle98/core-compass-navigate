@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -5,11 +6,11 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import AuthService from "@/services/AuthService";
 import { toast } from "sonner";
 import featureFlagService from "@/services/FeatureFlagService";
 import { User } from "@/types/Auth";
 import ServiceRegistry from "@/services/ServiceRegistry";
+import { useKeycloak } from "@/contexts/KeycloakContext";
 
 interface AuthContextType {
   user: User | null;
@@ -17,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  updateUser: (data: Partial<User>) => void; // Added this function
+  updateUser: (data: Partial<User>) => void;
   updateUserProfile: (data: Partial<User>) => void;
   resetPassword: (username: string) => Promise<boolean>;
   changePassword: (
@@ -31,86 +32,78 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const keycloak = useKeycloak();
 
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        // Check if user is already authenticated
-        if (AuthService.isAuthenticated()) {
-          // Get user info from the token or stored user data
-          const currentUser = AuthService.getCurrentUser();
-          setUser(currentUser);
-
-          // Update the user in ServiceRegistry
-          ServiceRegistry.updateCurrentUser(currentUser);
-
+        if (keycloak.isAuthenticated && keycloak.userInfo) {
+          // Convert Keycloak user info to our User type
+          const userData: User = {
+            id: keycloak.userInfo.sub || keycloak.userInfo.preferred_username || "unknown",
+            username: keycloak.userInfo.preferred_username || keycloak.userInfo.name || "user",
+            email: keycloak.userInfo.email || "",
+            roles: keycloak.userInfo.realm_access?.roles || [],
+            name: keycloak.userInfo.name,
+            firstName: keycloak.userInfo.given_name,
+            lastName: keycloak.userInfo.family_name,
+          };
+          
+          setUser(userData);
+          ServiceRegistry.updateCurrentUser(userData);
+          
           // Refresh feature flags after login
-          // await featureFlagService.refreshFlags();
+          await featureFlagService.refreshFlags();
         } else {
-          // If not authenticated, ensure user is logged out
-          await logout();
+          setUser(null);
+          ServiceRegistry.updateCurrentUser(null);
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
-        // If there's an error, ensure user is logged out
-        await logout();
+        setUser(null);
+        ServiceRegistry.updateCurrentUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     initAuth();
-  }, []);
+  }, [keycloak.isAuthenticated, keycloak.userInfo]);
 
   const login = async (
     username: string,
     password: string
   ): Promise<boolean> => {
-    setIsLoading(true);
+    // For Keycloak, we redirect to the login page
+    // This method is kept for compatibility but will use Keycloak login
     try {
-      // Call the login method from AuthService
-      const userData = await AuthService.login(username, password);
-      if (userData) {
-        setUser(userData);
-
-        // Update the user in ServiceRegistry
-        ServiceRegistry.updateCurrentUser(userData);
-
-        // Refresh feature flags after login
-        await featureFlagService.refreshFlags();
-
-        return true;
-      }
-      return false;
+      await keycloak.login();
+      return true;
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Login failed", {
-        description: "Please check your credentials and try again.",
+        description: "Please try again.",
       });
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
-    await AuthService.logout();
-    setUser(null);
-
-    // Update the user in ServiceRegistry
-    ServiceRegistry.updateCurrentUser(null);
+    try {
+      await keycloak.logout();
+      setUser(null);
+      ServiceRegistry.updateCurrentUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed");
+    }
   };
 
   const updateUser = (data: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-
-      // Update stored user data in AuthService
-      AuthService.updateCurrentUser(updatedUser);
-
-      // Update the user in ServiceRegistry
       ServiceRegistry.updateCurrentUser(updatedUser);
     }
   };
@@ -121,16 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (username: string): Promise<boolean> => {
     try {
-      await AuthService.resetPassword(username);
-      toast.success("Password reset email sent", {
-        description: "Please check your inbox for instructions",
+      // Keycloak handles password reset through its own flow
+      toast.info("Password reset", {
+        description: "Please use the Keycloak admin console to reset your password",
       });
       return true;
     } catch (error) {
       console.error("Reset password error:", error);
-      toast.error("Failed to send reset email", {
-        description: "Please try again later",
-      });
+      toast.error("Failed to reset password");
       return false;
     }
   };
@@ -140,20 +131,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     newPassword: string
   ): Promise<boolean> => {
     try {
-      const data = {
-        currentPassword,
-        newPassword,
-        confirmPassword: newPassword,
-      };
-
-      await AuthService.changePassword(data);
-      toast.success("Password changed successfully");
+      // Keycloak handles password changes through its own flow
+      toast.info("Change password", {
+        description: "Please use the Keycloak account console to change your password",
+      });
       return true;
     } catch (error) {
       console.error("Change password error:", error);
-      toast.error("Failed to change password", {
-        description: "Please check your current password and try again",
-      });
+      toast.error("Failed to change password");
       return false;
     }
   };
@@ -162,8 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
-        isLoading,
+        isAuthenticated: keycloak.isAuthenticated,
+        isLoading: isLoading || keycloak.isLoading,
         login,
         logout,
         updateUser,

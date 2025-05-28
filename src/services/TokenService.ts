@@ -1,34 +1,32 @@
-/**
- * Service for handling authentication tokens
- */
-const TOKEN_KEY = "token";
+
+import KeycloakService from "./KeycloakService";
 
 /**
- * Get the access token from local storage
+ * Get the access token from Keycloak
  */
 export const getAccessToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY);
+  return KeycloakService.getToken() || null;
 };
 
 /**
- * Set the access token in local storage
+ * Set the access token - not applicable for Keycloak as it manages tokens internally
  */
 export const setAccessToken = (token: string): void => {
-  localStorage.setItem(TOKEN_KEY, token);
+  console.warn("setAccessToken called but Keycloak manages tokens internally");
 };
 
 /**
- * Remove the access token from local storage
+ * Remove the access token - handled by Keycloak logout
  */
 export const removeAccessToken = (): void => {
-  localStorage.removeItem(TOKEN_KEY);
+  console.warn("removeAccessToken called but should use Keycloak logout");
 };
 
 /**
- * Check if a user is authenticated by verifying token presence
+ * Check if a user is authenticated using Keycloak
  */
 export const isAuthenticated = (): boolean => {
-  return !!getAccessToken();
+  return KeycloakService.isAuthenticated();
 };
 
 // For backward compatibility with code that uses TokenService as default import
@@ -38,11 +36,7 @@ const TokenService = {
   removeToken: removeAccessToken,
   isAuthenticated,
   refreshToken: async (): Promise<boolean> => {
-    // This is a placeholder - actual implementation would depend on your auth flow
-    console.warn(
-      "TokenService.refreshToken() called but not fully implemented"
-    );
-    return false;
+    return await KeycloakService.refreshToken();
   },
 };
 

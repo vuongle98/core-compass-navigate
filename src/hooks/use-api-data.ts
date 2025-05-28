@@ -1,4 +1,5 @@
-import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
+
+import { useQuery, UseQueryOptions, QueryKey, useQueryClient } from "@tanstack/react-query";
 import EnhancedApiService from "@/services/EnhancedApiService";
 import LoggingService from "@/services/LoggingService";
 import { useState, useCallback } from "react";
@@ -18,6 +19,8 @@ export interface ApiDataOptions<T> {
   onSuccess?: (data: T) => void;
   onError?: (error: unknown) => void;
   transform?: (data: unknown) => T;
+  useCache?: boolean;
+  cacheTime?: number;
 }
 
 export interface ApiDataResult<T> {
@@ -26,6 +29,8 @@ export interface ApiDataResult<T> {
   isError: boolean;
   error: unknown;
   refetch: () => void;
+  refresh: () => void;
+  forceRefresh: () => void;
   setParams: (
     params: Record<string, string | number | boolean | undefined>
   ) => void;
@@ -38,6 +43,8 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
   const [params, setParamsState] = useState<
     Record<string, string | number | boolean | undefined>
   >(options.params || {});
+  
+  const queryClient = useQueryClient();
 
   const fetchData = useCallback(async (): Promise<T> => {
     try {
@@ -50,7 +57,11 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
 
       const response = await EnhancedApiService.get<T>(
         options.endpoint,
-        params
+        params,
+        undefined,
+        "json",
+        options.useCache !== false,
+        options.useCache === false // forceRefresh when cache is disabled
       );
 
       // Apply transform function if provided
@@ -88,7 +99,7 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
 
       throw error;
     }
-  }, [options.endpoint, options.mockData, options.transform, params]);
+  }, [options.endpoint, options.mockData, options.transform, options.useCache, params]);
 
   // Set up query options
   const queryOptions: UseQueryOptions<T, unknown, T, QueryKey> = {
@@ -97,7 +108,8 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
       : [options.queryKey, params],
     queryFn: fetchData,
     enabled: options.enabled !== false,
-    staleTime: options.staleTime,
+    staleTime: options.useCache !== false ? (options.staleTime || 10000) : 0,
+    gcTime: options.useCache !== false ? (options.cacheTime || 300000) : 0,
     refetchOnWindowFocus: options.refetchOnWindowFocus,
     refetchInterval: options.refetchInterval,
     retry: options.retry,
@@ -139,12 +151,36 @@ export function useApiData<T>(options: ApiDataOptions<T>): ApiDataResult<T> {
     []
   );
 
+  // Manual refresh function that invalidates cache
+  const refresh = useCallback(() => {
+    if (options.useCache !== false) {
+      const queryKey = Array.isArray(options.queryKey)
+        ? [...options.queryKey]
+        : [options.queryKey];
+      queryClient.invalidateQueries({ queryKey });
+    }
+    refetch();
+  }, [refetch, queryClient, options.queryKey, options.useCache]);
+
+  // Force refresh function that bypasses cache
+  const forceRefresh = useCallback(() => {
+    if (options.useCache !== false) {
+      const queryKey = Array.isArray(options.queryKey)
+        ? [...options.queryKey]
+        : [options.queryKey];
+      queryClient.removeQueries({ queryKey });
+    }
+    refetch();
+  }, [refetch, queryClient, options.queryKey, options.useCache]);
+
   return {
     data,
     isLoading,
     isError,
     error,
     refetch,
+    refresh,
+    forceRefresh,
     setParams,
   };
 }

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -10,50 +11,46 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ServiceManagementService from "@/services/ServiceManagementService";
 import { Service, ServiceCreateRequest, ServiceStatus } from "@/types/Service";
 import { Column } from "@/types/Common";
 import { FilterOption } from "@/types/Common";
 import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
+import { useApiQuery } from "@/hooks/use-api-query";
 
 const ServiceManagement = () => {
   const [selectedServiceId, setSelectedServiceId] = useState<
     string | number | null
   >(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, any>>({});
   const [currentTab, setCurrentTab] = useState("all");
   const queryClient = useQueryClient();
 
+  // Use the updated useApiQuery hook with cache control
   const {
-    data: servicesResponse,
+    data: services,
     isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["services", filters, currentTab],
-    queryFn: async () => {
-      const statusFilter =
-        currentTab !== "all" ? { status: currentTab as ServiceStatus } : {};
-      return ServiceManagementService.getServices({
-        ...filters,
-        ...statusFilter,
-      });
-    },
+    filters,
+    setFilters,
+    refresh,
+    forceRefresh,
+    totalItems,
+  } = useApiQuery<Service>({
+    endpoint: "/api/services",
+    queryKey: ["services"],
+    useCache: true, // Enable caching
+    initialFilters: currentTab !== "all" ? { status: currentTab as ServiceStatus } : {},
   });
-
-  // Extract services from API response
-  const services = servicesResponse?.success
-    ? servicesResponse.data.content
-    : [];
 
   const createServiceMutation = useMutation({
     mutationFn: (data: ServiceCreateRequest) =>
       ServiceManagementService.createService(data),
     onSuccess: () => {
       toast.success("Service created successfully");
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+      // Force refresh to bypass cache after creation
+      forceRefresh();
     },
     onError: () => {
       toast.error("Failed to create service");
@@ -65,7 +62,8 @@ const ServiceManagement = () => {
       ServiceManagementService.updateServiceStatus(id, action),
     onSuccess: () => {
       toast.success("Service updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+      // Force refresh to bypass cache after update
+      forceRefresh();
     },
     onError: () => {
       toast.error("Failed to update service");
@@ -76,7 +74,8 @@ const ServiceManagement = () => {
     mutationFn: (id: number) => ServiceManagementService.deleteService(id),
     onSuccess: () => {
       toast.success("Service deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["services"] });
+      // Force refresh to bypass cache after deletion
+      forceRefresh();
     },
     onError: () => {
       toast.error("Failed to delete service");
@@ -121,7 +120,7 @@ const ServiceManagement = () => {
   };
 
   const handleStatusChange = () => {
-    queryClient.invalidateQueries({ queryKey: ["services"] });
+    forceRefresh();
   };
 
   const handleCreateService = async (
@@ -130,8 +129,15 @@ const ServiceManagement = () => {
     await createServiceMutation.mutateAsync(data);
   };
 
+  // Update filters when tab changes
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    const statusFilter = value !== "all" ? { status: value as ServiceStatus } : {};
+    setFilters({ ...filters, ...statusFilter });
+  };
+
   const getActionItems = (service: Service) => {
-    return [
+    const actions = [
       {
         type: "view" as ActionType,
         label: "View detail",
@@ -142,65 +148,39 @@ const ServiceManagement = () => {
         label: "Edit",
         onClick: () => handleEditService(service),
       },
-      {
-        type: "delete" as ActionType,
-        label: "Delete",
-        onClick: () => handleDeleteService(service),
-      },
     ];
 
-    // (
-    //   <div className="flex space-x-2">
-    //     <Button
-    //       variant="ghost"
-    //       size="sm"
-    //       onClick={() => handleViewService(service)}
-    //     >
-    //       View
-    //     </Button>
-    //     <Button
-    //       variant="ghost"
-    //       size="sm"
-    //       onClick={() => handleEditService(service)}
-    //     >
-    //       Edit
-    //     </Button>
-    //     {service.status === "stopped" && (
-    //       <Button
-    //         variant="ghost"
-    //         size="sm"
-    //         onClick={() => handleStartService(service)}
-    //       >
-    //         Start
-    //       </Button>
-    //     )}
-    //     {service.status === "running" && (
-    //       <>
-    //         <Button
-    //           variant="ghost"
-    //           size="sm"
-    //           onClick={() => handleStopService(service)}
-    //         >
-    //           Stop
-    //         </Button>
-    //         <Button
-    //           variant="ghost"
-    //           size="sm"
-    //           onClick={() => handleRestartService(service)}
-    //         >
-    //           Restart
-    //         </Button>
-    //       </>
-    //     )}
-    //     <Button
-    //       variant="destructive"
-    //       size="sm"
-    //       onClick={() => handleDeleteService(service)}
-    //     >
-    //       Delete
-    //     </Button>
-    //   </div>
-    // );
+    // Add status-specific actions
+    if (service.status === "stopped") {
+      actions.push({
+        type: "edit" as ActionType,
+        label: "Start",
+        onClick: () => handleStartService(service),
+      });
+    }
+
+    if (service.status === "running") {
+      actions.push(
+        {
+          type: "edit" as ActionType,
+          label: "Stop",
+          onClick: () => handleStopService(service),
+        },
+        {
+          type: "edit" as ActionType,
+          label: "Restart",
+          onClick: () => handleRestartService(service),
+        }
+      );
+    }
+
+    actions.push({
+      type: "delete" as ActionType,
+      label: "Delete",
+      onClick: () => handleDeleteService(service),
+    });
+
+    return actions;
   };
 
   const columns: Column<Service>[] = [
@@ -280,7 +260,7 @@ const ServiceManagement = () => {
         description="Manage and monitor your services"
         actions={
           <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => refetch()}>
+            <Button variant="outline" onClick={() => forceRefresh()}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -289,7 +269,7 @@ const ServiceManagement = () => {
         }
       />
 
-      <Tabs value={currentTab} onValueChange={setCurrentTab} className="mt-6">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="mt-6">
         <TabsList>
           <TabsTrigger value="all">All Services</TabsTrigger>
           <TabsTrigger value="running">Running</TabsTrigger>
@@ -312,7 +292,7 @@ const ServiceManagement = () => {
               isLoading={isLoading}
               pagination={true}
               showAddButton={true}
-              totalItems={services.length}
+              totalItems={totalItems}
             />
           </div>
         </TabsContent>
