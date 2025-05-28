@@ -1,6 +1,4 @@
-
-import React, { useState } from "react";
-import { Sidebar } from "@/components/layout/sidebar/Sidebar";
+import { useState } from "react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { DataFilters } from "@/components/common/DataFilters";
@@ -17,18 +15,27 @@ import ServiceManagementService from "@/services/ServiceManagementService";
 import { Service, ServiceCreateRequest, ServiceStatus } from "@/types/Service";
 import { Column } from "@/types/Common";
 import { FilterOption } from "@/types/Common";
+import { ActionsMenu, ActionType } from "@/components/common/ActionsMenu";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 
 const ServiceManagement = () => {
-  const [selectedServiceId, setSelectedServiceId] = useState<string | number | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<
+    string | number | null
+  >(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [currentTab, setCurrentTab] = useState("all");
   const queryClient = useQueryClient();
 
-  const { data: servicesResponse, isLoading, refetch } = useQuery({
+  const {
+    data: servicesResponse,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["services", filters, currentTab],
     queryFn: async () => {
-      const statusFilter = currentTab !== "all" ? { status: currentTab as ServiceStatus } : {};
+      const statusFilter =
+        currentTab !== "all" ? { status: currentTab as ServiceStatus } : {};
       return ServiceManagementService.getServices({
         ...filters,
         ...statusFilter,
@@ -37,10 +44,13 @@ const ServiceManagement = () => {
   });
 
   // Extract services from API response
-  const services = servicesResponse?.success ? servicesResponse.data.content : [];
+  const services = servicesResponse?.success
+    ? servicesResponse.data.content
+    : [];
 
   const createServiceMutation = useMutation({
-    mutationFn: (data: ServiceCreateRequest) => ServiceManagementService.createService(data),
+    mutationFn: (data: ServiceCreateRequest) =>
+      ServiceManagementService.createService(data),
     onSuccess: () => {
       toast.success("Service created successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -51,7 +61,7 @@ const ServiceManagement = () => {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: ({ id, action }: { id: number, action: ServiceStatus }) =>
+    mutationFn: ({ id, action }: { id: number; action: ServiceStatus }) =>
       ServiceManagementService.updateServiceStatus(id, action),
     onSuccess: () => {
       toast.success("Service updated successfully");
@@ -79,15 +89,24 @@ const ServiceManagement = () => {
   };
 
   const handleStartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id as number, action: "running" });
+    updateServiceMutation.mutate({
+      id: service.id as number,
+      action: "running",
+    });
   };
 
   const handleStopService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id as number, action: "stopped" });
+    updateServiceMutation.mutate({
+      id: service.id as number,
+      action: "stopped",
+    });
   };
 
   const handleRestartService = async (service: Service) => {
-    updateServiceMutation.mutate({ id: service.id as number, action: "running" });
+    updateServiceMutation.mutate({
+      id: service.id as number,
+      action: "running",
+    });
   };
 
   const handleEditService = (service: Service) => {
@@ -105,8 +124,83 @@ const ServiceManagement = () => {
     queryClient.invalidateQueries({ queryKey: ["services"] });
   };
 
-  const handleCreateService = async (data: ServiceCreateRequest): Promise<void> => {
+  const handleCreateService = async (
+    data: ServiceCreateRequest
+  ): Promise<void> => {
     await createServiceMutation.mutateAsync(data);
+  };
+
+  const getActionItems = (service: Service) => {
+    return [
+      {
+        type: "view" as ActionType,
+        label: "View detail",
+        onClick: () => handleViewService(service),
+      },
+      {
+        type: "edit" as ActionType,
+        label: "Edit",
+        onClick: () => handleEditService(service),
+      },
+      {
+        type: "delete" as ActionType,
+        label: "Delete",
+        onClick: () => handleDeleteService(service),
+      },
+    ];
+
+    // (
+    //   <div className="flex space-x-2">
+    //     <Button
+    //       variant="ghost"
+    //       size="sm"
+    //       onClick={() => handleViewService(service)}
+    //     >
+    //       View
+    //     </Button>
+    //     <Button
+    //       variant="ghost"
+    //       size="sm"
+    //       onClick={() => handleEditService(service)}
+    //     >
+    //       Edit
+    //     </Button>
+    //     {service.status === "stopped" && (
+    //       <Button
+    //         variant="ghost"
+    //         size="sm"
+    //         onClick={() => handleStartService(service)}
+    //       >
+    //         Start
+    //       </Button>
+    //     )}
+    //     {service.status === "running" && (
+    //       <>
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={() => handleStopService(service)}
+    //         >
+    //           Stop
+    //         </Button>
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={() => handleRestartService(service)}
+    //         >
+    //           Restart
+    //         </Button>
+    //       </>
+    //     )}
+    //     <Button
+    //       variant="destructive"
+    //       size="sm"
+    //       onClick={() => handleDeleteService(service)}
+    //     >
+    //       Delete
+    //     </Button>
+    //   </div>
+    // );
   };
 
   const columns: Column<Service>[] = [
@@ -124,7 +218,9 @@ const ServiceManagement = () => {
     {
       header: "Status",
       accessorKey: "status",
-      cell: (service: Service) => <ServiceStatusBadge status={service.status} />,
+      cell: (service: Service) => (
+        <ServiceStatusBadge status={service.status} />
+      ),
     },
     {
       header: "Description",
@@ -133,38 +229,14 @@ const ServiceManagement = () => {
     {
       header: "Created At",
       accessorKey: "createdAt",
-      cell: (service: Service) => new Date(service.createdAt).toLocaleDateString(),
+      cell: (service: Service) =>
+        new Date(service.createdAt).toLocaleDateString(),
     },
     {
       header: "Actions",
       accessorKey: "actions",
       cell: (service: Service) => (
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => handleViewService(service)}>
-            View
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleEditService(service)}>
-            Edit
-          </Button>
-          {service.status === "stopped" && (
-            <Button variant="ghost" size="sm" onClick={() => handleStartService(service)}>
-              Start
-            </Button>
-          )}
-          {service.status === "running" && (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => handleStopService(service)}>
-                Stop
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleRestartService(service)}>
-                Restart
-              </Button>
-            </>
-          )}
-          <Button variant="destructive" size="sm" onClick={() => handleDeleteService(service)}>
-            Delete
-          </Button>
-        </div>
+        <ActionsMenu actions={getActionItems(service)} />
       ),
     },
   ];
@@ -200,59 +272,60 @@ const ServiceManagement = () => {
   ];
 
   return (
-    <div className="flex min-h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
-        <PageHeader
-          title="Service Management"
-          description="Manage and monitor your services"
-          actions={
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => refetch()}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-              <CreateServiceDialog
-                onSubmit={handleCreateService}
-              />
-            </div>
-          }
-        />
+    <div className="flex-1 overflow-y-auto p-8">
+      <Breadcrumbs />
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="mt-6">
-          <TabsList>
-            <TabsTrigger value="all">All Services</TabsTrigger>
-            <TabsTrigger value="running">Running</TabsTrigger>
-            <TabsTrigger value="stopped">Stopped</TabsTrigger>
-            <TabsTrigger value="error">Error</TabsTrigger>
-          </TabsList>
+      <PageHeader
+        title="Service Management"
+        description="Manage and monitor your services"
+        actions={
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <CreateServiceDialog onSubmit={handleCreateService} />
+          </div>
+        }
+      />
 
-          <TabsContent value={currentTab} className="mt-6">
-            <div className="space-y-6">
-              <DataFilters
-                filters={filters}
-                setFilters={setFilters}
-                options={filterOptions}
-              />
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="mt-6">
+        <TabsList>
+          <TabsTrigger value="all">All Services</TabsTrigger>
+          <TabsTrigger value="running">Running</TabsTrigger>
+          <TabsTrigger value="stopped">Stopped</TabsTrigger>
+          <TabsTrigger value="error">Error</TabsTrigger>
+        </TabsList>
 
-              <DataTable
-                data={services}
-                columns={columns}
-                isLoading={isLoading}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {selectedServiceId && (
-          <ServiceDetailDialog
-            serviceId={selectedServiceId}
-            isOpen={detailDialogOpen}
-            onClose={() => setDetailDialogOpen(false)}
-            onStatusChange={handleStatusChange}
+        <TabsContent value={currentTab}>
+          <DataFilters
+            filters={filters}
+            setFilters={setFilters}
+            options={filterOptions}
           />
-        )}
-      </main>
+
+          <div className="mt-4">
+            <DataTable
+              data={services}
+              title="Services management"
+              columns={columns}
+              isLoading={isLoading}
+              pagination={true}
+              showAddButton={true}
+              totalItems={services.length}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {selectedServiceId && (
+        <ServiceDetailDialog
+          serviceId={selectedServiceId}
+          isOpen={detailDialogOpen}
+          onClose={() => setDetailDialogOpen(false)}
+          onStatusChange={handleStatusChange}
+        />
+      )}
     </div>
   );
 };
