@@ -25,8 +25,8 @@ try {
 // Default to commonly used Keycloak settings for development
 const keycloakConfig = {
   url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
-  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'account',
+  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'applications',
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'dashboard',
 };
 
 console.log('Keycloak config:', keycloakConfig);
