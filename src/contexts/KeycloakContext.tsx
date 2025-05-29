@@ -47,6 +47,25 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
           const userInfoData = KeycloakService.getUserInfo();
           console.log('KeycloakContext: User info loaded:', userInfoData);
           setUserInfo(userInfoData);
+          
+          if (!userInfoData) {
+            console.log('KeycloakContext: User info not available, but user is authenticated');
+            // We're authenticated but don't have user info yet
+            // This might happen if the profile loading failed
+            // Let's try to get the token parsed data at least
+            const token = KeycloakService.getToken();
+            if (token) {
+              console.log('KeycloakContext: Have token, user info should be available');
+              // Force a retry to get user info
+              setTimeout(() => {
+                const retryUserInfo = KeycloakService.getUserInfo();
+                console.log('KeycloakContext: Retry user info:', retryUserInfo);
+                if (retryUserInfo) {
+                  setUserInfo(retryUserInfo);
+                }
+              }, 100);
+            }
+          }
         } else {
           console.log('KeycloakContext: Not authenticated, clearing user info');
           setUserInfo(null);
