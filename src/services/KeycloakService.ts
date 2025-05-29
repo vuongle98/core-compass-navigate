@@ -33,6 +33,17 @@ class KeycloakService {
 
       this.initialized = true;
       this.initializationFailed = false;
+      
+      // If authenticated, load user profile
+      if (authenticated && this.keycloak.authenticated) {
+        try {
+          await this.keycloak.loadUserProfile();
+          console.log('User profile loaded successfully');
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+        }
+      }
+      
       LoggingService.info('keycloak', 'init_success', 'Keycloak initialized successfully');
       
       return authenticated;
@@ -99,7 +110,6 @@ class KeycloakService {
    */
   isAuthenticated(): boolean {
     if (this.initializationFailed) {
-      // In development mode without Keycloak, return false
       return false;
     }
     return this.keycloak?.authenticated ?? false;
@@ -116,13 +126,33 @@ class KeycloakService {
   }
 
   /**
-   * Get user info
+   * Get user info - combines tokenParsed and profile data
    */
   getUserInfo(): any {
-    if (this.initializationFailed) {
+    if (this.initializationFailed || !this.keycloak) {
       return null;
     }
-    return this.keycloak?.tokenParsed;
+    
+    // Combine token parsed data with profile data
+    const tokenParsed = this.keycloak.tokenParsed;
+    const profile = this.keycloak.profile;
+    
+    if (!tokenParsed) {
+      return null;
+    }
+    
+    return {
+      ...tokenParsed,
+      ...profile,
+      // Ensure we have the essential fields
+      sub: tokenParsed.sub,
+      preferred_username: tokenParsed.preferred_username || profile?.username,
+      email: tokenParsed.email || profile?.email,
+      name: tokenParsed.name || profile?.firstName && profile?.lastName ? `${profile.firstName} ${profile.lastName}` : undefined,
+      given_name: tokenParsed.given_name || profile?.firstName,
+      family_name: tokenParsed.family_name || profile?.lastName,
+      realm_access: tokenParsed.realm_access,
+    };
   }
 
   /**

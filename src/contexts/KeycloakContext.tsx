@@ -40,7 +40,10 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
         setInitializationFailed(KeycloakService.hasInitializationFailed());
         
         if (authenticated) {
-          setUserInfo(KeycloakService.getUserInfo());
+          // Get user info after successful authentication
+          const userInfoData = KeycloakService.getUserInfo();
+          console.log('Keycloak user info loaded:', userInfoData);
+          setUserInfo(userInfoData);
         }
 
         if (KeycloakService.hasInitializationFailed()) {
@@ -74,7 +77,8 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
     try {
       await KeycloakService.login();
       setIsAuthenticated(true);
-      setUserInfo(KeycloakService.getUserInfo());
+      const userInfoData = KeycloakService.getUserInfo();
+      setUserInfo(userInfoData);
     } catch (error) {
       console.error('Login failed:', error);
       toast.error('Login failed');
