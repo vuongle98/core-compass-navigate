@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -36,10 +35,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('AuthContext: initAuth called with state:', {
+        keycloakLoading: keycloak.isLoading,
+        keycloakAuthenticated: keycloak.isAuthenticated,
+        keycloakUserInfo: keycloak.userInfo ? 'present' : 'null',
+        initializationFailed: keycloak.initializationFailed
+      });
+
+      // Wait for Keycloak to finish loading
+      if (keycloak.isLoading) {
+        console.log('AuthContext: Keycloak still loading, waiting...');
+        return;
+      }
+
       setIsLoading(true);
       try {
         if (keycloak.isAuthenticated && keycloak.userInfo) {
-          console.log('Keycloak is authenticated with userInfo:', keycloak.userInfo);
+          console.log('AuthContext: User is authenticated with userInfo:', keycloak.userInfo);
           
           // Convert Keycloak user info to our User type
           const userData: User = {
@@ -52,38 +64,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             lastName: keycloak.userInfo.family_name,
           };
           
-          console.log('Setting user data:', userData);
+          console.log('AuthContext: Setting user data:', userData);
           setUser(userData);
           ServiceRegistry.updateCurrentUser(userData);
           
           // Refresh feature flags after login
           await featureFlagService.refreshFlags();
-        } else if (!keycloak.isLoading && !keycloak.isAuthenticated) {
-          // Only clear user if Keycloak is not loading and not authenticated
-          console.log('Keycloak is not authenticated, clearing user');
+        } else if (keycloak.isAuthenticated && !keycloak.userInfo) {
+          // User is authenticated but userInfo is not available
+          console.log('AuthContext: User authenticated but userInfo not available');
+          // Don't set user yet, wait for userInfo to be loaded
+        } else {
+          // Not authenticated or initialization failed
+          console.log('AuthContext: User not authenticated, clearing user data');
           setUser(null);
           ServiceRegistry.updateCurrentUser(null);
-        } else if (keycloak.isAuthenticated && !keycloak.userInfo) {
-          // User is authenticated but userInfo is not loaded yet
-          console.log('User authenticated but userInfo not available yet, waiting...');
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("AuthContext: Auth initialization error:", error);
         setUser(null);
         ServiceRegistry.updateCurrentUser(null);
       } finally {
-        // Only set loading to false if we're not waiting for userInfo
-        if (!keycloak.isLoading && (!keycloak.isAuthenticated || keycloak.userInfo)) {
+        // Only set loading to false when we have a definitive state
+        if (!keycloak.isAuthenticated || keycloak.userInfo || keycloak.initializationFailed) {
           setIsLoading(false);
         }
       }
     };
 
-    // Only run when authentication state changes
-    if (!keycloak.isLoading) {
-      initAuth();
-    }
-  }, [keycloak.isAuthenticated, keycloak.isLoading, keycloak.userInfo]);
+    initAuth();
+  }, [keycloak.isLoading, keycloak.isAuthenticated, keycloak.userInfo, keycloak.initializationFailed]);
 
   const login = async (
     username: string,
@@ -92,10 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // For Keycloak, we redirect to the login page
     // This method is kept for compatibility but will use Keycloak login
     try {
+      console.log('AuthContext: Starting login...');
       await keycloak.login();
       return true;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("AuthContext: Login error:", error);
       toast.error("Login failed", {
         description: "Please try again.",
       });
@@ -105,11 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async (): Promise<void> => {
     try {
+      console.log('AuthContext: Starting logout...');
       await keycloak.logout();
       setUser(null);
       ServiceRegistry.updateCurrentUser(null);
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("AuthContext: Logout error:", error);
       toast.error("Logout failed");
     }
   };
@@ -156,6 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
   };
+
+  console.log('AuthContext render state:', {
+    user: user ? 'present' : 'null',
+    isAuthenticated: keycloak.isAuthenticated,
+    isLoading: isLoading || keycloak.isLoading
+  });
 
   return (
     <AuthContext.Provider

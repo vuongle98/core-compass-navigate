@@ -1,4 +1,3 @@
-
 import Keycloak from 'keycloak-js';
 import LoggingService from './LoggingService';
 
@@ -34,13 +33,16 @@ class KeycloakService {
       this.initialized = true;
       this.initializationFailed = false;
       
+      console.log('Keycloak init result - authenticated:', authenticated);
+      
       // If authenticated, load user profile
       if (authenticated && this.keycloak.authenticated) {
         try {
           await this.keycloak.loadUserProfile();
-          console.log('User profile loaded successfully');
+          console.log('User profile loaded successfully:', this.keycloak.profile);
         } catch (error) {
           console.error('Failed to load user profile:', error);
+          // Don't fail completely if profile loading fails
         }
       }
       
@@ -76,7 +78,19 @@ class KeycloakService {
     }
 
     try {
+      console.log('Starting Keycloak login...');
       await this.keycloak.login();
+      
+      // After successful login, load user profile
+      if (this.keycloak.authenticated) {
+        try {
+          await this.keycloak.loadUserProfile();
+          console.log('User profile loaded after login:', this.keycloak.profile);
+        } catch (error) {
+          console.error('Failed to load user profile after login:', error);
+        }
+      }
+      
       LoggingService.info('keycloak', 'login_success', 'User logged in successfully');
     } catch (error) {
       LoggingService.error('keycloak', 'login_failed', 'Login failed', error);
@@ -97,6 +111,7 @@ class KeycloakService {
     }
 
     try {
+      console.log('Starting Keycloak logout...');
       await this.keycloak.logout();
       LoggingService.info('keycloak', 'logout_success', 'User logged out successfully');
     } catch (error) {
@@ -129,30 +144,38 @@ class KeycloakService {
    * Get user info - combines tokenParsed and profile data
    */
   getUserInfo(): any {
-    if (this.initializationFailed || !this.keycloak) {
+    if (this.initializationFailed || !this.keycloak || !this.keycloak.authenticated) {
+      console.log('getUserInfo: Not authenticated or failed initialization');
       return null;
     }
     
-    // Combine token parsed data with profile data
     const tokenParsed = this.keycloak.tokenParsed;
     const profile = this.keycloak.profile;
     
+    console.log('getUserInfo - tokenParsed:', tokenParsed);
+    console.log('getUserInfo - profile:', profile);
+    
     if (!tokenParsed) {
+      console.log('getUserInfo: No token parsed data available');
       return null;
     }
     
-    return {
+    // Create user info from available data
+    const userInfo = {
       ...tokenParsed,
       ...profile,
       // Ensure we have the essential fields
       sub: tokenParsed.sub,
       preferred_username: tokenParsed.preferred_username || profile?.username,
       email: tokenParsed.email || profile?.email,
-      name: tokenParsed.name || profile?.firstName && profile?.lastName ? `${profile.firstName} ${profile.lastName}` : undefined,
+      name: tokenParsed.name || (profile?.firstName && profile?.lastName ? `${profile.firstName} ${profile.lastName}` : undefined),
       given_name: tokenParsed.given_name || profile?.firstName,
       family_name: tokenParsed.family_name || profile?.lastName,
       realm_access: tokenParsed.realm_access,
     };
+    
+    console.log('getUserInfo result:', userInfo);
+    return userInfo;
   }
 
   /**

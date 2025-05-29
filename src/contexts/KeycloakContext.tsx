@@ -35,15 +35,21 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
   useEffect(() => {
     const initKeycloak = async () => {
       try {
+        console.log('KeycloakContext: Starting initialization...');
         const authenticated = await KeycloakService.init(config);
+        
+        console.log('KeycloakContext: Init result - authenticated:', authenticated);
         setIsAuthenticated(authenticated);
         setInitializationFailed(KeycloakService.hasInitializationFailed());
         
         if (authenticated) {
           // Get user info after successful authentication
           const userInfoData = KeycloakService.getUserInfo();
-          console.log('Keycloak user info loaded:', userInfoData);
+          console.log('KeycloakContext: User info loaded:', userInfoData);
           setUserInfo(userInfoData);
+        } else {
+          console.log('KeycloakContext: Not authenticated, clearing user info');
+          setUserInfo(null);
         }
 
         if (KeycloakService.hasInitializationFailed()) {
@@ -55,10 +61,13 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
       } catch (error) {
         console.error('Failed to initialize Keycloak:', error);
         setInitializationFailed(true);
+        setIsAuthenticated(false);
+        setUserInfo(null);
         toast.error('Failed to initialize authentication', {
           description: 'Running in development mode. Please check your Keycloak configuration.',
         });
       } finally {
+        console.log('KeycloakContext: Initialization complete, setting loading to false');
         setIsLoading(false);
       }
     };
@@ -75,10 +84,20 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
     }
 
     try {
+      console.log('KeycloakContext: Starting login...');
       await KeycloakService.login();
-      setIsAuthenticated(true);
-      const userInfoData = KeycloakService.getUserInfo();
-      setUserInfo(userInfoData);
+      
+      // After login, update state
+      const authenticated = KeycloakService.isAuthenticated();
+      console.log('KeycloakContext: Post-login authenticated state:', authenticated);
+      
+      setIsAuthenticated(authenticated);
+      
+      if (authenticated) {
+        const userInfoData = KeycloakService.getUserInfo();
+        console.log('KeycloakContext: Post-login user info:', userInfoData);
+        setUserInfo(userInfoData);
+      }
     } catch (error) {
       console.error('Login failed:', error);
       toast.error('Login failed');
@@ -91,6 +110,7 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
     }
 
     try {
+      console.log('KeycloakContext: Starting logout...');
       await KeycloakService.logout();
       setIsAuthenticated(false);
       setUserInfo(null);
@@ -109,6 +129,13 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
   };
 
   const token = KeycloakService.getToken();
+
+  console.log('KeycloakContext render state:', {
+    isAuthenticated,
+    isLoading,
+    userInfo: userInfo ? 'present' : 'null',
+    initializationFailed
+  });
 
   return (
     <KeycloakContext.Provider
