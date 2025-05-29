@@ -1,4 +1,3 @@
-
 import Keycloak from 'keycloak-js';
 import LoggingService from './LoggingService';
 
@@ -38,8 +37,12 @@ class KeycloakService {
       console.log('Keycloak instance authenticated property:', this.keycloak.authenticated);
       console.log('Keycloak token:', this.keycloak.token ? 'present' : 'null');
       
+      // The init method's return value might not be reliable, use the instance properties
+      const actuallyAuthenticated = this.keycloak.authenticated && !!this.keycloak.token;
+      console.log('Actually authenticated (token + flag):', actuallyAuthenticated);
+      
       // If authenticated, load user profile
-      if (authenticated && this.keycloak.token) {
+      if (actuallyAuthenticated) {
         try {
           console.log('Loading user profile...');
           await this.keycloak.loadUserProfile();
@@ -52,7 +55,7 @@ class KeycloakService {
       
       LoggingService.info('keycloak', 'init_success', 'Keycloak initialized successfully');
       
-      return authenticated;
+      return actuallyAuthenticated;
     } catch (error) {
       this.initializationFailed = true;
       LoggingService.error('keycloak', 'init_failed', 'Failed to initialize Keycloak', error);
@@ -86,7 +89,7 @@ class KeycloakService {
       await this.keycloak.login();
       
       // After successful login, load user profile
-      if (this.keycloak.token) {
+      if (this.keycloak.authenticated && this.keycloak.token) {
         try {
           await this.keycloak.loadUserProfile();
           console.log('User profile loaded after login:', this.keycloak.profile);
@@ -131,8 +134,14 @@ class KeycloakService {
     if (this.initializationFailed) {
       return false;
     }
-    // Check both the authenticated flag and the presence of a token
-    return !!(this.keycloak?.authenticated && this.keycloak?.token);
+    // Use the actual authenticated property and token presence
+    const authenticated = !!(this.keycloak?.authenticated && this.keycloak?.token);
+    console.log('isAuthenticated check:', {
+      keycloakAuthenticated: this.keycloak?.authenticated,
+      hasToken: !!this.keycloak?.token,
+      result: authenticated
+    });
+    return authenticated;
   }
 
   /**
@@ -154,9 +163,9 @@ class KeycloakService {
       return null;
     }
     
-    // Check if we have a token (which indicates authentication)
-    if (!this.keycloak.token) {
-      console.log('getUserInfo: No token available');
+    // Check if we have a token and are actually authenticated
+    if (!this.keycloak.token || !this.keycloak.authenticated) {
+      console.log('getUserInfo: No token available or not authenticated');
       return null;
     }
     

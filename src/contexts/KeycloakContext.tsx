@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import KeycloakService from '@/services/KeycloakService';
 import { toast } from 'sonner';
@@ -49,22 +48,17 @@ export function KeycloakProvider({ children, config }: KeycloakProviderProps) {
           setUserInfo(userInfoData);
           
           if (!userInfoData) {
-            console.log('KeycloakContext: User info not available, but user is authenticated');
-            // We're authenticated but don't have user info yet
-            // This might happen if the profile loading failed
-            // Let's try to get the token parsed data at least
-            const token = KeycloakService.getToken();
-            if (token) {
-              console.log('KeycloakContext: Have token, user info should be available');
-              // Force a retry to get user info
-              setTimeout(() => {
-                const retryUserInfo = KeycloakService.getUserInfo();
-                console.log('KeycloakContext: Retry user info:', retryUserInfo);
-                if (retryUserInfo) {
-                  setUserInfo(retryUserInfo);
-                }
-              }, 100);
-            }
+            console.log('KeycloakContext: Attempting to retry user info loading...');
+            // Try to retry loading user info with a slight delay
+            setTimeout(() => {
+              const retryUserInfo = KeycloakService.getUserInfo();
+              console.log('KeycloakContext: Retry user info:', retryUserInfo);
+              if (retryUserInfo) {
+                setUserInfo(retryUserInfo);
+              } else {
+                console.warn('KeycloakContext: Still no user info after retry');
+              }
+            }, 500);
           }
         } else {
           console.log('KeycloakContext: Not authenticated, clearing user info');
